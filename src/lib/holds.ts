@@ -145,4 +145,21 @@ export function cancelHold(holdId: string): boolean {
     h.priority = idx + 1;
   });
 
-  saveHolds(updated);\n  return true;\n}\n\n/**\n * Marca una reserva como completada tras ejecutarse el préstamo.\n */\nexport function fulfillHold(holdId: string, loanId: string): boolean {\n  const holds = getStoredHolds();\n  const updated = holds.map((h) => {\n    if (h.id === holdId) {\n      return { ...h, status: 'fulfilled' as HoldStatus, fulfilled_loan_id: loanId };\n    }\n    return h;\n  });\n  saveHolds(updated);\n  return true;\n}\n
+  saveHolds(updated);
+  return true;
+}
+
+/**
+ * Marca una reserva como completada tras ejecutarse el préstamo.
+ */
+export function fulfillHold(holdId: string, loanId: string): boolean {
+  const holds = getStoredHolds();
+  const updated = holds.map((h) => {
+    if (h.id === holdId) {
+      return { ...h, status: 'fulfilled' as HoldStatus, fulfilled_loan_id: loanId };
+    }
+    return h;
+  });
+  saveHolds(updated);
+  return true;
+}

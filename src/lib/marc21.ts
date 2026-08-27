@@ -211,28 +211,28 @@ export function workToMarcRecord(work: Work): MarcRecord {
  */
 export function marcRecordToXml(marc: MarcRecord): string {
   const lines: string[] = [];
-  lines.push('<?xml version=\"1.0\" encoding=\"UTF-8\"?>');
-  lines.push('<record xmlns=\"http://www.loc.gov/MARC21/slim\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd\">');
+  lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+  lines.push('<record xmlns="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">');
   lines.push(`  <leader>${escapeXml(marc.leader)}</leader>`);
 
   // Control Fields
   Object.entries(marc.controlFields).forEach(([tag, val]) => {
-    lines.push(`  <controlfield tag=\"${tag}\">${escapeXml(val)}</controlfield>`);
+    lines.push(`  <controlfield tag="${tag}">${escapeXml(val)}</controlfield>`);
   });
 
   // Data Fields
   marc.dataFields.forEach((f) => {
     const ind1 = f.ind1?.trim() || ' ';
     const ind2 = f.ind2?.trim() || ' ';
-    lines.push(`  <datafield tag=\"${f.tag}\" ind1=\"${ind1}\" ind2=\"${ind2}\">`);
+    lines.push(`  <datafield tag="${f.tag}" ind1="${ind1}" ind2="${ind2}">`);
     f.subfields.forEach((sf) => {
-      lines.push(`    <subfield code=\"${sf.code}\">${escapeXml(sf.value)}</subfield>`);
+      lines.push(`    <subfield code="${sf.code}">${escapeXml(sf.value)}</subfield>`);
     });
     lines.push('  </datafield>');
   });
 
   lines.push('</record>');
-  return lines.join('\\n');
+  return lines.join('\n');
 }
 
 /**
@@ -250,7 +250,7 @@ export function marcRecordToFormattedText(marc: MarcRecord): string {
     const subfieldsStr = f.subfields.map((sf) => `$${sf.code} ${sf.value}`).join(' ');
     lines.push(`${f.tag} ${ind1}${ind2} ${subfieldsStr}`);
   });
-  return lines.join('\\n');
+  return lines.join('\n');
 }
 
 /**
@@ -262,7 +262,7 @@ export function workToCatalogCardText(work: Work): string {
   const title = work.title || 'Sin título';
   const pub = work.publisher ? `${work.publisher}, ` : '';
   const year = work.publication_year ? `${work.publication_year}.` : '';
-  const desc = work.description ? `\\n   Resumen: ${work.description}\\n` : '';
+  const desc = work.description ? `\n   Resumen: ${work.description}\n` : '';
   const subjects = work.subjects && work.subjects.length > 0 
     ? work.subjects.map((s, i) => `${i + 1}. ${s}.`).join(' ') 
     : '1. Literatura.';
@@ -286,5 +286,14 @@ export function workToCatalogCardText(work: Work): string {
 }
 
 function escapeXml(unsafe: string): string {
-  return unsafe.replace(/[<>&'\"]/g, (c) => {
-    switch (c) {\n      case '<': return '&lt;';\n      case '>': return '&gt;';\n      case '&': return '&amp;';\n      case '\\'': return '&apos;';\n      case '\"': return '&quot;';\n      default: return c;\n    }\n  });\n}\n
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}

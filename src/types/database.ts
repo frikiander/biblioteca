@@ -275,7 +275,8 @@ export interface OfflineTransaction {
 }
 
 export interface Database {
-  public: {\n    Tables: {
+  public: {
+    Tables: {
       works: {
         Row: Work;
         Insert: Omit<Work, 'id' | 'created_at'> & { id?: string; created_at?: string };
