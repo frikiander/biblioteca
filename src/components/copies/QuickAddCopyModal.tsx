@@ -46,17 +46,37 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
   onClose,
   onCopyAdded,
 }) => {
-  const [branches] = useState<Branch[]>(() => {
+  const [branches, setBranches] = useState<Branch[]>(() => {
     return getStoredBranches();
   });
 
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(branches[0]?.id || 'b_primaria');
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(branches[0]?.id || '00000000-0000-4000-a000-000000000001');
   const [condition, setCondition] = useState<CopyCondition>('bueno');
 
-  const targetBranch = branches.find(b => b.id === selectedBranchId) || branches[0];
+  // Load live branches on mount
+  useEffect(() => {
+    if (isSupabaseConfigured && supabase) {
+      supabase
+        .from('branches')
+        .select('*')
+        .order('name')
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setBranches(data);
+            setSelectedBranchId((prev) => {
+              const stillExists = data.some((b) => b.id === prev);
+              return stillExists ? prev : data[0].id;
+            });
+          }
+        });
+    }
+  }, [isOpen]);
+
+  const targetBranch = branches.find(b => b.id === selectedBranchId || b.name === selectedBranchId) || branches[0];
   const prefix = getBranchCodePrefix(targetBranch?.name || targetBranch?.id);
   const deweyNum = work?.dewey_code ? (work.dewey_code.split('.')[0].replace(/[^0-9]/g, '') || '800') : '800';
 
+  // 4-variable state: Prefix, Dewey, Cutter, Sequence
   const [cutterCode, setCutterCode] = useState<string>(() => {
     return work ? getAuthorCutterCode(work.author, work.title) : 'OTE';
   });
@@ -81,6 +101,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Sync copy sequence and cutter when modal opens with a work
   useEffect(() => {
     if (work && isOpen) {
       const nextSeq = getNextCopySequenceForWork(work.id);
@@ -89,6 +110,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
     }
   }, [work, isOpen]);
 
+  // Sync marbete code whenever formula variables change
   useEffect(() => {
     if (!work) return;
     const code = generateMarbeteCode(
@@ -127,13 +149,15 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
       work.title
     );
 
+    const resolvedBranchId = targetBranch?.id || selectedBranchId;
+
     try {
       if (isSupabaseConfigured && supabase) {
         const { data: newCopy, error: insertError } = await (supabase as any)
           .from('copies')
           .insert({
             work_id: work.id,
-            branch_id: selectedBranchId,
+            branch_id: resolvedBranchId,
             condition: condition,
             internal_code: finalCode,
             status: targetBranch.type === 'external_donation' ? 'en_donacion' : 'disponible',
@@ -152,6 +176,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
           onClose();
         }, 800);
       } else {
+        // Local simulation
         const copies: Copy[] = getStoredCopies();
 
         if (copies.some((c) => c.internal_code === finalCode)) {
@@ -197,6 +222,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
         id="quick-add-copy-modal"
         className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden my-6"
       >
+        {/* Header */}
         <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center">
@@ -214,6 +240,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
           </button>
         </div>
 
+        {/* Book Context Pill */}
         <div className="px-5 py-3 bg-slate-50 border-b border-slate-200/80 flex items-center gap-3">
           <img
             src={work.cover_url}
@@ -229,6 +256,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
           </div>
         </div>
 
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
           {error && (
             <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-2">
@@ -244,6 +272,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
             </div>
           )}
 
+          {/* Sede Destination Selector */}
           <div className="space-y-1.5">
             <label className="block font-bold text-slate-700">
               1. Sede o Destino del Ejemplar <span className="text-rose-500">*</span>
@@ -270,7 +299,9 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
             </select>
           </div>
 
+          {/* Cutter & Sequence Row */}
           <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+            {/* Cutter */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
@@ -296,6 +327,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
               />
             </div>
 
+            {/* Sequence */}
             <div className="space-y-1">
               <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
                 <Layers className="w-3 h-3 text-emerald-700" />
@@ -318,6 +350,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
             </div>
           </div>
 
+          {/* Marbete Token Preview & Tejuelo 25x38mm */}
           <div className="p-3 bg-slate-900 text-white rounded-xl border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="space-y-2 flex-1 w-full sm:w-auto">
               <div className="flex items-center justify-between text-[10px] text-slate-400">
@@ -342,6 +375,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
               </div>
             </div>
 
+            {/* Live Spine Label */}
             <div className="shrink-0 bg-slate-800 p-1.5 rounded-lg border border-slate-600 flex flex-col items-center">
               <span className="text-[8px] uppercase font-bold text-slate-400 mb-1">Tejuelo 25×38mm</span>
               <SpineLabel
@@ -406,6 +440,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
             </div>
           </div>
 
+          {/* Physical Condition */}
           <div className="space-y-1.5">
             <label className="block font-bold text-slate-700">
               4. Estado de Conservación Física <span className="text-rose-500">*</span>
@@ -428,6 +463,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
             </div>
           </div>
 
+          {/* Notes */}
           <div className="space-y-1.5">
             <label className="block font-bold text-slate-700">
               5. Observaciones

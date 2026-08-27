@@ -49,15 +49,55 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
     return getStoredWorks();
   });
 
-  const [branches] = useState<Branch[]>(() => {
+  const [branches, setBranches] = useState<Branch[]>(() => {
     return getStoredBranches();
   });
 
   const [isRegisterWorkModalOpen, setIsRegisterWorkModalOpen] = useState<boolean>(false);
   const [selectedWorkId, setSelectedWorkId] = useState<string>(initialWork?.id || works[0]?.id || '');
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(branches[0]?.id || 'b_primaria');
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(branches[0]?.id || '00000000-0000-4000-a000-000000000001');
   const [condition, setCondition] = useState<CopyCondition>('bueno');
 
+  // Load live works and branches from Supabase
+  useEffect(() => {
+    if (isSupabaseConfigured && supabase) {
+      supabase
+        .from('works')
+        .select('*')
+        .order('title')
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setWorks(data);
+            if (!selectedWorkId) {
+              setSelectedWorkId(data[0].id);
+            }
+          }
+        });
+
+      supabase
+        .from('branches')
+        .select('*')
+        .order('name')
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setBranches(data);
+            setSelectedBranchId((prev) => {
+              const exists = data.some((b) => b.id === prev);
+              return exists ? prev : data[0].id;
+            });
+          }
+        });
+    }
+  }, []);
+
+  // Update selectedWorkId if initialWork prop changes
+  useEffect(() => {
+    if (initialWork?.id) {
+      setSelectedWorkId(initialWork.id);
+    }
+  }, [initialWork]);
+
+  // Update selectedWorkId if works changes and selectedWorkId is empty
   useEffect(() => {
     if (!selectedWorkId && works.length > 0) {
       setSelectedWorkId(works[0].id);
@@ -67,6 +107,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
   const selectedWork = works.find((w) => w.id === selectedWorkId) || initialWork || works[0];
   const selectedBranch = branches.find((b) => b.id === selectedBranchId) || branches[0];
 
+  // Variables for marbete formula: [PREFIJO]-[DEWEY]-[CUTTER]-[SECUENCIA]
   const [cutterCode, setCutterCode] = useState<string>(() => {
     return getAuthorCutterCode(selectedWork?.author, selectedWork?.title);
   });
@@ -74,10 +115,12 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
     return getNextCopySequenceForWork(selectedWork?.id);
   });
 
+  // Calculate prefix and dewey
   const prefix = getBranchCodePrefix(selectedBranch?.name || selectedBranch?.id);
   const deweyNum = selectedWork?.dewey_code ? (selectedWork.dewey_code.split('.')[0].replace(/[^0-9]/g, '') || '800') : '800';
   const formattedSequence = String(copySequence).padStart(3, '0');
 
+  // Combined code
   const [internalCode, setInternalCode] = useState<string>(() => {
     return generateMarbeteCode(
       selectedBranch?.name || selectedBranch?.id,
@@ -92,6 +135,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [actionResult, setActionResult] = useState<ActionResponse<Copy> | null>(null);
 
+  // Sync internalCode whenever formula variables change
   useEffect(() => {
     const code = generateMarbeteCode(
       selectedBranch?.name || selectedBranch?.id,
@@ -138,6 +182,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
 
     try {
       if (isSupabaseConfigured && supabase) {
+        // 1. Ensure branch exists in Supabase
         const { data: branchData } = await (supabase as any)
           .from('branches')
           .select('id, name')
@@ -162,6 +207,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
           targetBranchDbId = newBranch.id;
         }
 
+        // 2. Insert copy
         const { data: newCopy, error: copyError } = await (supabase as any)
           .from('copies')
           .insert({
@@ -187,8 +233,10 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
         setActionResult(res);
         if (onCopyRegistered && newCopy) onCopyRegistered(newCopy);
       } else {
+        // Local simulation with persistent storage
         const copies: Copy[] = getStoredCopies();
 
+        // Check if internal_code exists
         if (copies.some((c) => c.internal_code === generatedCode)) {
           throw new Error(`El código marbete ${generatedCode} ya existe en el inventario.`);
         }
@@ -218,6 +266,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
         if (onCopyRegistered) onCopyRegistered(newCopy);
       }
 
+      // Increment sequence for next copy
       setCopySequence(prev => prev + 1);
       setNotes('');
     } catch (err: unknown) {
@@ -233,6 +282,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
 
   return (
     <div id="register-copy-section" className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* Header */}
       <div className="p-6 bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 text-white">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -248,6 +298,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Work Selector */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -314,6 +365,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
           )}
         </div>
 
+        {/* Assigned Branch Selector */}
         <div className="space-y-2">
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
             2. Sede de Asignación <span className="text-rose-500">*</span>
@@ -370,7 +422,9 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
           )}
         </div>
 
+        {/* Dynamic Formula Components: Cutter Code & Copy Sequence */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+          {/* Cutter de Autor / Título */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -401,6 +455,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
             </p>
           </div>
 
+          {/* Secuencia Única de Copia */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-emerald-700" />
@@ -427,6 +482,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
           </div>
         </div>
 
+        {/* Visual Formula Breakdown Banner */}
         <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white border border-slate-700 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] uppercase tracking-wider font-bold text-emerald-400 flex items-center gap-1.5">
@@ -438,6 +494,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
             </span>
           </div>
 
+          {/* Visual token blocks */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
             <div className="p-2.5 rounded-xl bg-slate-800/90 border border-emerald-500/30">
               <span className="text-[10px] text-emerald-300 font-medium block">1. Prefijo Sede</span>
@@ -457,6 +514,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
             </div>
           </div>
 
+          {/* Resulting full code & Physical Spine Label Preview */}
           <div className="p-4 bg-black/40 rounded-xl border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="space-y-1 text-center sm:text-left">
               <span className="text-xs text-slate-300 block">Código Marbete Oficial:</span>
@@ -468,6 +526,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
               </span>
             </div>
 
+            {/* Live SpineLabel Render */}
             <div className="flex flex-col items-center gap-1 shrink-0 bg-slate-800/80 p-2.5 rounded-xl border border-slate-600">
               <span className="text-[9px] uppercase font-bold text-slate-300 tracking-wider flex items-center gap-1">
                 <Tag className="w-2.5 h-2.5 text-emerald-400" />
@@ -537,7 +596,9 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
           </div>
         </div>
 
+        {/* Condition & Notes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* Physical Condition */}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
               5. Estado Físico del Ejemplar <span className="text-rose-500">*</span>
@@ -567,6 +628,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
             </div>
           </div>
 
+          {/* Notes */}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
               6. Observaciones de la Asignación (Opcional)
@@ -582,6 +644,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
           </div>
         </div>
 
+        {/* Action result banner */}
         {actionResult && (
           <div
             id="action-result-banner"
@@ -609,6 +672,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
           </div>
         )}
 
+        {/* Submit button */}
         <div className="pt-2 flex items-center justify-between border-t border-slate-100">
           <div className="text-xs text-slate-500 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
@@ -636,6 +700,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
         </div>
       </form>
 
+      {/* Register Work Modal for quick on-the-fly cataloging */}
       {isRegisterWorkModalOpen && (
         <RegisterWorkModal
           isOpen={isRegisterWorkModalOpen}
