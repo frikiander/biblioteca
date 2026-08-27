@@ -225,6 +225,7 @@ export const DEWEY_GROUPS: DeweyClassGroup[] = [
   },
 ];
 
+// Major class record for quick lookups
 export const DEWEY_CLASSES: Record<string, DeweyCategory> = DEE_GROUPS_TO_MAP(DEWEY_GROUPS);
 
 function DEE_GROUPS_TO_MAP(groups: DeweyClassGroup[]): Record<string, DeweyCategory> {
@@ -242,6 +243,7 @@ function DEE_GROUPS_TO_MAP(groups: DeweyClassGroup[]): Record<string, DeweyCateg
   return map;
 }
 
+// Flat lookup for all divisions
 export const ALL_DEWEY_DIVISIONS: DeweyDivision[] = DEWEY_GROUPS.flatMap((g) => g.divisions);
 
 export function getDeweyInfo(deweyCode: string): DeweyCategory {
@@ -262,6 +264,7 @@ export function getDeweyInfo(deweyCode: string): DeweyCategory {
   const hundredPrefix = padded.charAt(0) + '00';
   const group = DEWEY_GROUPS.find((g) => g.code === hundredPrefix) || DEWEY_GROUPS[8];
 
+  // Look for exact division match (e.g., '860')
   const division = ALL_DEWEY_DIVISIONS.find((d) => d.code === padded) ||
                    ALL_DEWEY_DIVISIONS.find((d) => d.code === hundredPrefix);
 
@@ -276,3 +279,4 @@ export function getDeweyInfo(deweyCode: string): DeweyCategory {
     badgeText: group.badgeText,
   };
 }
+

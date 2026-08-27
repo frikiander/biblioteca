@@ -22,7 +22,16 @@ import {
   SpineLabelData
 } from './SpineLabel';
 import type { Copy, Work, WorkWithCopiesCount } from '../../types/database';
-import { getAuthorCutterCode, getStoredWorks, getStoredCopies } from '../../lib/supabaseClient';
+import { 
+  getAuthorCutterCode, 
+  getStoredWorks, 
+  getStoredCopies, 
+  extractSpineLabelPrefix, 
+  extractCopyNumber,
+  isSupabaseConfigured,
+  supabase,
+  INITIAL_BRANCHES
+} from '../../lib/supabaseClient';
 import { getDeweyInfo } from '../../lib/dewey';
 
 interface PrintSpineLabelsModalProps {
@@ -46,6 +55,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
   const [repeatCount, setRepeatCount] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<'sheet' | 'preview'>('sheet');
 
+  // Determinar la obra seleccionada
   const targetWork: Work | WorkWithCopiesCount | null = selectedWork || (() => {
     if (initialCopies && initialCopies.length > 0) {
       const wId = initialCopies[0].work_id;
@@ -56,40 +66,60 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
 
   const isSpecificWork = Boolean(targetWork || singleWorkTitle || (initialCopies && initialCopies.length > 0));
 
+  // Sincronizar copias cuando se abre el modal o cambia la selección
   useEffect(() => {
     if (!isOpen) return;
 
     const allStoredCopies = getStoredCopies();
 
-    if (targetWork) {
-      const workCopies = allStoredCopies.filter(c => c.work_id === targetWork.id);
-      
-      if (workCopies.length > 0) {
-        setCopies(workCopies);
-        setSelectedCopyIds(workCopies.map(c => c.id));
+    const loadWorkCopies = async () => {
+      if (targetWork) {
+        // Filtrar los ejemplares de esta obra específica en el store local
+        let workCopies = allStoredCopies.filter(c => c.work_id === targetWork.id);
+
+        // Si no hay copias locales y Supabase está configurado, consultar Supabase
+        if (workCopies.length === 0 && isSupabaseConfigured && supabase) {
+          try {
+            const { data } = await supabase.from('copies').select('*').eq('work_id', targetWork.id);
+            if (data && data.length > 0) {
+              workCopies = data;
+            }
+          } catch {
+            // Continuar con fallback
+          }
+        }
+        
+        if (workCopies.length > 0) {
+          setCopies(workCopies);
+          setSelectedCopyIds(workCopies.map(c => c.id));
+        } else {
+          // Si la obra no tiene ejemplares registrados aún, generamos 1 ejemplar de muestra con prefijo institucional correcto
+          const deweyPrefix = targetWork.dewey_code.split('.')[0] || '800';
+          const cutter = getAuthorCutterCode(targetWork.author, targetWork.title);
+          const virtualCopy: Copy = {
+            id: `virtual-copy-${targetWork.id}-1`,
+            work_id: targetWork.id,
+            branch_id: INITIAL_BRANCHES[0]?.id || '00000000-0000-4000-a000-000000000001',
+            internal_code: `MOS-PRI-${deweyPrefix}-${cutter}-001`,
+            condition: 'bueno',
+            notes: 'Ejemplar 1 (Muestra)',
+            created_at: new Date().toISOString(),
+            work: targetWork
+          };
+          setCopies([virtualCopy]);
+          setSelectedCopyIds([virtualCopy.id]);
+        }
+      } else if (initialCopies && initialCopies.length > 0) {
+        setCopies(initialCopies);
+        setSelectedCopyIds(initialCopies.map(c => c.id));
       } else {
-        const codePrefix = 'CIM';
-        const deweyPrefix = targetWork.dewey_code.split('.')[0] || '800';
-        const virtualCopy: Copy = {
-          id: `virtual-copy-${targetWork.id}-1`,
-          work_id: targetWork.id,
-          branch_id: 'branch-1',
-          internal_code: `${codePrefix}-${deweyPrefix}-001`,
-          condition: 'bueno',
-          notes: 'Ejemplar 1',
-          created_at: new Date().toISOString(),
-          work: targetWork
-        };
-        setCopies([virtualCopy]);
-        setSelectedCopyIds([virtualCopy.id]);
+        // Si se abrió desde el botón global sin ningún libro seleccionado
+        setCopies(allStoredCopies);
+        setSelectedCopyIds(allStoredCopies.map(c => c.id));
       }
-    } else if (initialCopies && initialCopies.length > 0) {
-      setCopies(initialCopies);
-      setSelectedCopyIds(initialCopies.map(c => c.id));
-    } else {
-      setCopies(allStoredCopies);
-      setSelectedCopyIds(allStoredCopies.map(c => c.id));
-    }
+    };
+
+    loadWorkCopies();
   }, [isOpen, targetWork, initialCopies]);
 
   if (!isOpen) return null;
@@ -114,6 +144,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
 
   const selectedCopies = copies.filter(c => selectedCopyIds.includes(c.id));
 
+  // Preparar lista de datos para PDF / Descargas (con soporte de repetición si el usuario quiere múltiples etiquetas de este libro)
   const getPreparedLabelsData = (): SpineLabelData[] => {
     if (selectedCopies.length === 0) return [];
     
@@ -121,10 +152,8 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
       const work = targetWork || works.find(w => w.id === copy.work_id) || copy.work;
       const dewey = work?.dewey_code || '800';
       const cutter = getAuthorCutterCode(work?.author, work?.title);
-      const codeParts = copy.internal_code.split('-');
-      const rawSeq = codeParts[codeParts.length - 1];
-      const copyNum = parseInt(rawSeq, 10) || idx + 1;
-      const prefix = codeParts[0] || 'CIM';
+      const copyNum = extractCopyNumber(copy.internal_code, idx + 1);
+      const prefix = extractSpineLabelPrefix(copy.internal_code, copy.branch_id);
 
       return {
         deweyCode: dewey,
@@ -139,6 +168,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
       return baseLabels;
     }
 
+    // Multiplicar etiquetas si el usuario seleccionó repetir
     const multiplied: SpineLabelData[] = [];
     for (let r = 0; r < repeatCount; r++) {
       baseLabels.forEach(lbl => multiplied.push({ ...lbl }));
@@ -146,6 +176,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
     return multiplied;
   };
 
+  // Descargar PDF usando jsPDF (100% exacto y compatible con cualquier navegador/impresora)
   const handleDownloadPDF = (mode: 'sheet' | 'single' = 'sheet') => {
     const labelsData = getPreparedLabelsData();
     if (labelsData.length === 0) return;
@@ -156,10 +187,13 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
     });
   };
 
+  // Impresión nativa del navegador
   const handleNativePrint = () => {
+    // Si estamos en un iframe o queremos imprimir limpiamente, generamos la orden de impresión
     window.print();
   };
 
+  // Descargar PNG o SVG de los tejuelos seleccionados
   const handleDownloadImages = (format: 'png' | 'svg') => {
     const labelsData = getPreparedLabelsData();
     if (labelsData.length === 0) return;
@@ -195,6 +229,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
         id="print-spine-labels-modal"
         className="bg-white rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden print:border-none print:shadow-none print:max-w-none print:max-h-none print:w-full print:rounded-none"
       >
+        {/* Modal Header - Hidden when printing */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-slate-50 print:hidden">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-800">
@@ -218,6 +253,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Primary Action: Download PDF */}
             <button
               id="download-spine-pdf-btn"
               onClick={() => handleDownloadPDF('sheet')}
@@ -229,6 +265,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
               <span>Descargar PDF</span>
             </button>
 
+            {/* Native Print */}
             <button
               id="native-print-btn"
               onClick={handleNativePrint}
@@ -240,6 +277,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
               <span>Imprimir</span>
             </button>
 
+            {/* Quick Image Downloads */}
             <div className="hidden md:flex items-center gap-1">
               <button
                 onClick={() => handleDownloadImages('png')}
@@ -271,6 +309,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
           </div>
         </div>
 
+        {/* Controls Bar - Options */}
         <div className="p-3 sm:px-6 bg-slate-100/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
           <div className="flex items-center gap-3 flex-wrap">
             <button
@@ -285,6 +324,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
               {selectedCopies.length} de {copies.length} ejemplares seleccionados
             </span>
 
+            {/* Repeat Label multiplier for single work */}
             {isSpecificWork && (
               <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
                 <span className="text-slate-500 text-[11px] font-medium">Copias de etiqueta:</span>
@@ -310,7 +350,9 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
           </div>
         </div>
 
+        {/* Printable Sheet View */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-200/50 print:bg-white print:p-0 print:overflow-visible">
+          {/* Virtual Letter Page Sheet Preview */}
           <div className="mx-auto bg-white p-6 sm:p-8 shadow-md border border-slate-300 rounded-lg max-w-[216mm] min-h-[279mm] print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none">
             {selectedCopies.length === 0 ? (
               <div className="py-20 text-center text-slate-400 text-sm print:hidden space-y-2">
@@ -319,6 +361,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Visual Header on the print sheet */}
                 <div className="border-b border-slate-200 pb-2 mb-4 flex items-center justify-between text-[11px] text-slate-500 print:text-black">
                   <span>Biblioteca Miguel Otero Silva — Colegio Integral El Manglar</span>
                   <span>{currentWorkTitle} ({labelsToRender.length} tejuelos)</span>
@@ -347,6 +390,7 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
           </div>
         </div>
 
+        {/* Modal Footer */}
         <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
             <Info className="w-3.5 h-3.5 text-emerald-700 shrink-0" />

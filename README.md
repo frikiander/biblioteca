@@ -80,13 +80,13 @@ git init
 git add .
 git commit -m "feat: Sistema de Gestión Biblioteca Miguel Otero Silva"
 git branch -M main
-git remote add origin https://github.com/frikiander/biblioteca.git
+git remote add origin https://github.com/TU_USUARIO/TU_REPOSITORIO.git
 git push -u origin main
 ```
 
 ### Paso 4: Desplegar en Vercel
 1. Ingresa a [vercel.com](https://vercel.com) y haz clic en **"Add New Project"**.
-2. Importa tu repositorio de GitHub `frikiander/biblioteca`.
+2. Importa tu repositorio de GitHub.
 3. En **Framework Preset**, selecciona **Vite**.
 4. En la sección **Environment Variables**, añade:
    - `VITE_SUPABASE_URL` = (Tu URL de Supabase)

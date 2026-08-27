@@ -20,16 +20,24 @@ export const BookCard: React.FC<BookCardProps> = ({
 }) => {
   const deweyInfo = getDeweyInfo(work.dewey_code);
 
-  const centralCopies = work.copies_by_branch.find(b => b.branch_type === 'internal')?.count || 0;
-  const ruralCopies = work.copies_by_branch
-    .filter(b => b.branch_type === 'external_donation')
+  const totalCount = work.total_copies ?? (work.copies_by_branch || []).reduce((acc, curr) => acc + curr.count, 0);
+  const internalSum = (work.copies_by_branch || [])
+    .filter((b) => b.branch_type === 'internal')
     .reduce((acc, curr) => acc + curr.count, 0);
+  const ruralSum = (work.copies_by_branch || [])
+    .filter((b) => b.branch_type === 'external_donation')
+    .reduce((acc, curr) => acc + curr.count, 0);
+
+  // Si existen copias totales pero la suma por sede dio cero, asignar a central por seguridad
+  const centralCopies = (internalSum + ruralSum === 0 && totalCount > 0) ? totalCount : internalSum;
+  const ruralCopies = ruralSum;
 
   return (
     <div 
       id={`book-card-${work.id}`}
       className="group bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-emerald-300 transition-all duration-300 flex flex-col overflow-hidden"
     >
+      {/* Top Banner with Dewey Classification */}
       <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2">
         <span 
           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${deweyInfo.badgeBg} ${deweyInfo.badgeText} tracking-tight`}
@@ -43,6 +51,7 @@ export const BookCard: React.FC<BookCardProps> = ({
         </span>
       </div>
 
+      {/* Book Cover and Title Info */}
       <div className="p-4 flex gap-4 flex-1">
         <div className="relative shrink-0">
           <img
@@ -91,6 +100,7 @@ export const BookCard: React.FC<BookCardProps> = ({
         </div>
       </div>
 
+      {/* Multi-branch Stock Distribution */}
       <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 space-y-2">
         <div className="flex items-center justify-between text-xs text-slate-600">
           <span className="font-semibold text-slate-700 flex items-center gap-1">
@@ -125,6 +135,7 @@ export const BookCard: React.FC<BookCardProps> = ({
         </div>
       </div>
 
+      {/* Card Action Buttons */}
       <div className="p-2.5 bg-white border-t border-slate-100 flex items-center gap-1.5 flex-wrap">
         <button
           id={`view-details-${work.id}`}

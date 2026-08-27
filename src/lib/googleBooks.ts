@@ -12,6 +12,7 @@ export const GOOGLE_BOOKS_API_KEY =
 
 export const isGoogleBooksApiKeyConfigured = Boolean(GOOGLE_BOOKS_API_KEY && GOOGLE_BOOKS_API_KEY.trim() !== '');
 
+
 export interface GoogleBookVolumeInfo {
   title?: string;
   subtitle?: string;
@@ -59,6 +60,9 @@ export interface NormalizedBookMetadata {
   source: 'google_books' | 'manual';
 }
 
+/**
+ * Infer Dewey class and notation based on book categories, title, and language
+ */
 export function inferDeweyFromGoogleBook(
   categories: string[] = [],
   title: string = '',
@@ -80,7 +84,7 @@ export function inferDeweyFromGoogleBook(
     combined.includes('cuentos')
   ) {
     if (language === 'spa' || combined.includes('venez') || combined.includes('hispano')) {
-      return { deweyClass: '800', deweyCode: '860' };
+      return { deweyClass: '800', deweyCode: '860' }; // Literaturas española y portuguesa
     }
     return { deweyClass: '800', deweyCode: '810' };
   }
@@ -94,7 +98,7 @@ export function inferDeweyFromGoogleBook(
     combined.includes('biografía') ||
     combined.includes('américa')
   ) {
-    return { deweyClass: '900', deweyCode: '980' };
+    return { deweyClass: '900', deweyCode: '980' }; // Historia de América del Sur
   }
 
   if (
@@ -235,6 +239,9 @@ export function inferDeweyFromGoogleBook(
   return { deweyClass: '800', deweyCode: '800' };
 }
 
+/**
+ * Strips HTML tags from descriptions
+ */
 function cleanDescription(rawText?: string): string {
   if (!rawText) return '';
   return rawText
@@ -247,6 +254,9 @@ function cleanDescription(rawText?: string): string {
     .trim();
 }
 
+/**
+ * Cleans and extracts high resolution image link from Google Books
+ */
 function getBestCoverImage(imageLinks?: GoogleBookVolumeInfo['imageLinks']): string {
   if (!imageLinks) return '';
   const url =
@@ -258,9 +268,13 @@ function getBestCoverImage(imageLinks?: GoogleBookVolumeInfo['imageLinks']): str
     '';
 
   if (!url) return '';
+  // Convert http to https and remove edge curl if present
   return url.replace(/^http:\/\//i, 'https://').replace('&edge=curl', '');
 }
 
+/**
+ * Normalizes ISO language code to 3-letter standard (spa, eng, fre, etc.)
+ */
 function normalizeLanguage(lang?: string): string {
   if (!lang) return 'spa';
   const clean = lang.toLowerCase().trim();
@@ -271,6 +285,9 @@ function normalizeLanguage(lang?: string): string {
   return clean.slice(0, 3);
 }
 
+/**
+ * Fetch book metadata from Google Books API by ISBN
+ */
 export async function searchBookByISBN(rawIsbn: string): Promise<NormalizedBookMetadata | null> {
   const cleanedIsbn = rawIsbn.replace(/[^0-9X]/gi, '').trim();
   if (!cleanedIsbn || (cleanedIsbn.length !== 10 && cleanedIsbn.length !== 13)) {
@@ -301,6 +318,7 @@ export async function searchBookByISBN(rawIsbn: string): Promise<NormalizedBookM
   const item: GoogleBookItem = data.items[0];
   const info = item.volumeInfo || {};
 
+  // Extract ISBN from identifiers if present
   let resolvedIsbn = cleanedIsbn;
   if (info.industryIdentifiers && info.industryIdentifiers.length > 0) {
     const isbn13 = info.industryIdentifiers.find((id) => id.type === 'ISBN_13');
@@ -308,6 +326,7 @@ export async function searchBookByISBN(rawIsbn: string): Promise<NormalizedBookM
     resolvedIsbn = isbn13?.identifier || isbn10?.identifier || cleanedIsbn;
   }
 
+  // Parse publication year
   let publicationYear = new Date().getFullYear();
   if (info.publishedDate) {
     const yearMatch = info.publishedDate.match(/\b\d{4}\b/);
@@ -316,9 +335,11 @@ export async function searchBookByISBN(rawIsbn: string): Promise<NormalizedBookM
     }
   }
 
+  // Parse subjects & categories
   let subjects: string[] = [];
   if (info.categories && info.categories.length > 0) {
     info.categories.forEach((cat) => {
+      // Split subcategories like "Fiction / Literary / Historical"
       const parts = cat.split('/').map((p) => p.trim());
       parts.forEach((p) => {
         if (p && !subjects.includes(p)) {

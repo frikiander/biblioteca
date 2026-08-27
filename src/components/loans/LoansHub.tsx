@@ -50,6 +50,7 @@ export const LoansHub: React.FC<LoansHubProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Sub-Navigation Bar for Loans */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-2xs">
         <div className="flex items-center gap-1.5 overflow-x-auto p-1">
           <button
@@ -109,6 +110,7 @@ export const LoansHub: React.FC<LoansHubProps> = ({
         </div>
       </div>
 
+      {/* Main Tab Panels */}
       {activeSubTab === 'checkout' && (
         <div className="max-w-4xl mx-auto">
           <CheckoutTab

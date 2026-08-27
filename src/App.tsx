@@ -3,30 +3,69 @@ import {
   BookOpen, 
   Building2, 
   PlusCircle, 
-  Layers, 
-  Terminal, 
-  GraduationCap, 
   HeartHandshake, 
   Library, 
-  Sparkles, 
-  ExternalLink, 
-  Code2, 
-  BookMarked 
+  BookMarked,
+  Globe,
+  Share2,
+  Check
 } from 'lucide-react';
 import { BookCatalog } from './components/catalog/BookCatalog';
 import { RegisterCopyForm } from './components/copies/RegisterCopyForm';
 import { BranchInventory } from './components/branches/BranchInventory';
-import { ArchitectureHub } from './components/dev/ArchitectureHub';
 import { LoansHub } from './components/loans/LoansHub';
+import { PublicCatalogPortal } from './components/public/PublicCatalogPortal';
 import { getStoredLoans } from './lib/loans';
 import type { Work, Copy } from './types/database';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'catalog' | 'loans' | 'register_copy' | 'branches' | 'architecture'>('catalog');
+  // Check if URL has ?mode=public or ?view=public
+  const [isPublicMode, setIsPublicMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mode') === 'public' || params.get('view') === 'public' || params.get('public') === 'true';
+  });
+
+  const [activeTab, setActiveTab] = useState<'catalog' | 'loans' | 'register_copy' | 'branches'>('catalog');
   const [selectedWorkForCopy, setSelectedWorkForCopy] = useState<Work | null>(null);
   const [catalogRefreshCounter, setCatalogRefreshCounter] = useState<number>(0);
   const [prefilledLoanMarbete, setPrefilledLoanMarbete] = useState<string>('');
   const [loanInitialTab, setLoanInitialTab] = useState<'checkout' | 'checkin' | 'history'>('checkout');
+  const [copiedPublicUrl, setCopiedPublicUrl] = useState<boolean>(false);
+
+  // Synchronize browser history / back-forward navigation for public mode
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setIsPublicMode(params.get('mode') === 'public' || params.get('view') === 'public' || params.get('public') === 'true');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleOpenPublicPortal = () => {
+    setIsPublicMode(true);
+    const newUrl = `${window.location.pathname}?mode=public`;
+    window.history.pushState({}, '', newUrl);
+  };
+
+  const handleReturnToAdmin = () => {
+    setIsPublicMode(false);
+    window.history.pushState({}, '', window.location.pathname);
+  };
+
+  const handleCopyPublicLink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const publicUrl = `${window.location.origin}${window.location.pathname}?mode=public`;
+    navigator.clipboard.writeText(publicUrl);
+    setCopiedPublicUrl(true);
+    setTimeout(() => setCopiedPublicUrl(false), 2500);
+  };
+
+  // If in public mode, render the dedicated Public Catalog Portal (OPAC)
+  if (isPublicMode) {
+    return <PublicCatalogPortal onSwitchToAdmin={handleReturnToAdmin} />;
+  }
 
   const activeLoansCount = getStoredLoans().filter((l) => l.status === 'active' || l.status === 'overdue').length;
 
@@ -74,19 +113,27 @@ export default function App() {
               </div>
             </div>
 
-            {/* Quick Action Button for Dev Hub */}
-            <button
-              onClick={() => setActiveTab('architecture')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition border cursor-pointer ${
-                activeTab === 'architecture'
-                  ? 'bg-emerald-700 text-white border-emerald-600'
-                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
-              }`}
-            >
-              <Code2 className="w-4 h-4 text-emerald-400" />
-              <span className="hidden md:inline">Ver Código & SQL</span>
-              <span className="md:hidden">SQL</span>
-            </button>
+            {/* Public Catalog Portal Action */}
+            <div className="flex items-center gap-2">
+              <button
+                id="btn-open-public-portal"
+                onClick={handleOpenPublicPortal}
+                className="px-3.5 py-2 bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md shadow-emerald-950/30 border border-emerald-500/30 transition cursor-pointer"
+                title="Abrir el portal de consulta pública exclusivo para estudiantes, docentes y familias"
+              >
+                <Globe className="w-4 h-4 text-emerald-200" />
+                <span className="hidden sm:inline">Ver Catálogo Público (OPAC)</span>
+                <span className="sm:hidden">Público</span>
+              </button>
+
+              <button
+                onClick={handleCopyPublicLink}
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-medium transition cursor-pointer"
+                title="Copiar enlace directo del catálogo público para compartir por WhatsApp o web"
+              >
+                {copiedPublicUrl ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {/* Navigation Tabs */}
@@ -151,19 +198,6 @@ export default function App() {
               <Building2 className="w-4 h-4" />
               Sedes e Inventario Descentralizado
             </button>
-
-            <button
-              id="tab-architecture"
-              onClick={() => setActiveTab('architecture')}
-              className={`py-3 px-4 rounded-xl flex items-center gap-2 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'architecture'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Terminal className="w-4 h-4 text-amber-400" />
-              SQL Supabase, Next.js & Server Action
-            </button>
           </nav>
         </div>
       </header>
@@ -206,10 +240,6 @@ export default function App() {
 
         {activeTab === 'branches' && (
           <BranchInventory />
-        )}
-
-        {activeTab === 'architecture' && (
-          <ArchitectureHub />
         )}
       </main>
 

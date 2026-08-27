@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS public.copies (
 );
 
 COMMENT ON TABLE public.copies IS 'Unidades físicas tangibles ubicadas en una sede o transferidas a dotación.';
-COMMENT ON COLUMN public.copies.internal_code IS 'Código de barras / marbete interno único del ejemplar (e.g. CIM-863-001 / SM-2024-042).';
+COMMENT ON COLUMN public.copies.internal_code IS 'Código de barras / marbete interno único del ejemplar (e.g. MOS-PRI-863-001 / SM-GUA-863-001).';
 
 -- -------------------------------------------------------------------------
 -- TABLA: students (Estudiantes, docentes y personal para préstamos)

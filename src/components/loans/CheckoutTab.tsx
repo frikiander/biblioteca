@@ -35,6 +35,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
   const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Form State
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [dueDays, setDueDays] = useState<number | null>(7);
   const [isIndefinite, setIsIndefinite] = useState(false);
@@ -48,6 +49,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [successLoan, setSuccessLoan] = useState<Loan | null>(null);
 
+  // Validate marbete code
   const handleValidateMarbete = (codeToSearch: string) => {
     const clean = codeToSearch.trim();
     if (!clean) {
@@ -75,6 +77,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
     setIsSearching(false);
   };
 
+  // Trigger search on typing (debounced) or Enter
   useEffect(() => {
     if (marbeteInput.trim().length >= 3) {
       const timer = setTimeout(() => {
@@ -172,6 +175,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Success Confirmation Receipt Card */}
       {successLoan ? (
         <div className="p-6 sm:p-8 bg-white rounded-3xl border border-emerald-200 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex items-center gap-3.5 text-emerald-800">
@@ -243,7 +247,9 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
         </div>
       ) : (
         <form onSubmit={handleSubmitCheckout} className="space-y-6">
+          {/* Main Card */}
           <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
+            {/* Header */}
             <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -259,6 +265,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
               </div>
             </div>
 
+            {/* Error Banner */}
             {errorBanner && (
               <div className="m-6 mb-0 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -267,6 +274,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
             )}
 
             <div className="p-6 space-y-6">
+              {/* STEP 1: Marbete Code Input */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label htmlFor="marbete-code-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -306,6 +314,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                   )}
                 </div>
 
+                {/* Validation Status Display */}
                 {hasSearched && !detectedCopy && (
                   <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -318,6 +327,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                   </div>
                 )}
 
+                {/* Copy Already Loaned Alert */}
                 {detectedCopy && activeLoanOnCopy && (
                   <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 space-y-3">
                     <div className="flex items-start gap-3">
@@ -355,6 +365,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                   </div>
                 )}
 
+                {/* Copy Found and Available Preview */}
                 {detectedCopy && !activeLoanOnCopy && (
                   <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-300 flex flex-col sm:flex-row items-start gap-4 animate-in fade-in duration-200">
                     <div className="w-16 h-22 rounded-xl bg-white border border-slate-200 overflow-hidden shadow-xs shrink-0 flex items-center justify-center">
@@ -409,6 +420,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                 )}
               </div>
 
+              {/* STEP 2: Student Searchable Dropdown */}
               <div className="space-y-2 pt-2 border-t border-slate-100">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   2. Alumno / Lector que Recibe el Libro <span className="text-rose-500">*</span>
@@ -425,6 +437,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                 )}
               </div>
 
+              {/* STEP 3: Loan Duration & Return Date with INDEFINIDO */}
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -460,6 +473,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                     </button>
                   ))}
 
+                  {/* Indefinite Option Button */}
                   <button
                     id="btn-loan-preset-indefinite"
                     type="button"
@@ -519,6 +533,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                 </div>
               </div>
 
+              {/* STEP 4: Observations / Notes */}
               <div className="space-y-1.5 pt-2 border-t border-slate-100">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   4. Observaciones de Entrega (Opcional)
@@ -534,6 +549,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
               </div>
             </div>
 
+            {/* Submit Action Footer */}
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-xs text-slate-500 text-center sm:text-left">
                 {detectedCopy && !activeLoanOnCopy && selectedStudent ? (

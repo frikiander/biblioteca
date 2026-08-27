@@ -59,7 +59,7 @@ export const INITIAL_BRANCHES: Branch[] = [
 ];
 
 export function getBranchCodePrefix(branchNameOrId?: string): string {
-  if (!branchNameOrId) return 'MOS-BAC';
+  if (!branchNameOrId) return 'MOS-PRI';
   const lower = branchNameOrId.toLowerCase().trim();
   
   if (lower.includes('primaria') || lower.endsWith('0001') || lower === 'b_primaria') return 'MOS-PRI';
@@ -70,7 +70,64 @@ export function getBranchCodePrefix(branchNameOrId?: string): string {
   if (lower.includes('delta') || lower.endsWith('0006') || lower === 'b_delta') return 'SM-DEL';
   
   if (lower.includes('semilla')) return 'SM-GUA';
-  return 'MOS-BAC';
+  return 'MOS-PRI';
+}
+
+/**
+ * Extrae de forma limpia el prefijo institucional para el tejuelo (ej: MOS-PRI, MOS-BAC, SM-GUA).
+ * Normaliza cualquier código antiguo o formato institucional.
+ */
+export function extractSpineLabelPrefix(internalCode?: string, branchNameOrId?: string): string {
+  if (internalCode && internalCode.trim()) {
+    const clean = internalCode.trim().toUpperCase();
+    
+    // Normalizar y reemplazar cualquier sigla residual CIM o CIEM
+    const normalized = clean
+      .replace(/^CIEM-PRI/i, 'MOS-PRI')
+      .replace(/^CIEM-BAC/i, 'MOS-BAC')
+      .replace(/^CIEM/i, 'MOS-PRI')
+      .replace(/^CIM-PRI/i, 'MOS-PRI')
+      .replace(/^CIM-BAC/i, 'MOS-BAC')
+      .replace(/^CIM/i, 'MOS-PRI');
+
+    const parts = normalized.split('-');
+    
+    // Si tiene estructura tipo MOS-PRI-860-CER-001 o MOS-BAC-860-CER-001
+    if (parts.length >= 3) {
+      const twoPartPrefix = `${parts[0]}-${parts[1]}`;
+      if (
+        ['MOS-PRI', 'MOS-BAC', 'SM-GUA', 'SM-CAR', 'SM-MER', 'SM-DEL'].includes(twoPartPrefix) ||
+        parts[0] === 'MOS' ||
+        parts[0] === 'SM'
+      ) {
+        if (isNaN(Number(parts[1]))) {
+          return twoPartPrefix;
+        }
+        return parts[0];
+      }
+    }
+    
+    if (parts[0] && isNaN(Number(parts[0]))) {
+      return parts[0];
+    }
+  }
+
+  if (branchNameOrId) {
+    return getBranchCodePrefix(branchNameOrId);
+  }
+
+  return 'MOS-PRI';
+}
+
+/**
+ * Extrae el número correlativo de copia a partir del código de marbete.
+ */
+export function extractCopyNumber(internalCode?: string, fallbackIndex: number = 1): number {
+  if (!internalCode) return fallbackIndex;
+  const parts = internalCode.trim().split('-');
+  const lastPart = parts[parts.length - 1];
+  const num = parseInt(lastPart, 10);
+  return isNaN(num) ? fallbackIndex : num;
 }
 
 export function getNextCopySequenceForWork(workId?: string): number {
@@ -287,7 +344,30 @@ export function getStoredCopies(): Copy[] {
     return [];
   }
   try {
-    return JSON.parse(saved);
+    const list: Copy[] = JSON.parse(saved);
+    if (!Array.isArray(list)) return [];
+
+    let modified = false;
+    const cleaned = list.map((c) => {
+      if (c.internal_code && (c.internal_code.includes('CIM') || c.internal_code.includes('CIEM'))) {
+        modified = true;
+        const newCode = c.internal_code
+          .replace(/^CIEM-PRI/i, 'MOS-PRI')
+          .replace(/^CIEM-BAC/i, 'MOS-BAC')
+          .replace(/^CIEM/i, 'MOS-PRI')
+          .replace(/^CIM-PRI/i, 'MOS-PRI')
+          .replace(/^CIM-BAC/i, 'MOS-BAC')
+          .replace(/^CIM/i, 'MOS-PRI');
+        return { ...c, internal_code: newCode };
+      }
+      return c;
+    });
+
+    if (modified) {
+      localStorage.setItem('manglar_copies', JSON.stringify(cleaned));
+    }
+
+    return cleaned;
   } catch {
     return [];
   }
@@ -320,10 +400,46 @@ export function getWorksWithInventory(
   branches: Branch[],
   copies: Copy[]
 ): WorkWithCopiesCount[] {
+  const currentBranches = branches && branches.length > 0 ? branches : INITIAL_BRANCHES;
+
   return works.map((work) => {
-    const workCopies = copies.filter((c) => c.work_id === work.id);
-    const copiesByBranch = branches.map((branch) => {
-      const branchCopies = workCopies.filter((c) => c.branch_id === branch.id);
+    // Buscar todas las copias asociadas a esta obra
+    const workCopies = (copies || []).filter((c) => {
+      if (!c) return false;
+      if (c.work_id && String(c.work_id).trim() === String(work.id).trim()) return true;
+      if (c.work && c.work.id && String(c.work.id).trim() === String(work.id).trim()) return true;
+      if (c.work && c.work.title && c.work.title.trim().toLowerCase() === work.title.trim().toLowerCase()) return true;
+      return false;
+    });
+
+    let assignedCount = 0;
+
+    const copiesByBranch = currentBranches.map((branch) => {
+      const branchCopies = workCopies.filter((c) => {
+        // Coincidencia exacta de ID
+        if (c.branch_id && String(c.branch_id).trim() === String(branch.id).trim()) return true;
+        if (c.branch && c.branch.id && String(c.branch.id).trim() === String(branch.id).trim()) return true;
+        
+        // Coincidencia por nombre de sede
+        if (c.branch && c.branch.name && c.branch.name.trim().toLowerCase() === branch.name.trim().toLowerCase()) return true;
+
+        // Coincidencia por prefijo del marbete
+        if (c.internal_code) {
+          const code = c.internal_code.toUpperCase();
+          const bName = branch.name.toLowerCase();
+          if ((bName.includes('primaria') || branch.id.endsWith('0001')) && code.startsWith('MOS-PRI')) return true;
+          if ((bName.includes('bachillerato') || branch.id.endsWith('0002')) && code.startsWith('MOS-BAC')) return true;
+          if (bName.includes('guárico') && code.startsWith('SM-GUA')) return true;
+          if (bName.includes('caripe') && code.startsWith('SM-CAR')) return true;
+          if (bName.includes('mérida') && code.startsWith('SM-MER')) return true;
+          if (bName.includes('delta') && code.startsWith('SM-DEL')) return true;
+        }
+
+        return false;
+      });
+
+      assignedCount += branchCopies.length;
+
       return {
         branch_id: branch.id,
         branch_name: branch.name,
@@ -336,6 +452,16 @@ export function getWorksWithInventory(
         },
       };
     });
+
+    // Si existen copias que no coincidieron con ninguna sede específica, asignarlas a la Sede Central (Primaria/Bachillerato)
+    if (workCopies.length > assignedCount) {
+      const unassigned = workCopies.length - assignedCount;
+      const primaryBranch = copiesByBranch.find((b) => b.branch_type === 'internal') || copiesByBranch[0];
+      if (primaryBranch) {
+        primaryBranch.count += unassigned;
+        primaryBranch.conditions.bueno += unassigned;
+      }
+    }
 
     return {
       ...work,

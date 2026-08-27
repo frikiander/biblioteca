@@ -2,17 +2,17 @@ import type { Loan, Student, Copy, CopyCondition, LoanStatus } from '../types/da
 import { getStoredCopies, getStoredWorks, getStoredBranches } from './supabaseClient';
 
 export const INITIAL_STUDENTS: Student[] = [
-  { id: 'est_01', name: 'Valentina Mendoza', grade_section: '4to Grado "A" — Primaria', identifier: 'CIM-PRI-2024-012', role: 'student' },
-  { id: 'est_02', name: 'Santiago Rivas Castillo', grade_section: '5to Grado "B" — Primaria', identifier: 'CIM-PRI-2024-034', role: 'student' },
-  { id: 'est_03', name: 'Camila Sofía Hernández', grade_section: '1er Año "A" — Bachillerato', identifier: 'CIM-BAC-2023-008', role: 'student' },
-  { id: 'est_04', name: 'Mateo Alejandro Gómez', grade_section: '3er Año "B" — Bachillerato', identifier: 'CIM-BAC-2022-045', role: 'student' },
-  { id: 'est_05', name: 'Lucía Isabella Farías', grade_section: '2do Grado "A" — Primaria', identifier: 'CIM-PRI-2025-003', role: 'student' },
-  { id: 'est_06', name: 'Diego Andrés Carvallo', grade_section: '4to Año "Ciencias" — Bachillerato', identifier: 'CIM-BAC-2021-019', role: 'student' },
-  { id: 'est_07', name: 'Mariana Victoria Ramos', grade_section: '6to Grado "A" — Primaria', identifier: 'CIM-PRI-2024-055', role: 'student' },
-  { id: 'est_08', name: 'Gabriel Ignacio Silva', grade_section: '5to Año "Promoción" — Bachillerato', identifier: 'CIM-BAC-2020-002', role: 'student' },
-  { id: 'doc_01', name: 'Prof. María Elena Morales', grade_section: 'Docente de Castellano y Literatura', identifier: 'CIM-DOC-004', role: 'teacher' },
-  { id: 'doc_02', name: 'Prof. Carlos Eduardo Benítez', grade_section: 'Docente de Ciencias y Biología', identifier: 'CIM-DOC-009', role: 'teacher' },
-  { id: 'doc_03', name: 'Prof. Ana Teresa Valera', grade_section: 'Maestra de 3er Grado — Primaria', identifier: 'CIM-DOC-015', role: 'teacher' },
+  { id: 'est_01', name: 'Valentina Mendoza', grade_section: '4to Grado "A" — Primaria', identifier: 'MOS-PRI-2024-012', role: 'student' },
+  { id: 'est_02', name: 'Santiago Rivas Castillo', grade_section: '5to Grado "B" — Primaria', identifier: 'MOS-PRI-2024-034', role: 'student' },
+  { id: 'est_03', name: 'Camila Sofía Hernández', grade_section: '1er Año "A" — Bachillerato', identifier: 'MOS-BAC-2023-008', role: 'student' },
+  { id: 'est_04', name: 'Mateo Alejandro Gómez', grade_section: '3er Año "B" — Bachillerato', identifier: 'MOS-BAC-2022-045', role: 'student' },
+  { id: 'est_05', name: 'Lucía Isabella Farías', grade_section: '2do Grado "A" — Primaria', identifier: 'MOS-PRI-2025-003', role: 'student' },
+  { id: 'est_06', name: 'Diego Andrés Carvallo', grade_section: '4to Año "Ciencias" — Bachillerato', identifier: 'MOS-BAC-2021-019', role: 'student' },
+  { id: 'est_07', name: 'Mariana Victoria Ramos', grade_section: '6to Grado "A" — Primaria', identifier: 'MOS-PRI-2024-055', role: 'student' },
+  { id: 'est_08', name: 'Gabriel Ignacio Silva', grade_section: '5to Año "Promoción" — Bachillerato', identifier: 'MOS-BAC-2020-002', role: 'student' },
+  { id: 'doc_01', name: 'Prof. María Elena Morales', grade_section: 'Docente de Castellano y Literatura', identifier: 'MOS-DOC-004', role: 'teacher' },
+  { id: 'doc_02', name: 'Prof. Carlos Eduardo Benítez', grade_section: 'Docente de Ciencias y Biología', identifier: 'MOS-DOC-009', role: 'teacher' },
+  { id: 'doc_03', name: 'Prof. Ana Teresa Valera', grade_section: 'Maestra de 3er Grado — Primaria', identifier: 'MOS-DOC-015', role: 'teacher' },
 ];
 
 export function getStoredStudents(): Student[] {
@@ -53,6 +53,7 @@ export function getStoredLoans(): Loan[] {
   try {
     const parsed: Loan[] = JSON.parse(saved);
     return parsed.map((l) => {
+      // Auto-compute overdue status if active, NOT indefinite, and past due date
       if (l.status === 'active' && !l.is_indefinite && l.due_date && new Date(l.due_date).getTime() < Date.now()) {
         return { ...l, status: 'overdue' as LoanStatus };
       }
@@ -69,6 +70,10 @@ export function saveLoans(loans: Loan[]): void {
   }
 }
 
+/**
+ * Normalizes a spine label/marbete code for fuzzy comparisons
+ * e.g. "mos-863-ote-1", "MOS-863-OTE-1", "MOS-863-OTE-001", "MOS - 863 - OTE - 1"
+ */
 export function normalizeMarbeteCode(code?: string): string {
   if (!code) return '';
   return code
@@ -77,12 +82,16 @@ export function normalizeMarbeteCode(code?: string): string {
     .replace(/\s+/g, '');
 }
 
+/**
+ * Checks if two marbete codes match (handling padding differences like -1 vs -001)
+ */
 export function areMarbeteCodesMatching(codeA?: string, codeB?: string): boolean {
   if (!codeA || !codeB) return false;
   const normA = normalizeMarbeteCode(codeA);
   const normB = normalizeMarbeteCode(codeB);
   if (normA === normB) return true;
 
+  // Split by hyphen and compare parts (e.g. MOS-863-OTE-1 vs MOS-863-OTE-001)
   const partsA = normA.split('-');
   const partsB = normB.split('-');
   if (partsA.length === partsB.length && partsA.length >= 3) {
@@ -98,6 +107,9 @@ export function areMarbeteCodesMatching(codeA?: string, codeB?: string): boolean
   return false;
 }
 
+/**
+ * Finds a physical copy by its marbete code
+ */
 export function findCopyByCode(code: string): Copy | null {
   if (!code || !code.trim()) return null;
   const copies = getStoredCopies();
@@ -117,6 +129,9 @@ export function findCopyByCode(code: string): Copy | null {
   };
 }
 
+/**
+ * Finds an active (or overdue) loan for a given copy code
+ */
 export function findActiveLoanByCopyCode(code: string): Loan | null {
   if (!code || !code.trim()) return null;
   const loans = getStoredLoans();
@@ -127,6 +142,9 @@ export function findActiveLoanByCopyCode(code: string): Loan | null {
   );
 }
 
+/**
+ * Registers a new checkout loan
+ */
 export function registerLoan(params: {
   copy: Copy;
   student: Student | { name: string; grade_section?: string; identifier?: string };
@@ -137,6 +155,7 @@ export function registerLoan(params: {
 }): { success: boolean; loan?: Loan; error?: string } {
   const { copy, student, dueDays = 7, isIndefinite = false, customDueDate, checkoutNotes = '' } = params;
 
+  // 1. Verify availability
   const existingActive = findActiveLoanByCopyCode(copy.internal_code);
   if (existingActive) {
     return {
@@ -187,9 +206,11 @@ export function registerLoan(params: {
     created_at: now.toISOString(),
   };
 
+  // Update loan storage
   const loans = getStoredLoans();
   saveLoans([newLoan, ...loans]);
 
+  // Update copy status to 'prestado'
   const copies = getStoredCopies();
   const updatedCopies = copies.map((c) => {
     if (c.id === copy.id || areMarbeteCodesMatching(c.internal_code, copy.internal_code)) {
@@ -204,11 +225,12 @@ export function registerLoan(params: {
     localStorage.setItem('manglar_copies', JSON.stringify(updatedCopies));
   }
 
+  // Also ensure student is saved in autocomplete history
   if (student.name.trim()) {
     saveStudent({
       name: student.name.trim(),
       grade_section: student.grade_section?.trim() || 'Alumno Colegio Integral El Manglar',
-      identifier: student.identifier?.trim() || `CIM-${Math.floor(1000 + Math.random() * 9000)}`,
+      identifier: student.identifier?.trim() || `MOS-EST-${Math.floor(1000 + Math.random() * 9000)}`,
       role: 'student',
     });
   }
@@ -219,6 +241,9 @@ export function registerLoan(params: {
   };
 }
 
+/**
+ * Returns a borrowed book (Check-in)
+ */
 export function returnLoan(params: {
   copyCode: string;
   returnNotes?: string;
@@ -236,6 +261,7 @@ export function returnLoan(params: {
 
   const now = new Date();
 
+  // 1. Update loan record
   const loans = getStoredLoans();
   const updatedLoans = loans.map((l) => {
     if (l.id === activeLoan.id) {
@@ -251,6 +277,7 @@ export function returnLoan(params: {
   });
   saveLoans(updatedLoans);
 
+  // 2. Set copy status back to 'disponible' (and update condition if specified)
   const copies = getStoredCopies();
   const updatedCopies = copies.map((c) => {
     if (c.id === activeLoan.copy_id || areMarbeteCodesMatching(c.internal_code, activeLoan.copy_internal_code)) {
@@ -274,6 +301,9 @@ export function returnLoan(params: {
   };
 }
 
+/**
+ * Traceability metadata for a copy or work
+ */
 export interface CopyTraceability {
   copyCode: string;
   copyId: string;
@@ -283,7 +313,7 @@ export interface CopyTraceability {
   deweyCode?: string;
   branchName: string;
   totalLoansCount: number;
-  uniqueHandsCount: number;
+  uniqueHandsCount: number; // Por cuántas manos/alumnos distintos ha pasado
   currentStatus: 'disponible' | 'prestado' | 'en_donacion' | 'baja' | 'en_traslado';
   activeLoan: Loan | null;
   history: Loan[];

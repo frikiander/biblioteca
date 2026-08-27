@@ -39,12 +39,14 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
     return getStoredLoans();
   }, [refreshTrigger]);
 
+  // Compute metrics
   const totalLoans = loans.length;
   const activeLoans = loans.filter((l) => l.status === 'active' || l.status === 'overdue');
   const returnedLoans = loans.filter((l) => l.status === 'returned');
   const overdueLoans = loans.filter((l) => l.status === 'overdue');
   const uniqueStudents = new Set(loans.map((l) => l.student_name.toLowerCase().trim())).size;
 
+  // Filtered loans list
   const filteredLoans = loans.filter((loan) => {
     const term = searchTerm.toLowerCase().trim();
     const matchesSearch =
@@ -71,6 +73,7 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
 
   return (
     <div className="space-y-6">
+      {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-slate-500">
@@ -109,6 +112,7 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
         </div>
       </div>
 
+      {/* Modal / Card of Specific Copy Traceability ("Por cuántas manos ha pasado un libro") */}
       {inspectedTraceability && (
         <div className="p-6 bg-white rounded-3xl border-2 border-emerald-600 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
@@ -134,6 +138,7 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
             </button>
           </div>
 
+          {/* Traceability Summary Highlights */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-xs">
             <div>
               <span className="text-slate-500 font-semibold uppercase text-[10px] block">Lectores Distintos</span>
@@ -165,6 +170,7 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
             </div>
           </div>
 
+          {/* Timeline of every loan the book went through */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
               <History className="w-4 h-4 text-emerald-700" />
@@ -235,7 +241,9 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
         </div>
       )}
 
+      {/* Main Loan History Table & Filters */}
       <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden space-y-4 p-6">
+        {/* Search & Filter Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -271,6 +279,7 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
           </div>
         </div>
 
+        {/* History List / Table */}
         {filteredLoans.length === 0 ? (
           <div className="text-center py-12 px-4 space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
@@ -294,6 +303,7 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                   className="py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition hover:bg-slate-50/70 p-2 rounded-2xl"
                 >
                   <div className="flex items-start gap-3.5">
+                    {/* Cover or Icon */}
                     <div className="w-12 h-16 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
                       {loan.work_cover_url ? (
                         <img

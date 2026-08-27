@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Building, MapPin, Layers, BookCheck, ArrowRight, HeartHandshake, ShieldCheck, Filter, Printer, Download, Image as ImageIcon, FileDown } from 'lucide-react';
-import type { Copy, Branch, Work } from '../../types/database';
-import { supabase, isSupabaseConfigured, INITIAL_BRANCHES, INITIAL_COPIES, INITIAL_WORKS, getStoredBranches, getStoredCopies, getAuthorCutterCode } from '../../lib/supabaseClient';
+import { 
+  supabase, 
+  isSupabaseConfigured, 
+  INITIAL_BRANCHES, 
+  INITIAL_COPIES, 
+  INITIAL_WORKS, 
+  getStoredBranches, 
+  getStoredCopies, 
+  getAuthorCutterCode,
+  extractSpineLabelPrefix,
+  extractCopyNumber
+} from '../../lib/supabaseClient';
 import { PrintSpineLabelsModal } from '../copies/PrintSpineLabelsModal';
 import { downloadSpineLabelPNG, downloadSpineLabelsPDF } from '../copies/SpineLabel';
 
@@ -209,10 +219,8 @@ export const BranchInventory: React.FC = () => {
                   const work = works.find((w) => w.id === copy.work_id) || copy.work;
                   const dewey = work?.dewey_code || '800';
                   const authorCutter = getAuthorCutterCode(work?.author, work?.title);
-                  const codeParts = copy.internal_code.split('-');
-                  const rawSeq = codeParts[codeParts.length - 1];
-                  const copyNum = parseInt(rawSeq, 10) || index + 1;
-                  const prefix = codeParts[0] || 'CIM';
+                  const copyNum = extractCopyNumber(copy.internal_code, index + 1);
+                  const prefix = extractSpineLabelPrefix(copy.internal_code, selectedBranch?.name || selectedBranch?.id);
 
                   return (
                     <tr key={copy.id} className="hover:bg-slate-50/80 transition">

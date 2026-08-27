@@ -9,7 +9,7 @@ export interface SpineLabelProps {
   authorLetters: string;
   /** Número o identificador del ejemplar (ej: "Ej. 1", 1, "c. 1") */
   copyNumber: string | number;
-  /** Prefijo o sigla institucional opcional (ej: "CIM", "MOS") */
+  /** Prefijo o sigla institucional opcional (ej: "MOS-PRI", "MOS-BAC") */
   prefix?: string;
   /** Clases CSS adicionales */
   className?: string;
@@ -46,20 +46,23 @@ function drawSpineLabelOnPDF(
       : `Ej. ${label.copyNumber}`;
   const prefix = label.prefix?.trim().toUpperCase();
 
+  // Fondo blanco
   doc.setFillColor(255, 255, 255);
   doc.rect(x, y, w, h, 'F');
 
+  // Guía de corte perimetral con línea punteada suave
   if (showGuide) {
     doc.setDrawColor(140, 140, 140);
     doc.setLineWidth(0.2);
     doc.setLineDashPattern([1, 0.8], 0);
     doc.rect(x + 0.1, y + 0.1, w - 0.2, h - 0.2, 'S');
-    doc.setLineDashPattern([], 0);
+    doc.setLineDashPattern([], 0); // restaurar patrón continuo
   }
 
   const centerX = x + w / 2;
   let currentY = y + 4;
 
+  // Prefijo institucional superior si existe (ej. "MOS-PRI", "MOS-BAC")
   if (prefix) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.8);
@@ -75,33 +78,43 @@ function drawSpineLabelOnPDF(
     currentY += 4.8;
   }
 
+  // Código Dewey (ej. "863.64")
   doc.setFont('courier', 'bold');
   doc.setFontSize(10.5);
   doc.setTextColor(0, 0, 0);
   doc.text(deweyDisplay, centerX, currentY, { align: 'center' });
 
+  // Separador intermedio sutil
   currentY += 1.8;
   doc.setDrawColor(160, 160, 160);
   doc.setLineWidth(0.2);
   doc.line(centerX - 4, currentY, centerX + 4, currentY);
   currentY += 5.2;
 
+  // Código Cutter (ej. "OTE")
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(0, 0, 0);
   doc.text(cutterDisplay, centerX, currentY, { align: 'center' });
 
+  // Separador inferior
   const bottomDividerY = y + h - 6.5;
   doc.setDrawColor(210, 210, 210);
   doc.setLineWidth(0.2);
   doc.line(x + 2.5, bottomDividerY, x + w - 2.5, bottomDividerY);
 
+  // Número de Ejemplar (ej. "EJ. 1")
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.8);
   doc.setTextColor(40, 40, 40);
   doc.text(copyDisplay.toUpperCase(), centerX, y + h - 2.4, { align: 'center' });
 }
 
+/**
+ * Descarga directamente un archivo PDF con los tejuelos especificados.
+ * - Modo 'sheet': Genera una hoja tamaño Carta (215.9 x 279.4 mm) lista para imprimir con cuadrícula de tejuelos (25x38 mm).
+ * - Modo 'single': Genera un archivo PDF con la medida exacta de 25x38 mm.
+ */
 export function downloadSpineLabelsPDF(
   labels: SpineLabelData[],
   options?: { filename?: string; mode?: 'sheet' | 'single'; title?: string }
@@ -126,22 +139,23 @@ export function downloadSpineLabelsPDF(
     return;
   }
 
+  // Hoja Carta estándar: 215.9 x 279.4 mm
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'letter'
   });
 
-  const labelW = 25;
-  const labelH = 38;
-  const gapX = 3.5;
-  const gapY = 3.5;
+  const labelW = 25; // 25 mm
+  const labelH = 38; // 38 mm
+  const gapX = 3.5;  // 3.5 mm
+  const gapY = 3.5;  // 3.5 mm
   const marginLeft = 10;
   const marginTop = 12;
 
-  const colsPerPage = 7;
-  const rowsPerPage = 6;
-  const labelsPerPage = colsPerPage * rowsPerPage;
+  const colsPerPage = 7; // 7 columnas x 25mm + 6 x 3.5mm = 196mm
+  const rowsPerPage = 6; // 6 filas x 38mm + 5 x 3.5mm = 245.5mm
+  const labelsPerPage = colsPerPage * rowsPerPage; // 42 tejuelos por página
 
   labels.forEach((label, index) => {
     if (index > 0 && index % labelsPerPage === 0) {
@@ -161,6 +175,9 @@ export function downloadSpineLabelsPDF(
   doc.save(filename);
 }
 
+/**
+ * Descarga una etiqueta individual de tejuelo en formato de imagen PNG en alta resolución (300 DPI).
+ */
 export function downloadSpineLabelPNG(options: {
   deweyCode: string;
   authorLetters: string;
@@ -177,6 +194,7 @@ export function downloadSpineLabelPNG(options: {
       ? String(copyNumber).trim()
       : `Ej. ${copyNumber}`;
 
+  // 25mm x 38mm a 300 DPI => 295px x 449px
   const width = 295;
   const height = 449;
   const canvas = document.createElement('canvas');
@@ -185,15 +203,18 @@ export function downloadSpineLabelPNG(options: {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
+  // Fondo blanco
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, width, height);
 
+  // Línea guía de corte discontinua
   ctx.strokeStyle = '#666666';
   ctx.lineWidth = 2;
   ctx.setLineDash([8, 6]);
   ctx.strokeRect(4, 4, width - 8, height - 8);
   ctx.setLineDash([]);
 
+  // Prefijo superior si existe
   let topY = 24;
   if (prefix) {
     ctx.fillStyle = '#444444';
@@ -210,11 +231,13 @@ export function downloadSpineLabelPNG(options: {
     topY = 70;
   }
 
+  // Notación Dewey
   ctx.fillStyle = '#000000';
   ctx.font = 'bold 36px "Courier New", monospace, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(deweyDisplay, width / 2, topY + (prefix ? 95 : 120));
 
+  // Separador intermedio
   ctx.strokeStyle = '#AAAAAA';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -222,11 +245,13 @@ export function downloadSpineLabelPNG(options: {
   ctx.lineTo(width / 2 + 40, topY + (prefix ? 130 : 155));
   ctx.stroke();
 
+  // Código Cutter
   ctx.fillStyle = '#000000';
   ctx.font = 'bold 44px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(cutterDisplay, width / 2, topY + (prefix ? 200 : 225));
 
+  // Separador inferior
   ctx.strokeStyle = '#CCCCCC';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -234,11 +259,13 @@ export function downloadSpineLabelPNG(options: {
   ctx.lineTo(width - 30, height - 70);
   ctx.stroke();
 
+  // Número de Ejemplar
   ctx.fillStyle = '#222222';
   ctx.font = 'bold 26px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(copyDisplay.toUpperCase(), width / 2, height - 30);
 
+  // Generar descarga
   const dataUrl = canvas.toDataURL('image/png');
   const link = document.createElement('a');
   const cleanTitle = (title || 'tejuelo').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25);
@@ -247,6 +274,9 @@ export function downloadSpineLabelPNG(options: {
   link.click();
 }
 
+/**
+ * Descarga una etiqueta de tejuelo en formato vectorial SVG exacto (25mm x 38mm).
+ */
 export function downloadSpineLabelSVG(options: {
   deweyCode: string;
   authorLetters: string;
@@ -266,6 +296,7 @@ export function downloadSpineLabelSVG(options: {
   const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="25mm" height="38mm" viewBox="0 0 25 38">
   <rect width="25" height="38" fill="#ffffff" />
+  <!-- Guía de corte manual 25x38 mm -->
   <rect x="0.5" y="0.5" width="24" height="37" fill="none" stroke="#666666" stroke-width="0.3" stroke-dasharray="1,0.7" />
   ${prefix ? `
   <text x="12.5" y="4" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#444444" text-anchor="middle">${prefix}</text>
@@ -288,6 +319,11 @@ export function downloadSpineLabelSVG(options: {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/**
+ * Componente Tejuelo (SpineLabel) para lomo de libro.
+ * Dimensiones estrictas de corte manual: 25 mm de ancho x 38 mm de alto.
+ * Optimizado para impresión en hojas autoadhesivas tamaño Carta con guías de corte.
+ */
 export const SpineLabel: React.FC<SpineLabelProps> = ({
   deweyCode,
   dewey,
@@ -300,6 +336,7 @@ export const SpineLabel: React.FC<SpineLabelProps> = ({
   const deweyDisplay = (deweyCode || dewey || '000').trim();
   const cutterDisplay = (authorLetters || 'XXX').trim().toUpperCase();
   
+  // Normalizar el formato del número de ejemplar (ej. "1" -> "Ej. 1", "Ej. 1" -> "Ej. 1")
   const copyDisplay = typeof copyNumber === 'number' 
     ? `Ej. ${copyNumber}` 
     : String(copyNumber).trim().startsWith('Ej.') || String(copyNumber).trim().startsWith('c.')
@@ -323,13 +360,16 @@ export const SpineLabel: React.FC<SpineLabelProps> = ({
         height: '38mm',
       }}
     >
+      {/* Prefijo o Identificador Institucional Superior (Opcional) */}
       {prefix && (
         <span className="text-[7.5px] font-semibold text-gray-600 print:text-black leading-none tracking-wider uppercase border-b border-gray-300 print:border-black w-full pb-[0.5mm]">
           {prefix}
         </span>
       )}
 
+      {/* Contenedor Central: Clasificación Dewey y Código Cutter */}
       <div className="flex-1 flex flex-col items-center justify-center w-full gap-[1mm] py-[0.5mm]">
+        {/* Notación Decimal Dewey */}
         <span 
           className="font-bold text-[11px] leading-tight tracking-tight text-black break-all font-mono"
           title={`Clasificación Dewey: ${deweyDisplay}`}
@@ -337,8 +377,10 @@ export const SpineLabel: React.FC<SpineLabelProps> = ({
           {deweyDisplay}
         </span>
 
+        {/* Separador sutil o espacio de respiro */}
         <div className="w-4 h-[0.5px] bg-gray-300 print:bg-black/40" />
 
+        {/* Código Cutter (3 letras del Autor / Título) */}
         <span 
           className="font-bold text-[12px] leading-none tracking-widest text-black uppercase"
           title={`Código Cutter: ${cutterDisplay}`}
@@ -347,6 +389,7 @@ export const SpineLabel: React.FC<SpineLabelProps> = ({
         </span>
       </div>
 
+      {/* Número de Ejemplar Inferior */}
       <div className="w-full pt-[0.5mm] border-t border-gray-300 print:border-black">
         <span className="font-bold text-[8.5px] leading-none tracking-normal text-gray-800 print:text-black uppercase block">
           {copyDisplay}

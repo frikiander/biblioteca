@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import type { WorkWithCopiesCount, Copy as CopyType } from '../../types/database';
 import { getDeweyInfo } from '../../lib/dewey';
-import { getAuthorCutterCode, getStoredCopies } from '../../lib/supabaseClient';
+import { getAuthorCutterCode, getStoredCopies, extractSpineLabelPrefix, getBranchCodePrefix } from '../../lib/supabaseClient';
 import { downloadSpineLabelPNG, downloadSpineLabelSVG, downloadSpineLabelsPDF } from '../copies/SpineLabel';
 import { PrintSpineLabelsModal } from '../copies/PrintSpineLabelsModal';
 
@@ -42,8 +42,17 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
   const deweyInfo = getDeweyInfo(work.dewey_code);
   const cutterCode = getAuthorCutterCode(work.author, work.title);
 
+  // Obtener copias de este libro
   const allStoredCopies = getStoredCopies();
   const workCopies = allStoredCopies.filter(c => c.work_id === work.id);
+
+  // Determinar el prefijo institucional por defecto (MOS-PRI o MOS-BAC)
+  const defaultBranchWithCopies = work.copies_by_branch?.find(b => b.count > 0);
+  const defaultPrefix = workCopies.length > 0 
+    ? extractSpineLabelPrefix(workCopies[0].internal_code, workCopies[0].branch_id)
+    : defaultBranchWithCopies
+      ? getBranchCodePrefix(defaultBranchWithCopies.branch_name || defaultBranchWithCopies.branch_id)
+      : 'MOS-PRI';
 
   const getLanguageLabel = (lang?: string) => {
     switch (lang?.toLowerCase()) {
@@ -84,7 +93,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
         deweyCode: work.dewey_code,
         authorLetters: cutterCode,
         copyNumber: 1,
-        prefix: 'CIM',
+        prefix: defaultPrefix,
         title: work.title
       }
     ], {
@@ -98,7 +107,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
       deweyCode: work.dewey_code,
       authorLetters: cutterCode,
       copyNumber: 1,
-      prefix: 'CIM',
+      prefix: defaultPrefix,
       title: work.title
     });
   };
@@ -108,7 +117,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
       deweyCode: work.dewey_code,
       authorLetters: cutterCode,
       copyNumber: 1,
-      prefix: 'CIM',
+      prefix: defaultPrefix,
       title: work.title
     });
   };
@@ -119,6 +128,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
         id="dublin-core-modal"
         className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200"
       >
+        {/* Header */}
         <div className="flex items-center justify-between p-5 sm:p-6 border-b border-slate-100 bg-slate-50/90 sticky top-0 backdrop-blur-md z-10">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-800">
@@ -148,6 +158,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
           </div>
         </div>
 
+        {/* Navigation Tabs */}
         <div className="px-6 pt-4 border-b border-slate-200 flex items-center justify-between bg-white">
           <div className="flex items-center gap-3">
             <button
@@ -177,6 +188,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
             </button>
           </div>
 
+          {/* Quick Download Tejuelo button */}
           <div className="pb-2 hidden sm:flex items-center gap-1">
             <button
               onClick={handleDownloadPNG}
@@ -197,7 +209,9 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
           </div>
         </div>
 
+        {/* Content */}
         <div className="p-6 space-y-6">
+          {/* Main Book Header Card */}
           <div className="flex flex-col sm:flex-row gap-5 items-start bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80">
             <img
               src={work.cover_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=300'}
@@ -220,6 +234,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
           </div>
 
           {activeTab === 'catalog' ? (
+            /* Clean, Human-Friendly Bibliographic Details Table */
             <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
               <div className="bg-slate-100/90 px-4 py-2.5 font-bold text-slate-800 border-b border-slate-200 flex items-center justify-between text-xs">
                 <span className="flex items-center gap-1.5">
@@ -230,6 +245,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
               </div>
 
               <div className="divide-y divide-slate-100 bg-white text-xs">
+                {/* Title */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 hover:bg-slate-50/50 transition">
                   <span className="font-semibold text-slate-600 flex items-center gap-2">
                     <Tag className="w-3.5 h-3.5 text-emerald-700" /> Título de la Obra:
@@ -237,6 +253,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
                   <span className="sm:col-span-2 text-slate-900 font-bold mt-0.5 sm:mt-0">{work.title}</span>
                 </div>
 
+                {/* Author */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 hover:bg-slate-50/50 transition">
                   <span className="font-semibold text-slate-600 flex items-center gap-2">
                     <User className="w-3.5 h-3.5 text-emerald-700" /> Autor / Creador:
@@ -244,6 +261,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
                   <span className="sm:col-span-2 text-slate-900 font-medium mt-0.5 sm:mt-0">{work.author}</span>
                 </div>
 
+                {/* ISBN */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 hover:bg-slate-50/50 transition">
                   <span className="font-semibold text-slate-600 flex items-center gap-2">
                     <Hash className="w-3.5 h-3.5 text-emerald-700" /> ISBN / Identificador:
@@ -253,6 +271,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
                   </span>
                 </div>
 
+                {/* Dewey Classification */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 hover:bg-slate-50/50 transition">
                   <span className="font-semibold text-slate-600 flex items-center gap-2">
                     <Layers className="w-3.5 h-3.5 text-emerald-700" /> Clasificación Dewey (CDD):
@@ -273,6 +292,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
                   </div>
                 </div>
 
+                {/* Publisher */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 hover:bg-slate-50/50 transition">
                   <span className="font-semibold text-slate-600 flex items-center gap-2">
                     <Building className="w-3.5 h-3.5 text-emerald-700" /> Editorial / Publicador:
@@ -280,6 +300,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
                   <span className="sm:col-span-2 text-slate-800 mt-0.5 sm:mt-0">{work.publisher || 'Editorial de Colección'}</span>
                 </div>
 
+                {/* Year */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 hover:bg-slate-50/50 transition">
                   <span className="font-semibold text-slate-600 flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 text-emerald-700" /> Año de Publicación:
@@ -287,6 +308,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
                   <span className="sm:col-span-2 text-slate-800 font-medium mt-0.5 sm:mt-0">{work.publication_year || 'Sin fecha especificada'}</span>
                 </div>
 
+                {/* Language */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 hover:bg-slate-50/50 transition">
                   <span className="font-semibold text-slate-600 flex items-center gap-2">
                     <Globe className="w-3.5 h-3.5 text-emerald-700" /> Idioma:
@@ -294,6 +316,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
                   <span className="sm:col-span-2 text-slate-800 mt-0.5 sm:mt-0">{getLanguageLabel(work.language)}</span>
                 </div>
 
+                {/* Rights / Licencia */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 hover:bg-slate-50/50 transition">
                   <span className="font-semibold text-slate-600 flex items-center gap-2">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" /> Régimen y Derechos:
@@ -305,6 +328,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
               </div>
             </div>
           ) : (
+            /* Technical Dublin Core ISO 15836 View */
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -341,6 +365,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
             </div>
           )}
 
+          {/* Branch Distribution Breakdown */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
@@ -387,6 +412,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
           </div>
         </div>
 
+        {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <button
@@ -423,6 +449,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
         </div>
       </div>
 
+      {/* Modal de Impresión de Tejuelos */}
       <PrintSpineLabelsModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}

@@ -16,7 +16,9 @@ import {
   BookPlus,
   CheckCircle2,
   Printer,
-  Trash2
+  Trash2,
+  Share2,
+  Globe
 } from 'lucide-react';
 import type { Work, Branch, Copy, WorkWithCopiesCount } from '../../types/database';
 import { supabase, isSupabaseConfigured, INITIAL_WORKS, INITIAL_BRANCHES, INITIAL_COPIES, getWorksWithInventory, getStoredBranches, getStoredCopies, clearAllPlatformData } from '../../lib/supabaseClient';
@@ -95,6 +97,10 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
 
         if (copiesError) {
           throw new Error(`Error en Supabase copies: ${copiesError.message}`);
+        }
+
+        if (typeof window !== 'undefined' && copiesData) {
+          localStorage.setItem('manglar_copies', JSON.stringify(copiesData));
         }
 
         const enriched = getWorksWithInventory(
@@ -200,9 +206,22 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
     return works.reduce((sum, w) => sum + w.total_copies, 0);
   }, [works]);
 
+  const totalCentralCount = useMemo(() => {
+    return works.reduce((sum, w) => {
+      const central = (w.copies_by_branch || [])
+        .filter((b) => b.branch_type === 'internal')
+        .reduce((acc, curr) => acc + curr.count, 0);
+      const rural = (w.copies_by_branch || [])
+        .filter((b) => b.branch_type === 'external_donation')
+        .reduce((acc, curr) => acc + curr.count, 0);
+      const displayCentral = (central + rural === 0 && w.total_copies > 0) ? w.total_copies : central;
+      return sum + displayCentral;
+    }, 0);
+  }, [works]);
+
   const totalDonationsCount = useMemo(() => {
     return works.reduce((sum, w) => {
-      const rural = w.copies_by_branch
+      const rural = (w.copies_by_branch || [])
         .filter((b) => b.branch_type === 'external_donation')
         .reduce((acc, curr) => acc + curr.count, 0);
       return sum + rural;
@@ -228,15 +247,20 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
           </div>
 
           {/* Quick Metrics & Actions */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200/70 text-right">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total Ejemplares</span>
-              <span className="text-base font-bold text-slate-800">{totalCopiesCount} uds.</span>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/70 text-right">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total</span>
+              <span className="text-sm font-bold text-slate-800">{totalCopiesCount} uds.</span>
             </div>
-            <div className="px-3.5 py-2 rounded-xl bg-emerald-50/80 border border-emerald-200/60 text-right">
+            <div className="px-3 py-1.5 rounded-xl bg-blue-50/80 border border-blue-200/60 text-right">
+              <span className="text-[10px] uppercase font-bold text-blue-700 block tracking-wider">Sede Central</span>
+              <span className="text-sm font-bold text-blue-950">{totalCentralCount} uds.</span>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-emerald-50/80 border border-emerald-200/60 text-right">
               <span className="text-[10px] uppercase font-bold text-emerald-700 block tracking-wider">Dotación Rural</span>
-              <span className="text-base font-bold text-emerald-950">{totalDonationsCount} uds.</span>
+              <span className="text-sm font-bold text-emerald-950">{totalDonationsCount} uds.</span>
             </div>
+
             <button
               id="refresh-catalog-btn"
               onClick={fetchWorksCatalog}
@@ -246,6 +270,21 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-700' : ''}`} />
             </button>
+
+            <button
+              id="open-public-link-btn"
+              onClick={() => {
+                const publicUrl = `${window.location.origin}${window.location.pathname}?mode=public`;
+                navigator.clipboard.writeText(publicUrl);
+                showToast('¡Enlace del Catálogo Público copiado al portapapeles para compartir con alumnos y familias!', 'success');
+              }}
+              className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+              title="Copiar enlace del catálogo público para compartir con estudiantes y padres"
+            >
+              <Share2 className="w-3.5 h-3.5 text-emerald-700" />
+              <span className="hidden sm:inline">Link Público Alumnos</span>
+            </button>
+
             <button
               id="open-print-spines-btn"
               onClick={() => {
@@ -254,29 +293,31 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
                 setPrintModalTitle(undefined);
                 setIsPrintSpineModalOpen(true);
               }}
-              className="px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-semibold shadow-2xs transition flex items-center gap-2 cursor-pointer"
+              className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
               title="Imprimir o descargar tejuelos (25x38 mm) en lote"
             >
-              <Printer className="w-4 h-4 text-emerald-700" />
-              <span>Imprimir Tejuelos</span>
+              <Printer className="w-3.5 h-3.5 text-emerald-700" />
+              <span className="hidden sm:inline">Imprimir Tejuelos</span>
             </button>
+
             {works.length > 0 && (
               <button
                 id="clear-all-data-btn"
                 onClick={handleClearAllData}
-                className="p-2.5 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
+                className="p-2 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
                 title="Vaciar inventario y limpiar todos los datos"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
+
             <button
               id="open-register-work-btn"
               onClick={() => setIsRegisterWorkModalOpen(true)}
-              className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-emerald-950/20 transition flex items-center gap-2 cursor-pointer"
+              className="px-3.5 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-950/20 transition flex items-center gap-1.5 cursor-pointer"
             >
               <BookPlus className="w-4 h-4 text-emerald-300" />
-              <span>+ Catalogar Nueva Obra</span>
+              <span>+ Catalogar Obra</span>
             </button>
           </div>
         </div>

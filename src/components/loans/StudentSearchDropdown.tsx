@@ -62,7 +62,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
       name: customName.trim(),
       grade_section: customGrade.trim() || 'Estudiante Colegio El Manglar',
       role: 'student',
-      identifier: `CIM-${Math.floor(1000 + Math.random() * 9000)}`,
+      identifier: `MOS-EST-${Math.floor(1000 + Math.random() * 9000)}`,
     });
 
     setStudents(getStoredStudents());
@@ -74,6 +74,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
+      {/* Active Trigger / Input Display */}
       {selectedStudent && !isOpen ? (
         <div
           onClick={() => !disabled && setIsOpen(true)}
@@ -136,8 +137,10 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
         </div>
       )}
 
+      {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden max-h-80 flex flex-col">
+          {/* Header with Search and Quick Action */}
           <div className="p-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs text-slate-600">
             <span className="font-semibold">Lista de Lectores & Estudiantes</span>
             <button
@@ -150,6 +153,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
             </button>
           </div>
 
+          {/* Inline Add Form */}
           {isAddingCustom ? (
             <form onSubmit={handleCreateCustom} className="p-4 bg-emerald-50/50 border-b border-emerald-100 space-y-3">
               <p className="text-xs font-bold text-emerald-950">Ingresar Nuevo Alumno o Docente</p>
@@ -183,6 +187,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
             </form>
           ) : null}
 
+          {/* Student List */}
           <div className="overflow-y-auto divide-y divide-slate-100 flex-1 p-1">
             {filteredStudents.length === 0 ? (
               <div className="p-6 text-center text-xs text-slate-500 space-y-2">

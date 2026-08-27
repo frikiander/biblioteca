@@ -57,6 +57,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
       setErrorBanner(null);
     } else {
       setActiveLoan(null);
+      // Check if copy exists at all
       const existingCopy = findCopyByCode(clean);
       if (existingCopy) {
         setErrorBanner(`El ejemplar con marbete "${existingCopy.internal_code}" ("${existingCopy.work?.title}") NO tiene un préstamo activo en este momento. Ya está disponible en estantería.`);
@@ -73,6 +74,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
     }
   }, [initialCode]);
 
+  // Handle enter in the main search input
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -118,6 +120,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
+  // Calculate loan duration and days
   const loanDaysElapsed = activeLoan
     ? Math.max(1, Math.ceil((Date.now() - new Date(activeLoan.loan_date).getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
@@ -130,6 +133,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Success Notification */}
       {successReturn && (
         <div className="p-6 sm:p-8 bg-white rounded-3xl border border-emerald-200 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex items-center gap-3.5 text-emerald-800">
@@ -179,8 +183,10 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
         </div>
       )}
 
+      {/* Main Check-in Form */}
       {!successReturn && (
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
+          {/* Header */}
           <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -196,6 +202,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
             </div>
           </div>
 
+          {/* Error Banner */}
           {errorBanner && (
             <div className="m-6 mb-0 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -204,6 +211,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
           )}
 
           <div className="p-6 space-y-6">
+            {/* The single ultra-fast text field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label htmlFor="checkin-marbete-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -246,8 +254,10 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
               </div>
             </div>
 
+            {/* Active Loan Details Detected */}
             {activeLoan && (
               <form onSubmit={handleConfirmReturn} className="space-y-6 pt-4 border-t border-slate-100 animate-in fade-in duration-200">
+                {/* Loan card details */}
                 <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
                     <div>
@@ -305,6 +315,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
                   </div>
                 </div>
 
+                {/* OBSERVATIONS FIELD (Required in user prompt) */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label htmlFor="return-notes-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -324,6 +335,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
                   />
                 </div>
 
+                {/* Physical Condition Selector upon return */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Estado Físico del Ejemplar al Retornar
@@ -350,6 +362,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
                   </div>
                 </div>
 
+                {/* Action Buttons */}
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <button
                     type="button"
