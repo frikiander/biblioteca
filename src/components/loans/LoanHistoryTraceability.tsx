@@ -370,4 +370,40 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                           <>Límite: <span className="font-bold text-teal-800">Plazo Indefinido</span></>
                         ) : loan.due_date ? (
                           <>Límite: <span className={`font-bold ${isOverdue ? 'text-rose-600' : 'text-slate-700'}`}>{new Date(loan.due_date).toLocaleDateString('es-VE')}</span></>
-                        ) : (\n                          <>Límite: <span className=\"font-bold text-teal-800\">Plazo Indefinido</span></>\n                        )}\n                      </p>\n                    </div>\n\n                    <div className=\"flex items-center gap-2\">\n                      <button\n                        type=\"button\"\n                        onClick={() => setSelectedTraceabilityCopy(loan.copy_internal_code)}\n                        className=\"px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center gap-1 cursor-pointer\"\n                      >\n                        <Eye className=\"w-3.5 h-3.5 text-slate-500\" />\n                        <span>Ver Trazabilidad</span>\n                      </button>\n\n                      {loan.status !== 'returned' && onSelectCheckinCode && (\n                        <button\n                          type=\"button\"\n                          onClick={() => onSelectCheckinCode(loan.copy_internal_code)}\n                          className=\"px-3 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs transition flex items-center gap-1 cursor-pointer shadow-2xs\"\n                        >\n                          <RotateCcw className=\"w-3.5 h-3.5\" />\n                          <span>Devolver</span>\n                        </button>\n                      )}\n                    </div>\n                  </div>\n                </div>\n              );\n            })}\n          </div>\n        )}\n      </div>\n    </div>\n  );\n};\n
+                        ) : (
+                          <>Límite: <span className="font-bold text-teal-800">Plazo Indefinido</span></>
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTraceabilityCopy(loan.copy_internal_code)}
+                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Ver Trazabilidad</span>
+                      </button>
+
+                      {loan.status !== 'returned' && onSelectCheckinCode && (
+                        <button
+                          type="button"
+                          onClick={() => onSelectCheckinCode(loan.copy_internal_code)}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Devolver</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

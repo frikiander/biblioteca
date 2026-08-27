@@ -184,4 +184,35 @@ export const LoansHub: React.FC<LoansHubProps> = ({
       </div>
 
       {/* Main Tab Panels */}
-      {activeSubTab === 'checkout' && (\n        <div className=\"max-w-4xl mx-auto\">\n          <CheckoutTab\n            onLoanCreated={handleLoanCreated}\n            onNavigateToCheckin={handleNavigateToCheckin}\n          />\n        </div>\n      )}\n\n      {activeSubTab === 'checkin' && (\n        <div className=\"max-w-4xl mx-auto\">\n          <CheckinTab\n            initialCode={prefilledCheckinCode}\n            onLoanReturned={handleLoanReturned}\n            onNavigateToCheckout={() => setActiveSubTab('checkout')}\n          />\n        </div>\n      )}\n\n      {activeSubTab === 'holds' && (\n        <HoldsTab onNavigateToCheckout={() => setActiveSubTab('checkout')} />\n      )}\n\n      {activeSubTab === 'history' && (\n        <LoanHistoryTraceability\n          refreshTrigger={refreshTrigger}\n          onSelectCheckinCode={handleNavigateToCheckin}\n        />\n      )}\n    </div>\n  );\n};\n
+      {activeSubTab === 'checkout' && (
+        <div className="max-w-4xl mx-auto">
+          <CheckoutTab
+            onLoanCreated={handleLoanCreated}
+            onNavigateToCheckin={handleNavigateToCheckin}
+          />
+        </div>
+      )}
+
+      {activeSubTab === 'checkin' && (
+        <div className="max-w-4xl mx-auto">
+          <CheckinTab
+            initialCode={prefilledCheckinCode}
+            onLoanReturned={handleLoanReturned}
+            onNavigateToCheckout={() => setActiveSubTab('checkout')}
+          />
+        </div>
+      )}
+
+      {activeSubTab === 'holds' && (
+        <HoldsTab onNavigateToCheckout={() => setActiveSubTab('checkout')} />
+      )}
+
+      {activeSubTab === 'history' && (
+        <LoanHistoryTraceability
+          refreshTrigger={refreshTrigger}
+          onSelectCheckinCode={handleNavigateToCheckin}
+        />
+      )}
+    </div>
+  );
+};
