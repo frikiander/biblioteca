@@ -1,1 +1,146 @@
-import type { BookSuggestion, SuggestionStatus, PatronRole } from '../types/database';\n\nexport const INITIAL_SUGGESTIONS: BookSuggestion[] = [\n  {\n    id: 'sug_01',\n    title: 'Fiebre',\n    author: 'Miguel Otero Silva',\n    publisher: 'Seix Barral',\n    publication_year: 1939,\n    reason: 'Completar la trilogía novelística de Miguel Otero Silva para el curso de 5to año de Bachillerato.',\n    suggested_by_name: 'Prof. María Elena Morales',\n    suggested_by_role: 'teacher',\n    suggested_by_grade: 'Docente de Castellano',\n    suggested_by_email: 'maria.morales@manglar.edu.ve',\n    status: 'approved',\n    reviewer_notes: 'Aprobado para la compra institucional en la próxima feria del libro.',\n    votes: 8,\n    voted_by: ['Prof. María Elena Morales', 'Camila Sofía Hernández', 'Mateo Alejandro Gómez'],\n    created_at: '2026-02-01T14:30:00Z',\n  },\n  {\n    id: 'sug_02',\n    title: 'Cosmos',\n    author: 'Carl Sagan',\n    publisher: 'Planeta',\n    publication_year: 1980,\n    reason: 'Material de consulta fundamental para el Club de Astronomía y el laboratorio de Ciencias.',\n    suggested_by_name: 'Diego Andrés Carvallo',\n    suggested_by_role: 'student',\n    suggested_by_grade: '4to Año \"Ciencias\"',\n    status: 'under_review',\n    reviewer_notes: 'En revisión de presupuesto para fondo de ciencias.',\n    votes: 5,\n    voted_by: ['Diego Andrés Carvallo', 'Santiago Rivas Castillo'],\n    created_at: '2026-02-10T11:15:00Z',\n  },\n  {\n    id: 'sug_03',\n    title: 'El Principito (Edición Bilingüe)',\n    author: 'Antoine de Saint-Exupéry',\n    reason: 'Apoyo para las clases de idiomas y comprensión lectora en 6to grado de Primaria.',\n    suggested_by_name: 'Mariana Victoria Ramos',\n    suggested_by_role: 'student',\n    suggested_by_grade: '6to Grado \"A\"',\n    status: 'pending',\n    votes: 3,\n    created_at: '2026-02-18T09:40:00Z',\n  },\n];\n\nexport function getStoredSuggestions(): BookSuggestion[] {\n  if (typeof window === 'undefined') return INITIAL_SUGGESTIONS;\n  const saved = localStorage.getItem('manglar_suggestions');\n  if (!saved) {\n    localStorage.setItem('manglar_suggestions', JSON.stringify(INITIAL_SUGGESTIONS));\n    return INITIAL_SUGGESTIONS;\n  }\n  try {\n    const parsed: BookSuggestion[] = JSON.parse(saved);\n    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SUGGESTIONS;\n  } catch {\n    return INITIAL_SUGGESTIONS;\n  }\n}\n\nexport function saveSuggestions(suggestions: BookSuggestion[]): void {\n  if (typeof window !== 'undefined') {\n    localStorage.setItem('manglar_suggestions', JSON.stringify(suggestions));\n  }\n}\n\nexport function submitSuggestion(params: {\n  title: string;\n  author: string;\n  isbn?: string;\n  publisher?: string;\n  publicationYear?: number;\n  reason?: string;\n  suggestedByName: string;\n  suggestedByRole?: PatronRole;\n  suggestedByGrade?: string;\n  suggestedByEmail?: string;\n}): BookSuggestion {\n  const suggestions = getStoredSuggestions();\n  const newSuggestion: BookSuggestion = {\n    id: `sug_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,\n    title: params.title.trim(),\n    author: params.author.trim(),\n    isbn: params.isbn?.trim() || undefined,\n    publisher: params.publisher?.trim() || undefined,\n    publication_year: params.publicationYear || undefined,\n    reason: params.reason?.trim() || undefined,\n    suggested_by_name: params.suggestedByName.trim(),\n    suggested_by_role: params.suggestedByRole || 'student',\n    suggested_by_grade: params.suggestedByGrade?.trim() || undefined,\n    suggested_by_email: params.suggestedByEmail?.trim() || undefined,\n    status: 'pending',\n    votes: 1,\n    voted_by: [params.suggestedByName.trim()],\n    created_at: new Date().toISOString(),\n  };\n\n  const updated = [newSuggestion, ...suggestions];\n  saveSuggestions(updated);\n  return newSuggestion;\n}\n\nexport function voteSuggestion(suggestionId: string, voterName: string): boolean {\n  const suggestions = getStoredSuggestions();\n  const updated = suggestions.map((s) => {\n    if (s.id === suggestionId) {\n      const voters = s.voted_by || [];\n      if (!voters.includes(voterName)) {\n        return {\n          ...s,\n          votes: s.votes + 1,\n          voted_by: [...voters, voterName],\n        };\n      }\n    }\n    return s;\n  });\n  saveSuggestions(updated);\n  return true;\n}\n\nexport function updateSuggestionStatus(\n  suggestionId: string,\n  status: SuggestionStatus,\n  reviewerNotes?: string\n): boolean {\n  const suggestions = getStoredSuggestions();\n  const updated = suggestions.map((s) => {\n    if (s.id === suggestionId) {\n      return {\n        ...s,\n        status,\n        reviewer_notes: reviewerNotes !== undefined ? reviewerNotes : s.reviewer_notes,\n        updated_at: new Date().toISOString(),\n      };\n    }\n    return s;\n  });\n  saveSuggestions(updated);\n  return true;\n}\n
+import type { BookSuggestion, SuggestionStatus, PatronRole } from '../types/database';
+
+export const INITIAL_SUGGESTIONS: BookSuggestion[] = [
+  {
+    id: 'sug_01',
+    title: 'Fiebre',
+    author: 'Miguel Otero Silva',
+    publisher: 'Seix Barral',
+    publication_year: 1939,
+    reason: 'Completar la trilogía novelística de Miguel Otero Silva para el curso de 5to año de Bachillerato.',
+    suggested_by_name: 'Prof. María Elena Morales',
+    suggested_by_role: 'teacher',
+    suggested_by_grade: 'Docente de Castellano',
+    suggested_by_email: 'maria.morales@manglar.edu.ve',
+    status: 'approved',
+    reviewer_notes: 'Aprobado para la compra institucional en la próxima feria del libro.',
+    votes: 8,
+    voted_by: ['Prof. María Elena Morales', 'Camila Sofía Hernández', 'Mateo Alejandro Gómez'],
+    created_at: '2026-02-01T14:30:00Z',
+  },
+  {
+    id: 'sug_02',
+    title: 'Cosmos',
+    author: 'Carl Sagan',
+    publisher: 'Planeta',
+    publication_year: 1980,
+    reason: 'Material de consulta fundamental para el Club de Astronomía y el laboratorio de Ciencias.',
+    suggested_by_name: 'Diego Andrés Carvallo',
+    suggested_by_role: 'student',
+    suggested_by_grade: '4to Año "Ciencias"',
+    status: 'under_review',
+    reviewer_notes: 'En revisión de presupuesto para fondo de ciencias.',
+    votes: 5,
+    voted_by: ['Diego Andrés Carvallo', 'Santiago Rivas Castillo'],
+    created_at: '2026-02-10T11:15:00Z',
+  },
+  {
+    id: 'sug_03',
+    title: 'El Principito (Edición Bilingüe)',
+    author: 'Antoine de Saint-Exupéry',
+    reason: 'Apoyo para las clases de idiomas y comprensión lectora en 6to grado de Primaria.',
+    suggested_by_name: 'Mariana Victoria Ramos',
+    suggested_by_role: 'student',
+    suggested_by_grade: '6to Grado "A"',
+    status: 'pending',
+    votes: 3,
+    created_at: '2026-02-18T09:40:00Z',
+  },
+];
+
+export function getStoredSuggestions(): BookSuggestion[] {
+  if (typeof window === 'undefined') return INITIAL_SUGGESTIONS;
+  const saved = localStorage.getItem('manglar_suggestions');
+  if (!saved) {
+    localStorage.setItem('manglar_suggestions', JSON.stringify(INITIAL_SUGGESTIONS));
+    return INITIAL_SUGGESTIONS;
+  }
+  try {
+    const parsed: BookSuggestion[] = JSON.parse(saved);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SUGGESTIONS;
+  } catch {
+    return INITIAL_SUGGESTIONS;
+  }
+}
+
+export function saveSuggestions(suggestions: BookSuggestion[]): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('manglar_suggestions', JSON.stringify(suggestions));
+  }
+}
+
+export function submitSuggestion(params: {
+  title: string;
+  author: string;
+  isbn?: string;
+  publisher?: string;
+  publicationYear?: number;
+  reason?: string;
+  suggestedByName: string;
+  suggestedByRole?: PatronRole;
+  suggestedByGrade?: string;
+  suggestedByEmail?: string;
+}): BookSuggestion {
+  const suggestions = getStoredSuggestions();
+  const newSuggestion: BookSuggestion = {
+    id: `sug_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    title: params.title.trim(),
+    author: params.author.trim(),
+    isbn: params.isbn?.trim() || undefined,
+    publisher: params.publisher?.trim() || undefined,
+    publication_year: params.publicationYear || undefined,
+    reason: params.reason?.trim() || undefined,
+    suggested_by_name: params.suggestedByName.trim(),
+    suggested_by_role: params.suggestedByRole || 'student',
+    suggested_by_grade: params.suggestedByGrade?.trim() || undefined,
+    suggested_by_email: params.suggestedByEmail?.trim() || undefined,
+    status: 'pending',
+    votes: 1,
+    voted_by: [params.suggestedByName.trim()],
+    created_at: new Date().toISOString(),
+  };
+
+  const updated = [newSuggestion, ...suggestions];
+  saveSuggestions(updated);
+  return newSuggestion;
+}
+
+export function voteSuggestion(suggestionId: string, voterName: string): boolean {
+  const suggestions = getStoredSuggestions();
+  const updated = suggestions.map((s) => {
+    if (s.id === suggestionId) {
+      const voters = s.voted_by || [];
+      if (!voters.includes(voterName)) {
+        return {
+          ...s,
+          votes: s.votes + 1,
+          voted_by: [...voters, voterName],
+        };
+      }
+    }
+    return s;
+  });
+  saveSuggestions(updated);
+  return true;
+}
+
+export function updateSuggestionStatus(
+  suggestionId: string,
+  status: SuggestionStatus,
+  reviewerNotes?: string
+): boolean {
+  const suggestions = getStoredSuggestions();
+  const updated = suggestions.map((s) => {
+    if (s.id === suggestionId) {
+      return {
+        ...s,
+        status,
+        reviewer_notes: reviewerNotes !== undefined ? reviewerNotes : s.reviewer_notes,
+        updated_at: new Date().toISOString(),
+      };
+    }
+    return s;
+  });
+  saveSuggestions(updated);
+  return true;
+}

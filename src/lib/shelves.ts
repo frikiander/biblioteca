@@ -1,1 +1,170 @@
-import type { VirtualShelf, VirtualShelfItem, Work } from '../types/database';\nimport { getStoredWorks } from './supabaseClient';\n\nexport const INITIAL_SHELVES: VirtualShelf[] = [\n  {\n    id: 'shelf_01',\n    name: 'Plan Lector 2026 — Colegio El Manglar',\n    description: 'Lecturas curriculares obligatorias y sugeridas para estudiantes de Primaria y Bachillerato.',\n    category: 'plan_lector',\n    is_public: true,\n    color: 'emerald',\n    icon: 'BookOpen',\n    created_at: '2026-01-10T08:00:00Z',\n    items: [],\n  },\n  {\n    id: 'shelf_02',\n    name: 'Fondo Especial: Miguel Otero Silva y Literatura Venezolana',\n    description: 'Obras cumbre del insigne escritor venezolano epónimo de nuestra biblioteca y autores contemporáneos.',\n    category: 'tematica',\n    is_public: true,\n    color: 'amber',\n    icon: 'Feather',\n    created_at: '2026-01-10T08:00:00Z',\n    items: [],\n  },\n  {\n    id: 'shelf_03',\n    name: 'Ecología, Manglares y Biodiversidad del Oriente',\n    description: 'Libros de referencia sobre medio ambiente, ecosistemas de manglar y conservación natural.',\n    category: 'tematica',\n    is_public: true,\n    color: 'teal',\n    icon: 'Trees',\n    created_at: '2026-01-15T08:00:00Z',\n    items: [],\n  },\n  {\n    id: 'shelf_04',\n    name: 'Primeros Lectores & Álbum Ilustrado',\n    description: 'Cuentos y novelas gráficas para fomentar el amor por los libros en preescolar y 1er-3er grado.',\n    category: 'recomendados',\n    is_public: true,\n    color: 'purple',\n    icon: 'Sparkles',\n    created_at: '2026-01-20T08:00:00Z',\n    items: [],\n  },\n];\n\nexport function getStoredShelves(): VirtualShelf[] {\n  if (typeof window === 'undefined') return INITIAL_SHELVES;\n  const saved = localStorage.getItem('manglar_virtual_shelves');\n  if (!saved) {\n    localStorage.setItem('manglar_virtual_shelves', JSON.stringify(INITIAL_SHELVES));\n    return INITIAL_SHELVES;\n  }\n  try {\n    const parsed: VirtualShelf[] = JSON.parse(saved);\n    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SHELVES;\n  } catch {\n    return INITIAL_SHELVES;\n  }\n}\n\nexport function saveShelves(shelves: VirtualShelf[]): void {\n  if (typeof window !== 'undefined') {\n    localStorage.setItem('manglar_virtual_shelves', JSON.stringify(shelves));\n  }\n}\n\nexport function createShelf(params: {\n  name: string;\n  description: string;\n  category: VirtualShelf['category'];\n  isPublic?: boolean;\n  color?: string;\n  icon?: string;\n}): VirtualShelf {\n  const shelves = getStoredShelves();\n  const newShelf: VirtualShelf = {\n    id: `shelf_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,\n    name: params.name.trim(),\n    description: params.description.trim(),\n    category: params.category,\n    is_public: params.isPublic ?? true,\n    color: params.color || 'emerald',\n    icon: params.icon || 'BookOpen',\n    created_at: new Date().toISOString(),\n    items: [],\n  };\n\n  const updated = [newShelf, ...shelves];\n  saveShelves(updated);\n  return newShelf;\n}\n\nexport function deleteShelf(shelfId: string): boolean {\n  const shelves = getStoredShelves();\n  const updated = shelves.filter((s) => s.id !== shelfId);\n  saveShelves(updated);\n  return true;\n}\n\nexport function addBookToShelf(shelfId: string, workId: string, notes?: string): boolean {\n  const shelves = getStoredShelves();\n  const works = getStoredWorks();\n  const targetWork = works.find((w) => w.id === workId);\n  if (!targetWork) return false;\n\n  const updated = shelves.map((shelf) => {\n    if (shelf.id === shelfId) {\n      const items = shelf.items || [];\n      if (items.some((i) => i.work_id === workId)) {\n        return shelf; // already in shelf\n      }\n      const newItem: VirtualShelfItem = {\n        id: `sitem_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,\n        shelf_id: shelfId,\n        work_id: workId,\n        work: targetWork,\n        added_at: new Date().toISOString(),\n        notes: notes?.trim(),\n      };\n      return {\n        ...shelf,\n        items: [newItem, ...items],\n        items_count: items.length + 1,\n      };\n    }\n    return shelf;\n  });\n\n  saveShelves(updated);\n  return true;\n}\n\nexport function removeBookFromShelf(shelfId: string, workId: string): boolean {\n  const shelves = getStoredShelves();\n  const updated = shelves.map((shelf) => {\n    if (shelf.id === shelfId) {\n      const items = (shelf.items || []).filter((i) => i.work_id !== workId);\n      return {\n        ...shelf,\n        items,\n        items_count: items.length,\n      };\n    }\n    return shelf;\n  });\n  saveShelves(updated);\n  return true;\n}\n\nexport function getShelfWithPopulatedWorks(shelf: VirtualShelf): VirtualShelf {\n  const works = getStoredWorks();\n  const populatedItems = (shelf.items || []).map((item) => {\n    const w = works.find((work) => work.id === item.work_id) || item.work;\n    return {\n      ...item,\n      work: w,\n    };\n  });\n\n  return {\n    ...shelf,\n    items: populatedItems,\n    items_count: populatedItems.length,\n  };\n}\n
+import type { VirtualShelf, VirtualShelfItem, Work } from '../types/database';
+import { getStoredWorks } from './supabaseClient';
+
+export const INITIAL_SHELVES: VirtualShelf[] = [
+  {
+    id: 'shelf_01',
+    name: 'Plan Lector 2026 — Colegio El Manglar',
+    description: 'Lecturas curriculares obligatorias y sugeridas para estudiantes de Primaria y Bachillerato.',
+    category: 'plan_lector',
+    is_public: true,
+    color: 'emerald',
+    icon: 'BookOpen',
+    created_at: '2026-01-10T08:00:00Z',
+    items: [],
+  },
+  {
+    id: 'shelf_02',
+    name: 'Fondo Especial: Miguel Otero Silva y Literatura Venezolana',
+    description: 'Obras cumbre del insigne escritor venezolano epónimo de nuestra biblioteca y autores contemporáneos.',
+    category: 'tematica',
+    is_public: true,
+    color: 'amber',
+    icon: 'Feather',
+    created_at: '2026-01-10T08:00:00Z',
+    items: [],
+  },
+  {
+    id: 'shelf_03',
+    name: 'Ecología, Manglares y Biodiversidad del Oriente',
+    description: 'Libros de referencia sobre medio ambiente, ecosistemas de manglar y conservación natural.',
+    category: 'tematica',
+    is_public: true,
+    color: 'teal',
+    icon: 'Trees',
+    created_at: '2026-01-15T08:00:00Z',
+    items: [],
+  },
+  {
+    id: 'shelf_04',
+    name: 'Primeros Lectores & Álbum Ilustrado',
+    description: 'Cuentos y novelas gráficas para fomentar el amor por los libros en preescolar y 1er-3er grado.',
+    category: 'recomendados',
+    is_public: true,
+    color: 'purple',
+    icon: 'Sparkles',
+    created_at: '2026-01-20T08:00:00Z',
+    items: [],
+  },
+];
+
+export function getStoredShelves(): VirtualShelf[] {
+  if (typeof window === 'undefined') return INITIAL_SHELVES;
+  const saved = localStorage.getItem('manglar_virtual_shelves');
+  if (!saved) {
+    localStorage.setItem('manglar_virtual_shelves', JSON.stringify(INITIAL_SHELVES));
+    return INITIAL_SHELVES;
+  }
+  try {
+    const parsed: VirtualShelf[] = JSON.parse(saved);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SHELVES;
+  } catch {
+    return INITIAL_SHELVES;
+  }
+}
+
+export function saveShelves(shelves: VirtualShelf[]): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('manglar_virtual_shelves', JSON.stringify(shelves));
+  }
+}
+
+export function createShelf(params: {
+  name: string;
+  description: string;
+  category: VirtualShelf['category'];
+  isPublic?: boolean;
+  color?: string;
+  icon?: string;
+}): VirtualShelf {
+  const shelves = getStoredShelves();
+  const newShelf: VirtualShelf = {
+    id: `shelf_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    name: params.name.trim(),
+    description: params.description.trim(),
+    category: params.category,
+    is_public: params.isPublic ?? true,
+    color: params.color || 'emerald',
+    icon: params.icon || 'BookOpen',
+    created_at: new Date().toISOString(),
+    items: [],
+  };
+
+  const updated = [newShelf, ...shelves];
+  saveShelves(updated);
+  return newShelf;
+}
+
+export function deleteShelf(shelfId: string): boolean {
+  const shelves = getStoredShelves();
+  const updated = shelves.filter((s) => s.id !== shelfId);
+  saveShelves(updated);
+  return true;
+}
+
+export function addBookToShelf(shelfId: string, workId: string, notes?: string): boolean {
+  const shelves = getStoredShelves();
+  const works = getStoredWorks();
+  const targetWork = works.find((w) => w.id === workId);
+  if (!targetWork) return false;
+
+  const updated = shelves.map((shelf) => {
+    if (shelf.id === shelfId) {
+      const items = shelf.items || [];
+      if (items.some((i) => i.work_id === workId)) {
+        return shelf; // already in shelf
+      }
+      const newItem: VirtualShelfItem = {
+        id: `sitem_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
+        shelf_id: shelfId,
+        work_id: workId,
+        work: targetWork,
+        added_at: new Date().toISOString(),
+        notes: notes?.trim(),
+      };
+      return {
+        ...shelf,
+        items: [newItem, ...items],
+        items_count: items.length + 1,
+      };
+    }
+    return shelf;
+  });
+
+  saveShelves(updated);
+  return true;
+}
+
+export function removeBookFromShelf(shelfId: string, workId: string): boolean {
+  const shelves = getStoredShelves();
+  const updated = shelves.map((shelf) => {
+    if (shelf.id === shelfId) {
+      const items = (shelf.items || []).filter((i) => i.work_id !== workId);
+      return {
+        ...shelf,
+        items,
+        items_count: items.length,
+      };
+    }
+    return shelf;
+  });
+  saveShelves(updated);
+  return true;
+}
+
+export function getShelfWithPopulatedWorks(shelf: VirtualShelf): VirtualShelf {
+  const works = getStoredWorks();
+  const populatedItems = (shelf.items || []).map((item) => {
+    const w = works.find((work) => work.id === item.work_id) || item.work;
+    return {
+      ...item,
+      work: w,
+    };
+  });
+
+  return {
+    ...shelf,
+    items: populatedItems,
+    items_count: populatedItems.length,
+  };
+}

@@ -1,1 +1,95 @@
-# 📚 Biblioteca Miguel Otero Silva — Colegio Integral El Manglar\n\nSistema integral de gestión bibliotecaria multisede, catalogación universal bajo estándar Dublin Core simplificado, MARC21, Clasificación Decimal Dewey (CDD), autocompletado automatizado con **Google Books API**, generación/impresión de marbetes normalizados (Cutter-Sanborn) y módulo de circulación y préstamos.\n\n---\n\n## 🚀 Tecnologías Principales\n\n- **Frontend**: React 19 + TypeScript + Vite + TailwindCSS v4\n- **Iconografía e Interfaz**: Lucide React + Motion + jsPDF\n- **Base de Datos & Backend**: Supabase (PostgreSQL 15+ con Row Level Security - RLS)\n- **Servicios Externos**: Google Books API + Open Library (metadatos bibliográficos e ISBN)\n- **Despliegue Recomendado**: Vercel + Supabase Cloud\n\n---\n\n## 🔑 Variables de Entorno y Credenciales\n\nEl proyecto utiliza un archivo `.env` para almacenar las credenciales de desarrollo local. Copia la plantilla base:\n\n```bash\ncp .env.example .env\n```\n\n### Variables requeridas:\n\n| Variable | Descripción | Obligatorio |\n| :--- | :--- | :--- |\n| `VITE_GOOGLE_BOOKS_API_KEY` | API Key de Google Cloud Books API para autocompletar libros por ISBN sin límites de cuota | Opcional (funciona en modo público) |\n| `VITE_SUPABASE_URL` | URL de tu proyecto en Supabase (ej: `https://xyz.supabase.co`) | Para modo BD en la nube |\n| `VITE_SUPABASE_ANON_KEY` | Llave anónima pública de Supabase | Para modo BD en la nube |\n| `NEXT_PUBLIC_SUPABASE_URL` | Alias compatible para Next.js / Vercel | Opcional |\n| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Alias compatible para Next.js / Vercel | Opcional |\n| `SUPABASE_SERVICE_ROLE_KEY` | Llave de rol de servicio (Solo backend/migraciones, **nunca** exponer al cliente) | Opcional |\n\n> 💡 **Nota de Seguridad**: El archivo `.env` ya está protegido en `.gitignore` para evitar que tus credenciales se suban a GitHub.\n\n---\n\n## 🛠️ Ejecución Local\n\n1. **Instalar dependencias**:\n   ```bash\n   npm install\n   # o bien\n   bun install\n   ```\n\n2. **Configurar `.env`** con tus credenciales.\n\n3. **Iniciar el servidor de desarrollo**:\n   ```bash\n   npm run dev\n   ```\n   La aplicación estará disponible en `http://localhost:3000`.\n\n---\n\n## 🌐 Guía de Despliegue: Supabase, Git y Vercel\n\n### Paso 1: Configurar Base de Datos en Supabase\n1. Ingresa a [supabase.com](https://supabase.com) e inicia sesión.\n2. Crea un nuevo proyecto (ejemplo: `biblioteca-manglar`).\n3. Ve a la sección **SQL Editor** en el panel izquierdo.\n4. Pega el script SQL del archivo [`supabase_schema.sql`](supabase_schema.sql) y haz clic en **Run**.\n5. Ve a **Project Settings > API** y copia:\n   - **Project URL**\n   - **Project API Key (`anon public`)**\n\n### Paso 2: Obtener Google Books API Key\n1. Ve a [Google Cloud Console](https://console.cloud.google.com/).\n2. Crea un proyecto y ve a **APIs y Servicios > Biblioteca**.\n3. Busca **\"Books API\"** y haz clic en **Habilitar**.\n4. Ve a **APIs y Servicios > Credenciales > Crear Credenciales > Clave de API**.\n5. Copia la clave y pégala en `VITE_GOOGLE_BOOKS_API_KEY`.\n\n### Paso 3: Subir a GitHub\n```bash\ngit init\ngit add .\ngit commit -m \"feat: Sistema de Gestión Biblioteca Miguel Otero Silva\"\ngit branch -M main\ngit remote add origin https://github.com/TU_USUARIO/TU_REPOSITORIO.git\ngit push -u origin main\n```\n\n### Paso 4: Desplegar en Vercel\n1. Ingresa a [vercel.com](https://vercel.com) y haz clic en **\"Add New Project\"**.\n2. Importa tu repositorio de GitHub.\n3. En **Framework Preset**, selecciona **Vite**.\n4. En la sección **Environment Variables**, añade:\n   - `VITE_SUPABASE_URL` = (Tu URL de Supabase)\n   - `VITE_SUPABASE_ANON_KEY` = (Tu clave anon de Supabase)\n   - `VITE_GOOGLE_BOOKS_API_KEY` = (Tu API Key de Google Books)\n5. Haz clic en **Deploy**.\n
+# 📚 Biblioteca Miguel Otero Silva — Colegio Integral El Manglar
+
+Sistema integral de gestión bibliotecaria multisede, catalogación universal bajo estándar Dublin Core simplificado, MARC21, Clasificación Decimal Dewey (CDD), autocompletado automatizado con **Google Books API**, generación/impresión de marbetes normalizados (Cutter-Sanborn) y módulo de circulación y préstamos.
+
+---
+
+## 🚀 Tecnologías Principales
+
+- **Frontend**: React 19 + TypeScript + Vite + TailwindCSS v4
+- **Iconografía e Interfaz**: Lucide React + Motion + jsPDF
+- **Base de Datos & Backend**: Supabase (PostgreSQL 15+ con Row Level Security - RLS)
+- **Servicios Externos**: Google Books API + Open Library (metadatos bibliográficos e ISBN)
+- **Despliegue Recomendado**: Vercel + Supabase Cloud
+
+---
+
+## 🔑 Variables de Entorno y Credenciales
+
+El proyecto utiliza un archivo `.env` para almacenar las credenciales de desarrollo local. Copia la plantilla base:
+
+```bash
+cp .env.example .env
+```
+
+### Variables requeridas:
+
+| Variable | Descripción | Obligatorio |
+| :--- | :--- | :--- |
+| `VITE_GOOGLE_BOOKS_API_KEY` | API Key de Google Cloud Books API para autocompletar libros por ISBN sin límites de cuota | Opcional (funciona en modo público) |
+| `VITE_SUPABASE_URL` | URL de tu proyecto en Supabase (ej: `https://xyz.supabase.co`) | Para modo BD en la nube |
+| `VITE_SUPABASE_ANON_KEY` | Llave anónima pública de Supabase | Para modo BD en la nube |
+| `NEXT_PUBLIC_SUPABASE_URL` | Alias compatible para Next.js / Vercel | Opcional |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Alias compatible para Next.js / Vercel | Opcional |
+| `SUPABASE_SERVICE_ROLE_KEY` | Llave de rol de servicio (Solo backend/migraciones, **nunca** exponer al cliente) | Opcional |
+
+> 💡 **Nota de Seguridad**: El archivo `.env` ya está protegido en `.gitignore` para evitar que tus credenciales se suban a GitHub.
+
+---
+
+## 🛠️ Ejecución Local
+
+1. **Instalar dependencias**:
+   ```bash
+   npm install
+   # o bien
+   bun install
+   ```
+
+2. **Configurar `.env`** con tus credenciales.
+
+3. **Iniciar el servidor de desarrollo**:
+   ```bash
+   npm run dev
+   ```
+   La aplicación estará disponible en `http://localhost:3000`.
+
+---
+
+## 🌐 Guía de Despliegue: Supabase, Git y Vercel
+
+### Paso 1: Configurar Base de Datos en Supabase
+1. Ingresa a [supabase.com](https://supabase.com) e inicia sesión.
+2. Crea un nuevo proyecto (ejemplo: `biblioteca-manglar`).
+3. Ve a la sección **SQL Editor** en el panel izquierdo.
+4. Pega el script SQL del archivo [`supabase_schema.sql`](supabase_schema.sql) y haz clic en **Run**.
+5. Ve a **Project Settings > API** y copia:
+   - **Project URL**
+   - **Project API Key (`anon public`)**
+
+### Paso 2: Obtener Google Books API Key
+1. Ve a [Google Cloud Console](https://console.cloud.google.com/).
+2. Crea un proyecto y ve a **APIs y Servicios > Biblioteca**.
+3. Busca **"Books API"** y haz clic en **Habilitar**.
+4. Ve a **APIs y Servicios > Credenciales > Crear Credenciales > Clave de API**.
+5. Copia la clave y pégala en `VITE_GOOGLE_BOOKS_API_KEY`.
+
+### Paso 3: Subir a GitHub
+```bash
+git init
+git add .
+git commit -m "feat: Sistema de Gestión Biblioteca Miguel Otero Silva"
+git branch -M main
+git remote add origin https://github.com/TU_USUARIO/TU_REPOSITORIO.git
+git push -u origin main
+```
+
+### Paso 4: Desplegar en Vercel
+1. Ingresa a [vercel.com](https://vercel.com) y haz clic en **"Add New Project"**.
+2. Importa tu repositorio de GitHub.
+3. En **Framework Preset**, selecciona **Vite**.
+4. En la sección **Environment Variables**, añade:
+   - `VITE_SUPABASE_URL` = (Tu URL de Supabase)
+   - `VITE_SUPABASE_ANON_KEY` = (Tu clave anon de Supabase)
+   - `VITE_GOOGLE_BOOKS_API_KEY` = (Tu API Key de Google Books)
+5. Haz clic en **Deploy**.

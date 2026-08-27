@@ -1,1 +1,116 @@
-import type { OfflineTransaction } from '../types/database';\nimport { registerLoan, returnLoan } from './loans';\nimport { placeHold } from './holds';\nimport { findCopyByCode } from './loans';\nimport { getStoredWorks } from './supabaseClient';\n\nexport function getOfflineQueue(): OfflineTransaction[] {\n  if (typeof window === 'undefined') return [];\n  const saved = localStorage.getItem('manglar_offline_queue');\n  if (!saved) return [];\n  try {\n    return JSON.parse(saved) || [];\n  } catch {\n    return [];\n  }\n}\n\nexport function saveOfflineQueue(queue: OfflineTransaction[]): void {\n  if (typeof window !== 'undefined') {\n    localStorage.setItem('manglar_offline_queue', JSON.stringify(queue));\n  }\n}\n\nexport function queueOfflineTransaction(\n  type: 'checkout' | 'checkin' | 'hold',\n  payload: Record<string, unknown>\n): OfflineTransaction {\n  const item: OfflineTransaction = {\n    id: `off_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,\n    type,\n    payload,\n    timestamp: Date.now(),\n    synced: false,\n  };\n\n  const queue = getOfflineQueue();\n  const updated = [...queue, item];\n  saveOfflineQueue(updated);\n  return item;\n}\n\nexport async function processOfflineQueue(): Promise<{\n  processed: number;\n  failed: number;\n  remaining: OfflineTransaction[];\n}> {\n  const queue = getOfflineQueue();\n  if (queue.length === 0) return { processed: 0, failed: 0, remaining: [] };\n\n  const remaining: OfflineTransaction[] = [];\n  let processed = 0;\n  let failed = 0;\n\n  for (const item of queue) {\n    try {\n      if (item.type === 'checkout') {\n        const copyCode = String(item.payload.copyCode || '');\n        const copy = findCopyByCode(copyCode);\n        if (copy) {\n          const res = registerLoan({\n            copy,\n            student: item.payload.student as any,\n            dueDays: item.payload.dueDays as number,\n            isIndefinite: Boolean(item.payload.isIndefinite),\n            checkoutNotes: `[Offline Sync] ${String(item.payload.checkoutNotes || '')}`.trim(),\n          });\n          if (res.success) {\n            processed++;\n          } else {\n            failed++;\n            remaining.push({ ...item, error: res.error });\n          }\n        } else {\n          failed++;\n          remaining.push({ ...item, error: 'Ejemplar no encontrado' });\n        }\n      } else if (item.type === 'checkin') {\n        const copyCode = String(item.payload.copyCode || '');\n        const res = returnLoan({\n          copyCode,\n          returnNotes: `[Offline Sync] ${String(item.payload.returnNotes || '')}`.trim(),\n          returnCondition: item.payload.returnCondition as any,\n        });\n        if (res.success) {\n          processed++;\n        } else {\n          failed++;\n          remaining.push({ ...item, error: res.error });\n        }\n      } else if (item.type === 'hold') {\n        const workId = String(item.payload.workId || '');\n        const works = getStoredWorks();\n        const work = works.find((w) => w.id === workId);\n        if (work) {\n          const res = placeHold({\n            work,\n            patron: item.payload.patron as any,\n            notes: `[Offline Sync] ${String(item.payload.notes || '')}`.trim(),\n          });\n          if (res.success) {\n            processed++;\n          } else {\n            failed++;\n            remaining.push({ ...item, error: res.error });\n          }\n        }\n      }\n    } catch (err: any) {\n      failed++;\n      remaining.push({ ...item, error: err.message || 'Error desconocido al sincronizar' });\n    }\n  }\n\n  saveOfflineQueue(remaining);\n  return { processed, failed, remaining };\n}\n
+import type { OfflineTransaction } from '../types/database';
+import { registerLoan, returnLoan } from './loans';
+import { placeHold } from './holds';
+import { findCopyByCode } from './loans';
+import { getStoredWorks } from './supabaseClient';
+
+export function getOfflineQueue(): OfflineTransaction[] {
+  if (typeof window === 'undefined') return [];
+  const saved = localStorage.getItem('manglar_offline_queue');
+  if (!saved) return [];
+  try {
+    return JSON.parse(saved) || [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveOfflineQueue(queue: OfflineTransaction[]): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('manglar_offline_queue', JSON.stringify(queue));
+  }
+}
+
+export function queueOfflineTransaction(
+  type: 'checkout' | 'checkin' | 'hold',
+  payload: Record<string, unknown>
+): OfflineTransaction {
+  const item: OfflineTransaction = {
+    id: `off_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    type,
+    payload,
+    timestamp: Date.now(),
+    synced: false,
+  };
+
+  const queue = getOfflineQueue();
+  const updated = [...queue, item];
+  saveOfflineQueue(updated);
+  return item;
+}
+
+export async function processOfflineQueue(): Promise<{
+  processed: number;
+  failed: number;
+  remaining: OfflineTransaction[];
+}> {
+  const queue = getOfflineQueue();
+  if (queue.length === 0) return { processed: 0, failed: 0, remaining: [] };
+
+  const remaining: OfflineTransaction[] = [];
+  let processed = 0;
+  let failed = 0;
+
+  for (const item of queue) {
+    try {
+      if (item.type === 'checkout') {
+        const copyCode = String(item.payload.copyCode || '');
+        const copy = findCopyByCode(copyCode);
+        if (copy) {
+          const res = registerLoan({
+            copy,
+            student: item.payload.student as any,
+            dueDays: item.payload.dueDays as number,
+            isIndefinite: Boolean(item.payload.isIndefinite),
+            checkoutNotes: `[Offline Sync] ${String(item.payload.checkoutNotes || '')}`.trim(),
+          });
+          if (res.success) {
+            processed++;
+          } else {
+            failed++;
+            remaining.push({ ...item, error: res.error });
+          }
+        } else {
+          failed++;
+          remaining.push({ ...item, error: 'Ejemplar no encontrado' });
+        }
+      } else if (item.type === 'checkin') {
+        const copyCode = String(item.payload.copyCode || '');
+        const res = returnLoan({
+          copyCode,
+          returnNotes: `[Offline Sync] ${String(item.payload.returnNotes || '')}`.trim(),
+          returnCondition: item.payload.returnCondition as any,
+        });
+        if (res.success) {
+          processed++;
+        } else {
+          failed++;
+          remaining.push({ ...item, error: res.error });
+        }
+      } else if (item.type === 'hold') {
+        const workId = String(item.payload.workId || '');
+        const works = getStoredWorks();
+        const work = works.find((w) => w.id === workId);
+        if (work) {
+          const res = placeHold({
+            work,
+            patron: item.payload.patron as any,
+            notes: `[Offline Sync] ${String(item.payload.notes || '')}`.trim(),
+          });
+          if (res.success) {
+            processed++;
+          } else {
+            failed++;
+            remaining.push({ ...item, error: res.error });
+          }
+        }
+      }
+    } catch (err: any) {
+      failed++;
+      remaining.push({ ...item, error: err.message || 'Error desconocido al sincronizar' });
+    }
+  }
+
+  saveOfflineQueue(remaining);
+  return { processed, failed, remaining };
+}
