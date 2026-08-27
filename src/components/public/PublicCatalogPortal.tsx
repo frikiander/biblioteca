@@ -22,9 +22,11 @@ import {
   CheckCircle2,
   Calendar,
   Building,
-  Tag
+  Tag,
+  Bookmark,
+  Lightbulb
 } from 'lucide-react';
-import type { WorkWithCopiesCount, Branch, Work, Copy as CopyType } from '../../types/database';
+import type { WorkWithCopiesCount, Branch, Work, Copy as CopyType, VirtualShelf } from '../../types/database';
 import { 
   getWorksWithInventory, 
   getStoredBranches, 
@@ -34,6 +36,8 @@ import {
   supabase 
 } from '../../lib/supabaseClient';
 import { DEWEY_GROUPS, getDeweyInfo } from '../../lib/dewey';
+import { getStoredShelves } from '../../lib/shelves';
+import { submitSuggestion } from '../../lib/suggestions';
 
 interface PublicCatalogPortalProps {
   onSwitchToAdmin?: () => void;
@@ -41,6 +45,8 @@ interface PublicCatalogPortalProps {
 
 export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwitchToAdmin }) => {
   const [works, setWorks] = useState<WorkWithCopiesCount[]>([]);
+  const [shelves, setShelves] = useState<VirtualShelf[]>([]);
+  const [selectedShelfId, setSelectedShelfId] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDewey, setSelectedDewey] = useState<string>('all');
@@ -49,11 +55,20 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [copiedBookInfo, setCopiedBookInfo] = useState<boolean>(false);
 
-  // Cargar catálogo público desde Supabase o localStorage
+  // Desiderata suggestion modal
+  const [isSuggestModalOpen, setIsSuggestModalOpen] = useState<boolean>(false);
+  const [sugTitle, setSugTitle] = useState<string>('');
+  const [sugAuthor, setSugAuthor] = useState<string>('');
+  const [sugReason, setSugReason] = useState<string>('');
+  const [sugName, setSugName] = useState<string>('');
+  const [sugGrade, setSugGrade] = useState<string>('');
+  const [sugSent, setSugSent] = useState<boolean>(false);
+
   useEffect(() => {
     const loadCatalog = async () => {
       setLoading(true);
       try {
+        setShelves(getStoredShelves());
         if (isSupabaseConfigured && supabase) {
           const { data: worksData } = await supabase.from('works').select('*').order('title', { ascending: true });
           const { data: branchesData } = await supabase.from('branches').select('*');
@@ -86,7 +101,6 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
     loadCatalog();
   }, []);
 
-  // Generar enlace para compartir catálogo público
   const handleShareCatalog = () => {
     const publicUrl = `${window.location.origin}${window.location.pathname}?mode=public`;
     navigator.clipboard.writeText(publicUrl);
@@ -94,7 +108,6 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
-  // Copiar datos del libro para solicitarlo
   const handleCopyBookData = (work: WorkWithCopiesCount) => {
     const text = `📖 Solicitud de Préstamo - Biblioteca Miguel Otero Silva\nColegio Integral El Manglar\n\n• Título: ${work.title}\n• Autor: ${work.author}\n• Clasificación CDD: ${work.dewey_code}\n• ISBN: ${work.isbn || 'N/A'}`;
     navigator.clipboard.writeText(text);
@@ -102,22 +115,57 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
     setTimeout(() => setCopiedBookInfo(false), 2500);
   };
 
-  // Filtrado de obras
+  const handleSendSuggestion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sugTitle.trim() || !sugAuthor.trim() || !sugName.trim()) return;
+
+    submitSuggestion({
+      title: sugTitle,
+      author: sugAuthor,
+      reason: sugReason,
+      suggestedByName: sugName,
+      suggestedByGrade: sugGrade,
+    });
+
+    setSugSent(true);
+    setTimeout(() => {
+      setSugSent(false);
+      setIsSuggestModalOpen(false);
+      setSugTitle('');
+      setSugAuthor('');
+      setSugReason('');
+      setSugName('');
+      setSugGrade('');
+    }, 2000);
+  };
+
   const filteredWorks = useMemo(() => {
     return works.filter((w) => {
+      // 1. Shelf filter
+      if (selectedShelfId !== 'all') {
+        const shelf = shelves.find((s) => s.id === selectedShelfId);
+        if (shelf && shelf.items) {
+          const inShelf = shelf.items.some((i) => i.work_id === w.id);
+          if (!inShelf) return false;
+        }
+      }
+
+      // 2. Search query filter
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
         w.title.toLowerCase().includes(q) ||
         w.author.toLowerCase().includes(q) ||
-        w.dewey_code.includes(q) ||
         (w.isbn && w.isbn.toLowerCase().includes(q)) ||
-        (w.subjects && w.subjects.some((s) => s.toLowerCase().includes(q)));
+        (w.dewey_code && w.dewey_code.includes(q)) ||
+        (w.subjects && w.subjects.some((s) => s.toLowerCase().includes(q))) ||
+        (w.description && w.description.toLowerCase().includes(q));
 
+      // 3. Dewey classification filter
       const matchesDewey =
-        selectedDewey === 'all' ||
-        w.dewey_code.startsWith(selectedDewey.charAt(0));
+        selectedDewey === 'all' || w.dewey_code.startsWith(selectedDewey.charAt(0));
 
+      // 4. Availability filter
       const centralCount = (w.copies_by_branch || [])
         .filter((b) => b.branch_type === 'internal')
         .reduce((acc, curr) => acc + curr.count, 0);
@@ -128,7 +176,7 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
 
       return matchesSearch && matchesDewey && matchesAvailability;
     });
-  }, [works, searchQuery, selectedDewey, availabilityFilter]);
+  }, [works, searchQuery, selectedDewey, availabilityFilter, selectedShelfId, shelves]);
 
   const totalCentralAvailable = works.reduce((sum, w) => {
     const centralCount = (w.copies_by_branch || [])
@@ -154,7 +202,7 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
                     Colegio Integral El Manglar
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
-                    Catálogo Abierto
+                    Catálogo Abierto (OPAC)
                   </span>
                 </div>
                 <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
@@ -166,25 +214,34 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
               </div>
             </div>
 
-            {/* Actions: Share Public Link & Admin Return */}
+            {/* Actions */}
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setIsSuggestModalOpen(true)}
+                className="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition cursor-pointer"
+                title="Proponer un libro para que el colegio lo adquiera"
+              >
+                <Lightbulb className="w-4 h-4" />
+                <span className="hidden sm:inline">Proponer un Libro</span>
+                <span className="sm:hidden">Proponer</span>
+              </button>
+
+              <button
                 onClick={handleShareCatalog}
-                className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950/20 transition cursor-pointer"
-                title="Copiar enlace directo de este catálogo para enviar a estudiantes y representantes"
+                className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition cursor-pointer"
+                title="Copiar enlace directo"
               >
                 {copiedLink ? <Check className="w-4 h-4 text-emerald-200" /> : <Share2 className="w-4 h-4" />}
-                <span>{copiedLink ? '¡Enlace Copiado!' : 'Compartir Catálogo'}</span>
+                <span className="hidden sm:inline">{copiedLink ? '¡Copiado!' : 'Compartir'}</span>
               </button>
 
               {onSwitchToAdmin && (
                 <button
                   onClick={onSwitchToAdmin}
                   className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-medium transition cursor-pointer hidden md:flex items-center gap-1.5"
-                  title="Regresar al panel de gestión bibliotecaria interna"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Panel Administrativo</span>
+                  <span>Panel Admin</span>
                 </button>
               )}
             </div>
@@ -211,41 +268,44 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
               Explora todas las obras registradas bajo el estándar de Clasificación Decimal Dewey. Consulta sinopsis, autores y disponibilidad para solicitar tu préstamo directamente en el campus del Colegio Integral El Manglar.
             </p>
-
-            {/* 3 Steps Guide to borrow a book */}
-            <div className="pt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-emerald-800/50">
-              <div className="bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/10 flex items-start gap-2.5">
-                <div className="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
-                  1
-                </div>
-                <div className="text-xs">
-                  <span className="font-bold text-white block">Busca tu libro</span>
-                  <span className="text-[11px] text-slate-300">Por título, autor o tu tema preferido.</span>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/10 flex items-start gap-2.5">
-                <div className="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
-                  2
-                </div>
-                <div className="text-xs">
-                  <span className="font-bold text-white block">Anota el CDD / Título</span>
-                  <span className="text-[11px] text-slate-300">Guarda la clasificación del libro.</span>
-                </div>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-xs p-3 rounded-2xl border border-white/10 flex items-start gap-2.5">
-                <div className="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
-                  3
-                </div>
-                <div className="text-xs">
-                  <span className="font-bold text-white block">Solicítalo en Biblioteca</span>
-                  <span className="text-[11px] text-slate-300">En el Módulo de Primaria o Bachillerato.</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
+
+        {/* Virtual Shelves (Plan Lector & Colecciones Curadas) */}
+        {shelves.length > 0 && (
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+              <Bookmark className="w-4 h-4 text-emerald-700" />
+              <span>Colecciones Curadas & Plan Lector:</span>
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+              <button
+                onClick={() => setSelectedShelfId('all')}
+                className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap cursor-pointer ${
+                  selectedShelfId === 'all'
+                    ? 'bg-emerald-800 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                Todas las Obras ({works.length})
+              </button>
+              {shelves.map((shelf) => (
+                <button
+                  key={shelf.id}
+                  onClick={() => setSelectedShelfId(shelf.id)}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                    selectedShelfId === shelf.id
+                      ? 'bg-emerald-800 text-white font-bold shadow-xs'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  <span>{shelf.name}</span>
+                  <span className="text-[10px] opacity-75">({shelf.items?.length || 0})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Search & Filter Bar */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
@@ -287,7 +347,7 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
             <span className="text-slate-400 font-semibold uppercase text-[10px] shrink-0 mr-1 flex items-center gap-1">
               <Filter className="w-3 h-3" />
-              Áreas:
+              Áreas Dewey:
             </span>
             <button
               onClick={() => setSelectedDewey('all')}
@@ -297,7 +357,7 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
               }`}
             >
-              Todas las Áreas ({works.length})
+              Todas ({works.length})
             </button>
             {DEWEY_GROUPS.map((group) => {
               const countInGroup = works.filter((w) => w.dewey_code.startsWith(group.code.charAt(0))).length;
@@ -347,93 +407,78 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
               onClick={() => {
                 setSearchQuery('');
                 setSelectedDewey('all');
+                setSelectedShelfId('all');
                 setAvailabilityFilter('all');
               }}
-              className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+              className="px-4 py-2 bg-emerald-800 text-white font-bold rounded-xl text-xs"
             >
-              Ver Todo el Catálogo
+              Restablecer Filtros
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredWorks.map((work) => {
               const deweyInfo = getDeweyInfo(work.dewey_code);
               const centralCopies = (work.copies_by_branch || [])
                 .filter((b) => b.branch_type === 'internal')
                 .reduce((acc, curr) => acc + curr.count, 0);
-              const ruralCopies = (work.copies_by_branch || [])
-                .filter((b) => b.branch_type === 'external_donation')
-                .reduce((acc, curr) => acc + curr.count, 0);
 
-              const displayCentral = (centralCopies + ruralCopies === 0 && work.total_copies > 0)
-                ? work.total_copies
-                : centralCopies;
+              const isAvailable = centralCopies > 0 || work.total_copies > 0;
 
               return (
                 <div
                   key={work.id}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-xl hover:border-emerald-300 transition-all duration-300 flex flex-col overflow-hidden group"
+                  onClick={() => setSelectedBook(work)}
+                  className="bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-xl hover:border-emerald-300 transition duration-300 flex flex-col justify-between overflow-hidden cursor-pointer group"
                 >
-                  {/* Top Dewey Pill */}
-                  <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${deweyInfo.badgeBg} ${deweyInfo.badgeText}`}>
-                      CDD {work.dewey_code}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono truncate">
-                      {work.publication_year || 'S/A'}
-                    </span>
-                  </div>
+                  <div>
+                    {/* Dewey Badge */}
+                    <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${deweyInfo.badgeBg} ${deweyInfo.badgeText}`}>
+                        CDD {work.dewey_code}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {isAvailable ? 'Disponible' : 'Consultar'}
+                      </span>
+                    </div>
 
-                  {/* Book Cover and Basic Info */}
-                  <div className="p-4 flex gap-3.5 flex-1">
-                    <img
-                      src={work.cover_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=300'}
-                      alt={work.title}
-                      className="w-20 h-28 object-cover rounded-xl shadow-md border border-slate-200 bg-slate-100 shrink-0 group-hover:scale-102 transition duration-300"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=300';
-                      }}
-                    />
+                    {/* Book Cover & Info */}
+                    <div className="p-4 flex gap-3.5">
+                      {work.cover_url ? (
+                        <img
+                          src={work.cover_url}
+                          alt={work.title}
+                          className="w-20 h-28 object-cover rounded-xl shadow-xs shrink-0 group-hover:scale-105 transition duration-300"
+                        />
+                      ) : (
+                        <div className="w-20 h-28 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+                          <BookOpen className="w-8 h-8" />
+                        </div>
+                      )}
 
-                    <div className="space-y-1 min-w-0 flex-1 flex flex-col justify-between">
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2" title={work.title}>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-800 transition line-clamp-2 leading-tight">
                           {work.title}
-                        </h4>
-                        <p className="text-xs text-emerald-800 font-medium truncate mt-0.5">
+                        </h3>
+                        <p className="text-xs text-slate-600 font-medium mt-1 truncate">
                           {work.author}
                         </p>
-                      </div>
-
-                      {/* Stock availability indicator */}
-                      <div className="pt-2">
-                        {displayCentral > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            {displayCentral} {displayCentral === 1 ? 'ejemplar en colegio' : 'ejemplares en colegio'}
-                          </span>
-                        ) : ruralCopies > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
-                            🌿 Dotación Rural ({ruralCopies})
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">
-                            Consultar en biblioteca
-                          </span>
-                        )}
+                        <p className="text-[11px] text-slate-500 line-clamp-2 mt-1.5 leading-relaxed">
+                          {work.description || 'Sin sinopsis registrada.'}
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Action Button */}
-                  <div className="p-3 bg-slate-50 border-t border-slate-100">
-                    <button
-                      onClick={() => setSelectedBook(work)}
-                      className="w-full py-2 bg-slate-900 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
-                    >
-                      <Info className="w-3.5 h-3.5" />
-                      <span>Ver Ficha & Solicitar</span>
-                    </button>
+                  <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+                    <span className="font-semibold text-emerald-800">
+                      {centralCopies > 0 ? `${centralCopies} ejemplar(es) en sede` : 'Consultar en sala'}
+                    </span>
+                    <span className="text-[11px] text-slate-400 group-hover:text-emerald-700 font-bold transition">
+                      Ver Ficha →
+                    </span>
                   </div>
                 </div>
               );
@@ -442,117 +487,57 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
         )}
       </main>
 
-      {/* Book Detail Modal for Public */}
+      {/* Modal: Book Detail (Public) */}
       {selectedBook && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200"
-          onClick={(e) => e.target === e.currentTarget && setSelectedBook(null)}
-        >
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 my-6">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between sticky top-0 backdrop-blur-md z-10">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800">
-                  <BookOpen className="w-4 h-4" />
-                </div>
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                {selectedBook.cover_url && (
+                  <img
+                    src={selectedBook.cover_url}
+                    alt={selectedBook.title}
+                    className="w-16 h-22 object-cover rounded-xl shadow-xs shrink-0"
+                  />
+                )}
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Ficha de Consulta Bibliográfica</h3>
-                  <p className="text-xs text-slate-500">Biblioteca Miguel Otero Silva • Colegio Integral El Manglar</p>
+                  <span className="text-[10px] font-bold font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    CDD {selectedBook.dewey_code}
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 mt-1 leading-tight">
+                    {selectedBook.title}
+                  </h3>
+                  <p className="text-xs text-slate-600 font-medium">{selectedBook.author}</p>
                 </div>
               </div>
+
               <button
                 onClick={() => setSelectedBook(null)}
-                className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
               >
-                <X className="w-5 h-5" />
+                ✕
               </button>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6 space-y-6">
-              {/* Book Header */}
-              <div className="flex flex-col sm:flex-row gap-5 items-start bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-                <img
-                  src={selectedBook.cover_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=300'}
-                  alt={selectedBook.title}
-                  className="w-24 h-36 object-cover rounded-xl shadow-md border border-slate-200 shrink-0 mx-auto sm:mx-0"
-                />
-                <div className="space-y-2 flex-1">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getDeweyInfo(selectedBook.dewey_code).badgeBg} ${getDeweyInfo(selectedBook.dewey_code).badgeText}`}>
-                    CDD {selectedBook.dewey_code} • {getDeweyInfo(selectedBook.dewey_code).name}
-                  </span>
-                  <h4 className="text-lg font-bold text-slate-900 leading-snug">{selectedBook.title}</h4>
-                  <p className="text-xs font-semibold text-emerald-800">Por {selectedBook.author}</p>
-                  <p className="text-xs text-slate-600 line-clamp-3">
-                    {selectedBook.description || 'Sin sinopsis bibliográfica registrada.'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Physical Availability Info */}
-              <div className="space-y-2">
-                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                  <Building className="w-3.5 h-3.5 text-emerald-700" />
-                  Disponibilidad en Sedes
-                </h5>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  {selectedBook.copies_by_branch.map((b) => (
-                    <div
-                      key={b.branch_id}
-                      className={`p-3 rounded-xl border flex items-center justify-between ${
-                        b.count > 0 ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-500'
-                      }`}
-                    >
-                      <div>
-                        <span className="font-bold block text-xs">{b.branch_name}</span>
-                        <span className="text-[10px] opacity-80">
-                          {b.branch_type === 'internal' ? 'Campus Colegio El Manglar' : 'Dotación Rural'}
-                        </span>
-                      </div>
-                      <span className={`px-2.5 py-1 rounded-lg font-bold text-xs ${b.count > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                        {b.count} {b.count === 1 ? 'ud.' : 'uds.'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* How to borrow this book card */}
-              <div className="bg-gradient-to-br from-slate-900 to-emerald-950 text-white p-5 rounded-2xl border border-emerald-800/40 space-y-3">
-                <div className="flex items-center gap-2 text-emerald-300 font-bold text-sm">
-                  <GraduationCap className="w-4 h-4" />
-                  <span>¿Cómo solicitar el préstamo de este libro?</span>
-                </div>
-                <ul className="text-xs text-slate-200 space-y-2 list-disc list-inside">
-                  <li>
-                    <strong>Ubicación:</strong> Dirígete a la <strong>Biblioteca Miguel Otero Silva</strong> en el campus del Colegio Integral El Manglar (Edificio Primaria o Bachillerato).
-                  </li>
-                  <li>
-                    <strong>Identificación del libro:</strong> Pídele al bibliotecario la obra <em>"{selectedBook.title}"</em> bajo la clasificación Dewey <strong>CDD {selectedBook.dewey_code}</strong>.
-                  </li>
-                  <li>
-                    <strong>Requisito:</strong> Indica tu nombre completo, grado/sección o carnet estudiantil institucional.
-                  </li>
-                  <li>
-                    <strong>Tiempo de préstamo:</strong> 7 a 14 días renovables para estudio y lectura en casa.
-                  </li>
-                </ul>
-              </div>
+            <div className="text-xs text-slate-700 space-y-2">
+              <p className="leading-relaxed">{selectedBook.description || 'Sin descripción registrada.'}</p>
+              {selectedBook.publisher && <div><strong>Editorial:</strong> {selectedBook.publisher}</div>}
+              {selectedBook.publication_year && <div><strong>Año:</strong> {selectedBook.publication_year}</div>}
+              {selectedBook.isbn && <div><strong>ISBN:</strong> {selectedBook.isbn}</div>}
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
               <button
                 onClick={() => handleCopyBookData(selectedBook)}
-                className="px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer"
               >
-                {copiedBookInfo ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-600" />}
-                <span>{copiedBookInfo ? '¡Datos Copiados!' : 'Copiar Datos para Solicitud'}</span>
+                {copiedBookInfo ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedBookInfo ? '¡Copiado!' : 'Copiar para Solicitar'}</span>
               </button>
 
               <button
                 onClick={() => setSelectedBook(null)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                className="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs"
               >
                 Cerrar
               </button>
@@ -561,7 +546,113 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
         </div>
       )}
 
-      {/* Public Footer */}
+      {/* Modal: Public Suggestion / Desiderata */}
+      {isSuggestModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-amber-600" />
+                Proponer un Libro a la Biblioteca
+              </h3>
+              <button
+                onClick={() => setIsSuggestModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              >
+                ✕
+              </button>
+            </div>
+
+            {sugSent ? (
+              <div className="py-8 text-center text-emerald-700 space-y-2">
+                <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-600 animate-bounce" />
+                <h4 className="font-bold text-sm">¡Sugerencia enviada con éxito!</h4>
+                <p className="text-xs text-slate-500">El equipo de la biblioteca evaluará tu propuesta para próximas compras y dotaciones.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSendSuggestion} className="mt-4 space-y-3 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Título del Libro *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="ej. Fiebre o Relato de un Náufrago"
+                    value={sugTitle}
+                    onChange={(e) => setSugTitle(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Autor / Escritor *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="ej. Gabriel García Márquez"
+                    value={sugAuthor}
+                    onChange={(e) => setSugAuthor(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">¿Por qué te gustaría que esté en la biblioteca?</label>
+                  <textarea
+                    rows={2}
+                    placeholder="ej. Para el club de lectura de 5to año o investigación..."
+                    value={sugReason}
+                    onChange={(e) => setSugReason(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Tu Nombre *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="ej. Santiago Rivas"
+                      value={sugName}
+                      onChange={(e) => setSugName(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Grado / Sección</label>
+                    <input
+                      type="text"
+                      placeholder="ej. 5to Grado B"
+                      value={sugGrade}
+                      onChange={(e) => setSugGrade(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsSuggestModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-sm"
+                  >
+                    Enviar Propuesta
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-8 text-center text-xs text-slate-500 mt-auto">
         <div className="max-w-7xl mx-auto px-4 space-y-2">
           <div className="flex flex-wrap items-center justify-center gap-3 text-slate-700 font-semibold">
@@ -569,21 +660,11 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
             <span>•</span>
             <span>Biblioteca Miguel Otero Silva</span>
             <span>•</span>
-            <span>Colección Pública y Donaciones Rurales</span>
+            <span>Colección Abierta & Donaciones Rurales</span>
           </div>
           <p className="text-slate-400 max-w-lg mx-auto">
             Plataforma de consulta bibliográfica abierta a la comunidad educativa. Todos los derechos reservados.
           </p>
-          {onSwitchToAdmin && (
-            <div className="pt-2">
-              <button
-                onClick={onSwitchToAdmin}
-                className="text-[11px] text-emerald-800 hover:text-emerald-950 underline font-semibold cursor-pointer"
-              >
-                Acceso para Bibliotecarios y Personal Docente
-              </button>
-            </div>
-          )}
         </div>
       </footer>
     </div>
