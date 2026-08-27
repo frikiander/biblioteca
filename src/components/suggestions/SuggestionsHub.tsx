@@ -88,4 +88,361 @@ export function SuggestionsHub() {
     refreshSuggestions();
   };
 
-  const filteredSuggestions = suggestions.filter((s) => {\n    const matchesStatus = statusFilter === 'all' || s.status === statusFilter;\n    const q = searchQuery.toLowerCase().trim();\n    const matchesQuery =\n      !q ||\n      s.title.toLowerCase().includes(q) ||\n      s.author.toLowerCase().includes(q) ||\n      s.suggested_by_name.toLowerCase().includes(q);\n\n    return matchesStatus && matchesQuery;\n  });\n\n  const getStatusBadge = (status: SuggestionStatus) => {\n    switch (status) {\n      case 'pending':\n        return (\n          <span className=\"px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1\">\n            <Clock className=\"w-3 h-3\" />\n            Pendiente\n          </span>\n        );\n      case 'under_review':\n        return (\n          <span className=\"px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1\">\n            <AlertCircle className=\"w-3 h-3\" />\n            En Evaluación\n          </span>\n        );\n      case 'approved':\n        return (\n          <span className=\"px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1\">\n            <CheckCircle2 className=\"w-3 h-3\" />\n            Aprobado para Compra\n          </span>\n        );\n      case 'cataloged':\n        return (\n          <span className=\"px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-50 text-purple-800 border border-purple-200 flex items-center gap-1\">\n            <BookCheck className=\"w-3 h-3\" />\n            Ya en Catálogo\n          </span>\n        );\n      case 'rejected':\n        return (\n          <span className=\"px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200 flex items-center gap-1\">\n            <XCircle className=\"w-3 h-3\" />\n            No Aprobado\n          </span>\n        );\n    }\n  };\n\n  return (\n    <div className=\"space-y-6\">\n      {/* Top Banner */}\n      <div className=\"bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6\">\n        <div className=\"flex items-start gap-4\">\n          <div className=\"w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-md shadow-amber-950/20 shrink-0\">\n            <Lightbulb className=\"w-7 h-7\" />\n          </div>\n          <div>\n            <div className=\"flex items-center gap-2\">\n              <span className=\"text-[10px] uppercase font-bold tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200\">\n                Koha Purchase Suggestions\n              </span>\n              <span className=\"text-xs text-slate-500\">• Buzón de Desideratas y Adquisiciones</span>\n            </div>\n            <h2 className=\"text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1\">\n              Sugerencias de Compra y Dotación Bibliográfica\n            </h2>\n            <p className=\"text-xs sm:text-sm text-slate-600 max-w-2xl mt-1\">\n              Canal participativo para que docentes y alumnos propongan nuevos títulos para el fondo de la biblioteca central o donaciones rurales, con votación comunitaria y flujo de aprobación.\n            </p>\n          </div>\n        </div>\n\n        <button\n          onClick={() => setIsSubmitModalOpen(true)}\n          className=\"px-5 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md shadow-amber-950/20 transition cursor-pointer shrink-0\"\n        >\n          <PlusCircle className=\"w-4 h-4\" />\n          Proponer un Libro\n        </button>\n      </div>\n\n      {/* Search & Status Filters */}\n      <div className=\"bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3\">\n        <div className=\"relative flex-1\">\n          <Search className=\"w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2\" />\n          <input\n            type=\"text\"\n            placeholder=\"Buscar por título propuesto, autor o solicitante...\"\n            value={searchQuery}\n            onChange={(e) => setSearchQuery(e.target.value)}\n            className=\"w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:bg-white\"\n          />\n        </div>\n\n        <select\n          value={statusFilter}\n          onChange={(e) => setStatusFilter(e.target.value)}\n          className=\"px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-amber-500\"\n        >\n          <option value=\"all\">Todos los Estados</option>\n          <option value=\"pending\">Pendientes</option>\n          <option value=\"under_review\">En Evaluación</option>\n          <option value=\"approved\">Aprobados</option>\n          <option value=\"cataloged\">En Catálogo</option>\n          <option value=\"rejected\">No Aprobados</option>\n        </select>\n      </div>\n\n      {/* Suggestions List */}\n      <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n        {filteredSuggestions.map((sug) => (\n          <div\n            key={sug.id}\n            className=\"bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition flex flex-col justify-between\"\n          >\n            <div>\n              <div className=\"flex items-start justify-between gap-3\">\n                <div>\n                  <h3 className=\"text-base font-bold text-slate-900 leading-tight\">\n                    {sug.title}\n                  </h3>\n                  <div className=\"text-xs text-slate-600 font-medium mt-0.5\">\n                    por {sug.author} {sug.publisher && `• Editorial ${sug.publisher}`} {sug.publication_year && `(${sug.publication_year})`}\n                  </div>\n                </div>\n\n                {getStatusBadge(sug.status)}\n              </div>\n\n              {sug.reason && (\n                <div className=\"mt-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-700 leading-relaxed\">\n                  <span className=\"font-bold text-slate-800 block mb-0.5\">Motivo pedagógico:</span>\n                  \"{sug.reason}\"\n                </div>\n              )}\n\n              {sug.reviewer_notes && (\n                <div className=\"mt-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-900 leading-relaxed\">\n                  <span className=\"font-bold block mb-0.5 flex items-center gap-1\">\n                    <MessageSquare className=\"w-3.5 h-3.5 text-amber-700\" />\n                    Respuesta de la Biblioteca:\n                  </span>\n                  {sug.reviewer_notes}\n                </div>\n              )}\n\n              <div className=\"mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500\">\n                <div>\n                  Propuesto por <strong>{sug.suggested_by_name}</strong> ({sug.suggested_by_grade || sug.suggested_by_role})\n                </div>\n                <div>\n                  {new Date(sug.created_at).toLocaleDateString('es-VE')}\n                </div>\n              </div>\n            </div>\n\n            {/* Actions */}\n            <div className=\"mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2\">\n              <button\n                onClick={() => handleVote(sug.id)}\n                className=\"px-3 py-1.5 bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer\"\n                title=\"Apoyar esta propuesta\"\n              >\n                <ThumbsUp className=\"w-3.5 h-3.5\" />\n                {sug.votes} {sug.votes === 1 ? 'Voto' : 'Votos'}\n              </button>\n\n              <button\n                onClick={() => handleOpenReviewModal(sug)}\n                className=\"px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer\"\n              >\n                Gestionar Estado\n              </button>\n            </div>\n          </div>\n        ))}\n      </div>\n\n      {/* Modal: New Suggestion */}\n      {isSubmitModalOpen && (\n        <div className=\"fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4\">\n          <div className=\"bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200\">\n            <div className=\"flex items-center justify-between pb-4 border-b border-slate-100\">\n              <h3 className=\"font-bold text-base text-slate-900 flex items-center gap-2\">\n                <Lightbulb className=\"w-5 h-5 text-amber-600\" />\n                Proponer Nuevo Libro para la Biblioteca\n              </h3>\n              <button\n                onClick={() => setIsSubmitModalOpen(false)}\n                className=\"p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100\"\n              >\n                ✕\n              </button>\n            </div>\n\n            <form onSubmit={handleSubmitNew} className=\"mt-4 space-y-3.5 text-xs\">\n              <div className=\"grid grid-cols-2 gap-3\">\n                <div className=\"col-span-2\">\n                  <label className=\"font-bold text-slate-700 block mb-1\">Título de la Obra *</label>\n                  <input\n                    type=\"text\"\n                    required\n                    placeholder=\"ej. Fiebre o Doña Bárbara\"\n                    value={formTitle}\n                    onChange={(e) => setFormTitle(e.target.value)}\n                    className=\"w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs\"\n                  />\n                </div>\n\n                <div>\n                  <label className=\"font-bold text-slate-700 block mb-1\">Autor / Escritor *</label>\n                  <input\n                    type=\"text\"\n                    required\n                    placeholder=\"ej. Miguel Otero Silva\"\n                    value={formAuthor}\n                    onChange={(e) => setFormAuthor(e.target.value)}\n                    className=\"w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs\"\n                  />\n                </div>\n\n                <div>\n                  <label className=\"font-bold text-slate-700 block mb-1\">Editorial (opcional)</label>\n                  <input\n                    type=\"text\"\n                    placeholder=\"ej. Santillana / Planeta\"\n                    value={formPublisher}\n                    onChange={(e) => setFormPublisher(e.target.value)}\n                    className=\"w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs\"\n                  />\n                </div>\n              </div>\n\n              <div>\n                <label className=\"font-bold text-slate-700 block mb-1\">¿Por qué recomiendas este libro? (Motivo)</label>\n                <textarea\n                  rows={2}\n                  placeholder=\"ej. Apoyo para el curso de Castellano de 4to año o lectura recreativa...\"\n                  value={formReason}\n                  onChange={(e) => setFormReason(e.target.value)}\n                  className=\"w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs\"\n                />\n              </div>\n\n              <div className=\"pt-3 border-t border-slate-100 grid grid-cols-2 gap-3\">\n                <div>\n                  <label className=\"font-bold text-slate-700 block mb-1\">Tu Nombre Completo *</label>\n                  <input\n                    type=\"text\"\n                    required\n                    placeholder=\"ej. Prof. María Morales\"\n                    value={formName}\n                    onChange={(e) => setFormName(e.target.value)}\n                    className=\"w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs\"\n                  />\n                </div>\n\n                <div>\n                  <label className=\"font-bold text-slate-700 block mb-1\">Grado / Cargo</label>\n                  <input\n                    type=\"text\"\n                    placeholder=\"ej. Docente de Literatura\"\n                    value={formGrade}\n                    onChange={(e) => setFormGrade(e.target.value)}\n                    className=\"w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs\"\n                  />\n                </div>\n              </div>\n\n              <div className=\"pt-4 border-t border-slate-100 flex items-center justify-end gap-2\">\n                <button\n                  type=\"button\"\n                  onClick={() => setIsSubmitModalOpen(false)}\n                  className=\"px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl\"\n                >\n                  Cancelar\n                </button>\n                <button\n                  type=\"submit\"\n                  className=\"px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-sm\"\n                >\n                  Enviar Sugerencia\n                </button>\n              </div>\n            </form>\n          </div>\n        </div>\n      )}\n\n      {/* Modal: Review Suggestion */}\n      {selectedSuggestionForReview && (\n        <div className=\"fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4\">\n          <div className=\"bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 space-y-4\">\n            <div className=\"flex items-center justify-between pb-3 border-b border-slate-100\">\n              <h3 className=\"font-bold text-base text-slate-900\">\n                Evaluar Desiderata / Propuesta\n              </h3>\n              <button\n                onClick={() => setSelectedSuggestionForReview(null)}\n                className=\"p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100\"\n              >\n                ✕\n              </button>\n            </div>\n\n            <div className=\"text-xs space-y-2\">\n              <div className=\"font-bold text-sm text-slate-900\">{selectedSuggestionForReview.title}</div>\n              <div className=\"text-slate-600\">Autor: {selectedSuggestionForReview.author}</div>\n              <div className=\"text-slate-500\">Solicitado por: {selectedSuggestionForReview.suggested_by_name}</div>\n            </div>\n\n            <div>\n              <label className=\"font-bold text-xs text-slate-700 block mb-1\">Notas de la Biblioteca / Justificación</label>\n              <textarea\n                rows={3}\n                placeholder=\"Observaciones de presupuesto, estado de adquisición...\"\n                value={reviewerNotes}\n                onChange={(e) => setReviewerNotes(e.target.value)}\n                className=\"w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 text-xs\"\n              />\n            </div>\n\n            <div className=\"pt-2 grid grid-cols-2 gap-2\">\n              <button\n                onClick={() => handleUpdateStatus('under_review')}\n                className=\"px-3 py-2 bg-blue-50 text-blue-800 font-bold rounded-xl text-xs hover:bg-blue-100 transition\"\n              >\n                En Evaluación\n              </button>\n              <button\n                onClick={() => handleUpdateStatus('approved')}\n                className=\"px-3 py-2 bg-emerald-800 text-white font-bold rounded-xl text-xs hover:bg-emerald-700 transition\"\n              >\n                Aprobar Compra\n              </button>\n              <button\n                onClick={() => handleUpdateStatus('cataloged')}\n                className=\"px-3 py-2 bg-purple-50 text-purple-800 font-bold rounded-xl text-xs hover:bg-purple-100 transition\"\n              >\n                Marcar en Catálogo\n              </button>\n              <button\n                onClick={() => handleUpdateStatus('rejected')}\n                className=\"px-3 py-2 bg-rose-50 text-rose-800 font-bold rounded-xl text-xs hover:bg-rose-100 transition\"\n              >\n                Rechazar\n              </button>\n            </div>\n          </div>\n        </div>\n      )}\n    </div>\n  );\n}\n
+  const filteredSuggestions = suggestions.filter((s) => {
+    const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
+    const q = searchQuery.toLowerCase().trim();
+    const matchesQuery =
+      !q ||
+      s.title.toLowerCase().includes(q) ||
+      s.author.toLowerCase().includes(q) ||
+      s.suggested_by_name.toLowerCase().includes(q);
+
+    return matchesStatus && matchesQuery;
+  });
+
+  const getStatusBadge = (status: SuggestionStatus) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            Pendiente
+          </span>
+        );
+      case 'under_review':
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            En Evaluación
+          </span>
+        );
+      case 'approved':
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" />
+            Aprobado para Compra
+          </span>
+        );
+      case 'cataloged':
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-50 text-purple-800 border border-purple-200 flex items-center gap-1">
+            <BookCheck className="w-3 h-3" />
+            Ya en Catálogo
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200 flex items-center gap-1">
+            <XCircle className="w-3 h-3" />
+            No Aprobado
+          </span>
+        );
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Top Banner */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-md shadow-amber-950/20 shrink-0">
+            <Lightbulb className="w-7 h-7" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                Koha Purchase Suggestions
+              </span>
+              <span className="text-xs text-slate-500">• Buzón de Desideratas y Adquisiciones</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+              Sugerencias de Compra y Dotación Bibliográfica
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1">
+              Canal participativo para que docentes y alumnos propongan nuevos títulos para el fondo de la biblioteca central o donaciones rurales, con votación comunitaria y flujo de aprobación.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsSubmitModalOpen(true)}
+          className="px-5 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md shadow-amber-950/20 transition cursor-pointer shrink-0"
+        >
+          <PlusCircle className="w-4 h-4" />
+          Proponer un Libro
+        </button>
+      </div>
+
+      {/* Search & Status Filters */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Buscar por título propuesto, autor o solicitante..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:bg-white"
+          />
+        </div>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-amber-500"
+        >
+          <option value="all">Todos los Estados</option>
+          <option value="pending">Pendientes</option>
+          <option value="under_review">En Evaluación</option>
+          <option value="approved">Aprobados</option>
+          <option value="cataloged">En Catálogo</option>
+          <option value="rejected">No Aprobados</option>
+        </select>
+      </div>
+
+      {/* Suggestions List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredSuggestions.map((sug) => (
+          <div
+            key={sug.id}
+            className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 leading-tight">
+                    {sug.title}
+                  </h3>
+                  <div className="text-xs text-slate-600 font-medium mt-0.5">
+                    por {sug.author} {sug.publisher && `• Editorial ${sug.publisher}`} {sug.publication_year && `(${sug.publication_year})`}
+                  </div>
+                </div>
+
+                {getStatusBadge(sug.status)}
+              </div>
+
+              {sug.reason && (
+                <div className="mt-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-700 leading-relaxed">
+                  <span className="font-bold text-slate-800 block mb-0.5">Motivo pedagógico:</span>
+                  "{sug.reason}"
+                </div>
+              )}
+
+              {sug.reviewer_notes && (
+                <div className="mt-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-900 leading-relaxed">
+                  <span className="font-bold block mb-0.5 flex items-center gap-1">
+                    <MessageSquare className="w-3.5 h-3.5 text-amber-700" />
+                    Respuesta de la Biblioteca:
+                  </span>
+                  {sug.reviewer_notes}
+                </div>
+              )}
+
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <div>
+                  Propuesto por <strong>{sug.suggested_by_name}</strong> ({sug.suggested_by_grade || sug.suggested_by_role})
+                </div>
+                <div>
+                  {new Date(sug.created_at).toLocaleDateString('es-VE')}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button
+                onClick={() => handleVote(sug.id)}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                title="Apoyar esta propuesta"
+              >
+                <ThumbsUp className="w-3.5 h-3.5" />
+                {sug.votes} {sug.votes === 1 ? 'Voto' : 'Votos'}
+              </button>
+
+              <button
+                onClick={() => handleOpenReviewModal(sug)}
+                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Gestionar Estado
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Modal: New Suggestion */}
+      {isSubmitModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-amber-600" />
+                Proponer Nuevo Libro para la Biblioteca
+              </h3>
+              <button
+                onClick={() => setIsSubmitModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitNew} className="mt-4 space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <label className="font-bold text-slate-700 block mb-1">Título de la Obra *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="ej. Fiebre o Doña Bárbara"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Autor / Escritor *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="ej. Miguel Otero Silva"
+                    value={formAuthor}
+                    onChange={(e) => setFormAuthor(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Editorial (opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="ej. Santillana / Planeta"
+                    value={formPublisher}
+                    onChange={(e) => setFormPublisher(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">¿Por qué recomiendas este libro? (Motivo)</label>
+                <textarea
+                  rows={2}
+                  placeholder="ej. Apoyo para el curso de Castellano de 4to año o lectura recreativa..."
+                  value={formReason}
+                  onChange={(e) => setFormReason(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Tu Nombre Completo *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="ej. Prof. María Morales"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Grado / Cargo</label>
+                  <input
+                    type="text"
+                    placeholder="ej. Docente de Literatura"
+                    value={formGrade}
+                    onChange={(e) => setFormGrade(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:bg-white text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSubmitModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-sm"
+                >
+                  Enviar Sugerencia
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Review Suggestion */}
+      {selectedSuggestionForReview && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-base text-slate-900">
+                Evaluar Desiderata / Propuesta
+              </h3>
+              <button
+                onClick={() => setSelectedSuggestionForReview(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-xs space-y-2">
+              <div className="font-bold text-sm text-slate-900">{selectedSuggestionForReview.title}</div>
+              <div className="text-slate-600">Autor: {selectedSuggestionForReview.author}</div>
+              <div className="text-slate-500">Solicitado por: {selectedSuggestionForReview.suggested_by_name}</div>
+            </div>
+
+            <div>
+              <label className="font-bold text-xs text-slate-700 block mb-1">Notas de la Biblioteca / Justificación</label>
+              <textarea
+                rows={3}
+                placeholder="Observaciones de presupuesto, estado de adquisición..."
+                value={reviewerNotes}
+                onChange={(e) => setReviewerNotes(e.target.value)}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 text-xs"
+              />
+            </div>
+
+            <div className="pt-2 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleUpdateStatus('under_review')}
+                className="px-3 py-2 bg-blue-50 text-blue-800 font-bold rounded-xl text-xs hover:bg-blue-100 transition"
+              >
+                En Evaluación
+              </button>
+              <button
+                onClick={() => handleUpdateStatus('approved')}
+                className="px-3 py-2 bg-emerald-800 text-white font-bold rounded-xl text-xs hover:bg-emerald-700 transition"
+              >
+                Aprobar Compra
+              </button>
+              <button
+                onClick={() => handleUpdateStatus('cataloged')}
+                className="px-3 py-2 bg-purple-50 text-purple-800 font-bold rounded-xl text-xs hover:bg-purple-100 transition"
+              >
+                Marcar en Catálogo
+              </button>
+              <button
+                onClick={() => handleUpdateStatus('rejected')}
+                className="px-3 py-2 bg-rose-50 text-rose-800 font-bold rounded-xl text-xs hover:bg-rose-100 transition"
+              >
+                Rechazar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
