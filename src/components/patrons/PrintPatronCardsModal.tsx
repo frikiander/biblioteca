@@ -170,4 +170,101 @@ export function PrintPatronCardsModal({ patrons, onClose }: PrintPatronCardsModa
               const cat = getPatronCategory(patron);
               const idCode = patron.identifier || `MOS-ID-${patron.id.slice(0, 6)}`;
 
-              return (\n                <div\n                  key={patron.id}\n                  className=\"bg-slate-900 text-white rounded-2xl p-4 shadow-md border border-slate-800 relative overflow-hidden flex flex-col justify-between h-[210px]\"\n                >\n                  {/* Top line accent */}\n                  <div className=\"absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500\" />\n\n                  {/* Header info */}\n                  <div>\n                    <div className=\"flex items-center justify-between\">\n                      <div className=\"flex items-center gap-2\">\n                        <div className=\"w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center\">\n                          <Library className=\"w-4 h-4\" />\n                        </div>\n                        <div>\n                          <div className=\"text-[9px] font-bold text-emerald-400 uppercase tracking-widest leading-none\">\n                            Colegio Integral El Manglar\n                          </div>\n                          <div className=\"text-[11px] font-bold text-white leading-tight\">\n                            Biblioteca Miguel Otero Silva\n                          </div>\n                        </div>\n                      </div>\n                      <span className=\"text-[9px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30\">\n                        {cat.name.split(' ')[0]}\n                      </span>\n                    </div>\n\n                    {/* Patron Name & Grade */}\n                    <div className=\"mt-3\">\n                      <h3 className=\"text-sm font-bold text-white leading-tight truncate\">\n                        {patron.name}\n                      </h3>\n                      <p className=\"text-[11px] text-slate-300 font-medium\">\n                        {patron.grade_section || 'Comunidad Educativa'}\n                      </p>\n                      <div className=\"flex items-center gap-2 mt-1\">\n                        <span className=\"text-xs font-mono font-bold text-emerald-400\">\n                          {idCode}\n                        </span>\n                        <span className=\"text-[10px] text-slate-400\">\n                          • Máx {cat.maxLoans} libros ({cat.loanDays} días)\n                        </span>\n                      </div>\n                    </div>\n                  </div>\n\n                  {/* Barcode section */}\n                  <div className=\"bg-white rounded-xl p-2 text-slate-900 text-center shadow-inner mt-2\">\n                    <div className=\"h-6 flex items-center justify-center gap-[2px] overflow-hidden px-2\">\n                      {Array.from({ length: 36 }).map((_, i) => (\n                        <div\n                          key={i}\n                          className=\"bg-black h-full\"\n                          style={{\n                            width: i % 3 === 0 ? '3px' : i % 2 === 0 ? '2px' : '1px',\n                            marginRight: i % 4 === 0 ? '2px' : '1px',\n                          }}\n                        />\n                      ))}\n                    </div>\n                    <div className=\"text-[9px] font-mono font-bold text-slate-800 mt-0.5 tracking-wider\">\n                      * {idCode} *\n                    </div>\n                  </div>\n                </div>\n              );\n            })}\n          </div>\n        </div>\n\n        {/* Footer */}\n        <div className=\"px-6 py-4 bg-white border-t border-slate-200 flex items-center justify-between\">\n          <span className=\"text-xs text-slate-500\">\n            Compatible con impresoras de credenciales PVC y hojas adhesivas tamaño carta.\n          </span>\n          <div className=\"flex gap-2\">\n            <button\n              onClick={onClose}\n              className=\"px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer\"\n            >\n              Cerrar\n            </button>\n            <button\n              onClick={handleDownloadPdf}\n              className=\"px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer\"\n            >\n              <Printer className=\"w-4 h-4\" />\n              Imprimir Carnets (PDF)\n            </button>\n          </div>\n        </div>\n\n      </div>\n    </div>\n  );\n}\n
+              return (
+                <div
+                  key={patron.id}
+                  className="bg-slate-900 text-white rounded-2xl p-4 shadow-md border border-slate-800 relative overflow-hidden flex flex-col justify-between h-[210px]"
+                >
+                  {/* Top line accent */}
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
+
+                  {/* Header info */}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+                          <Library className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest leading-none">
+                            Colegio Integral El Manglar
+                          </div>
+                          <div className="text-[11px] font-bold text-white leading-tight">
+                            Biblioteca Miguel Otero Silva
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                        {cat.name.split(' ')[0]}
+                      </span>
+                    </div>
+
+                    {/* Patron Name & Grade */}
+                    <div className="mt-3">
+                      <h3 className="text-sm font-bold text-white leading-tight truncate">
+                        {patron.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-300 font-medium">
+                        {patron.grade_section || 'Comunidad Educativa'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-mono font-bold text-emerald-400">
+                          {idCode}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          • Máx {cat.maxLoans} libros ({cat.loanDays} días)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Barcode section */}
+                  <div className="bg-white rounded-xl p-2 text-slate-900 text-center shadow-inner mt-2">
+                    <div className="h-6 flex items-center justify-center gap-[2px] overflow-hidden px-2">
+                      {Array.from({ length: 36 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="bg-black h-full"
+                          style={{
+                            width: i % 3 === 0 ? '3px' : i % 2 === 0 ? '2px' : '1px',
+                            marginRight: i % 4 === 0 ? '2px' : '1px',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-[9px] font-mono font-bold text-slate-800 mt-0.5 tracking-wider">
+                      * {idCode} *
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-white border-t border-slate-200 flex items-center justify-between">
+          <span className="text-xs text-slate-500">
+            Compatible con impresoras de credenciales PVC y hojas adhesivas tamaño carta.
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              Cerrar
+            </button>
+            <button
+              onClick={handleDownloadPdf}
+              className="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              Imprimir Carnets (PDF)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
