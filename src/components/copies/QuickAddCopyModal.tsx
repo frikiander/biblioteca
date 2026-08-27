@@ -339,4 +339,163 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
                   min="1"
                   max="999"
                   value={copySequence}
-                  onChange={(e) => setCopySequence(Math.max(1, parseInt(e.target.value) || 1))}\n                  required\n                  className=\"w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-xs font-bold text-slate-900\"\n                />\n                <span className=\"px-2 py-1.5 bg-emerald-100 text-emerald-900 rounded-lg font-mono font-bold text-[10px] shrink-0\">\n                  {formattedSequence}\n                </span>\n              </div>\n            </div>\n          </div>\n\n          {/* Marbete Token Preview & Tejuelo 25x38mm */}\n          <div className=\"p-3 bg-slate-900 text-white rounded-xl border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3\">\n            <div className=\"space-y-2 flex-1 w-full sm:w-auto\">\n              <div className=\"flex items-center justify-between text-[10px] text-slate-400\">\n                <span>Fórmula: [Sede]-[Dewey]-[Cutter]-[Copia]</span>\n                <span className=\"text-emerald-400 font-bold\">Copia #{copySequence}</span>\n              </div>\n              <div className=\"flex items-center justify-between gap-2\">\n                <span className=\"font-mono text-sm font-extrabold text-emerald-300 tracking-wide\">\n                  {internalCode}\n                </span>\n                <div className=\"flex items-center gap-1\">\n                  <span className=\"text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono\">\n                    {deweyNum}\n                  </span>\n                  <span className=\"text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono\">\n                    {cutterCode}\n                  </span>\n                  <span className=\"text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono\">\n                    {prefix}\n                  </span>\n                </div>\n              </div>\n            </div>\n\n            {/* Live Spine Label */}\n            <div className=\"shrink-0 bg-slate-800 p-1.5 rounded-lg border border-slate-600 flex flex-col items-center\">\n              <span className=\"text-[8px] uppercase font-bold text-slate-400 mb-1\">Tejuelo 25×38mm</span>\n              <SpineLabel\n                deweyCode={deweyNum}\n                authorLetters={cutterCode}\n                copyNumber={`Ej. ${copySequence}`}\n                prefix={prefix}\n                showCutGuide={true}\n              />\n              <div className=\"flex items-center gap-1 mt-1.5\">\n                <button\n                  type=\"button\"\n                  onClick={() => downloadSpineLabelsPDF([\n                    {\n                      deweyCode: deweyNum,\n                      authorLetters: cutterCode,\n                      copyNumber: copySequence,\n                      prefix: prefix,\n                      title: work?.title\n                    }\n                  ], {\n                    title: work?.title,\n                    mode: 'sheet'\n                  })}\n                  className=\"px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition\"\n                  title=\"Descargar archivo PDF listo para imprimir en hoja Carta\"\n                >\n                  <FileDown className=\"w-2.5 h-2.5 text-emerald-300\" />\n                  <span>PDF</span>\n                </button>\n                <button\n                  type=\"button\"\n                  onClick={() => downloadSpineLabelPNG({\n                    deweyCode: deweyNum,\n                    authorLetters: cutterCode,\n                    copyNumber: copySequence,\n                    prefix: prefix,\n                    title: work?.title\n                  })}\n                  className=\"px-2 py-0.5 rounded bg-emerald-700/80 hover:bg-emerald-600 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition\"\n                  title=\"Descargar imagen PNG de este tejuelo\"\n                >\n                  <ImageIcon className=\"w-2.5 h-2.5\" />\n                  <span>PNG</span>\n                </button>\n                <button\n                  type=\"button\"\n                  onClick={() => downloadSpineLabelSVG({\n                    deweyCode: deweyNum,\n                    authorLetters: cutterCode,\n                    copyNumber: copySequence,\n                    prefix: prefix,\n                    title: work?.title\n                  })}\n                  className=\"px-2 py-0.5 rounded bg-blue-700/80 hover:bg-blue-600 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition\"\n                  title=\"Descargar gráfico vectorial SVG\"\n                >\n                  <Download className=\"w-2.5 h-2.5\" />\n                  <span>SVG</span>\n                </button>\n              </div>\n            </div>\n          </div>\n\n          {/* Physical Condition */}\n          <div className=\"space-y-1.5\">\n            <label className=\"block font-bold text-slate-700\">\n              4. Estado de Conservación Física <span className=\"text-rose-500\">*</span>\n            </label>\n            <div className=\"grid grid-cols-3 gap-2\">\n              {(['bueno', 'regular', 'malo'] as CopyCondition[]).map((cond) => (\n                <button\n                  key={cond}\n                  type=\"button\"\n                  onClick={() => setCondition(cond)}\n                  className={`py-2 px-3 rounded-xl font-bold capitalize transition border cursor-pointer ${\n                    condition === cond\n                      ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'\n                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'\n                  }`}\n                >\n                  {cond}\n                </button>\n              ))}\n            </div>\n          </div>\n\n          {/* Notes */}\n          <div className=\"space-y-1.5\">\n            <label className=\"block font-bold text-slate-700\">\n              5. Observaciones\n            </label>\n            <input\n              type=\"text\"\n              value={notes}\n              onChange={(e) => setNotes(e.target.value)}\n              placeholder=\"Ej: Sala de lectura general...\"\n              className=\"w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition\"\n            />\n          </div>\n\n          <div className=\"pt-2 flex items-center justify-end gap-2\">\n            <button\n              type=\"button\"\n              onClick={onClose}\n              className=\"px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer\"\n            >\n              Cancelar\n            </button>\n            <button\n              type=\"submit\"\n              disabled={isSubmitting}\n              className=\"px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold transition flex items-center gap-2 cursor-pointer disabled:opacity-50\"\n            >\n              <PlusCircle className=\"w-4 h-4\" />\n              {isSubmitting ? 'Guardando...' : `Registrar ${internalCode}`}\n            </button>\n          </div>\n        </form>\n      </div>\n    </div>\n  );\n};\n
+                  onChange={(e) => setCopySequence(Math.max(1, parseInt(e.target.value) || 1))}
+                  required
+                  className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-xs font-bold text-slate-900"
+                />
+                <span className="px-2 py-1.5 bg-emerald-100 text-emerald-900 rounded-lg font-mono font-bold text-[10px] shrink-0">
+                  {formattedSequence}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Marbete Token Preview & Tejuelo 25x38mm */}
+          <div className="p-3 bg-slate-900 text-white rounded-xl border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="space-y-2 flex-1 w-full sm:w-auto">
+              <div className="flex items-center justify-between text-[10px] text-slate-400">
+                <span>Fórmula: [Sede]-[Dewey]-[Cutter]-[Copia]</span>
+                <span className="text-emerald-400 font-bold">Copia #{copySequence}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-sm font-extrabold text-emerald-300 tracking-wide">
+                  {internalCode}
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">
+                    {deweyNum}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
+                    {cutterCode}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                    {prefix}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Spine Label */}
+            <div className="shrink-0 bg-slate-800 p-1.5 rounded-lg border border-slate-600 flex flex-col items-center">
+              <span className="text-[8px] uppercase font-bold text-slate-400 mb-1">Tejuelo 25×38mm</span>
+              <SpineLabel
+                deweyCode={deweyNum}
+                authorLetters={cutterCode}
+                copyNumber={`Ej. ${copySequence}`}
+                prefix={prefix}
+                showCutGuide={true}
+              />
+              <div className="flex items-center gap-1 mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => downloadSpineLabelsPDF([
+                    {
+                      deweyCode: deweyNum,
+                      authorLetters: cutterCode,
+                      copyNumber: copySequence,
+                      prefix: prefix,
+                      title: work?.title
+                    }
+                  ], {
+                    title: work?.title,
+                    mode: 'sheet'
+                  })}
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition"
+                  title="Descargar archivo PDF listo para imprimir en hoja Carta"
+                >
+                  <FileDown className="w-2.5 h-2.5 text-emerald-300" />
+                  <span>PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => downloadSpineLabelPNG({
+                    deweyCode: deweyNum,
+                    authorLetters: cutterCode,
+                    copyNumber: copySequence,
+                    prefix: prefix,
+                    title: work?.title
+                  })}
+                  className="px-2 py-0.5 rounded bg-emerald-700/80 hover:bg-emerald-600 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition"
+                  title="Descargar imagen PNG de este tejuelo"
+                >
+                  <ImageIcon className="w-2.5 h-2.5" />
+                  <span>PNG</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => downloadSpineLabelSVG({
+                    deweyCode: deweyNum,
+                    authorLetters: cutterCode,
+                    copyNumber: copySequence,
+                    prefix: prefix,
+                    title: work?.title
+                  })}
+                  className="px-2 py-0.5 rounded bg-blue-700/80 hover:bg-blue-600 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition"
+                  title="Descargar gráfico vectorial SVG"
+                >
+                  <Download className="w-2.5 h-2.5" />
+                  <span>SVG</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Physical Condition */}
+          <div className="space-y-1.5">
+            <label className="block font-bold text-slate-700">
+              4. Estado de Conservación Física <span className="text-rose-500">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['bueno', 'regular', 'malo'] as CopyCondition[]).map((cond) => (
+                <button
+                  key={cond}
+                  type="button"
+                  onClick={() => setCondition(cond)}
+                  className={`py-2 px-3 rounded-xl font-bold capitalize transition border cursor-pointer ${
+                    condition === cond
+                      ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {cond}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-1.5">
+            <label className="block font-bold text-slate-700">
+              5. Observaciones
+            </label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ej: Sala de lectura general..."
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
+            />
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <PlusCircle className="w-4 h-4" />
+              {isSubmitting ? 'Guardando...' : `Registrar ${internalCode}`}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

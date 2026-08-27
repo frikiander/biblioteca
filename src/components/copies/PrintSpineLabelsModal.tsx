@@ -155,4 +155,270 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
       const copyNum = extractCopyNumber(copy.internal_code, idx + 1);
       const prefix = extractSpineLabelPrefix(copy.internal_code, copy.branch_id);
 
-      return {\n        deweyCode: dewey,\n        authorLetters: cutter,\n        copyNumber: copyNum,\n        prefix: prefix,\n        title: work?.title || currentWorkTitle\n      };\n    });\n\n    if (repeatCount <= 1) {\n      return baseLabels;\n    }\n\n    // Multiplicar etiquetas si el usuario seleccionó repetir\n    const multiplied: SpineLabelData[] = [];\n    for (let r = 0; r < repeatCount; r++) {\n      baseLabels.forEach(lbl => multiplied.push({ ...lbl }));\n    }\n    return multiplied;\n  };\n\n  // Descargar PDF usando jsPDF (100% exacto y compatible con cualquier navegador/impresora)\n  const handleDownloadPDF = (mode: 'sheet' | 'single' = 'sheet') => {\n    const labelsData = getPreparedLabelsData();\n    if (labelsData.length === 0) return;\n\n    downloadSpineLabelsPDF(labelsData, {\n      mode: mode,\n      title: currentWorkTitle\n    });\n  };\n\n  // Impresión nativa del navegador\n  const handleNativePrint = () => {\n    // Si estamos en un iframe o queremos imprimir limpiamente, generamos la orden de impresión\n    window.print();\n  };\n\n  // Descargar PNG o SVG de los tejuelos seleccionados\n  const handleDownloadImages = (format: 'png' | 'svg') => {\n    const labelsData = getPreparedLabelsData();\n    if (labelsData.length === 0) return;\n\n    labelsData.forEach((label, idx) => {\n      setTimeout(() => {\n        if (format === 'png') {\n          downloadSpineLabelPNG({\n            deweyCode: label.deweyCode,\n            authorLetters: label.authorLetters,\n            copyNumber: label.copyNumber,\n            prefix: label.prefix,\n            title: label.title\n          });\n        } else {\n          downloadSpineLabelSVG({\n            deweyCode: label.deweyCode,\n            authorLetters: label.authorLetters,\n            copyNumber: label.copyNumber,\n            prefix: label.prefix,\n            title: label.title\n          });\n        }\n      }, idx * 120);\n    });\n  };\n\n  const labelsToRender = getPreparedLabelsData();\n\n  return (\n    <div className=\"fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs print:p-0 print:bg-white print:static print:inset-auto\">\n      <div \n        id=\"print-spine-labels-modal\"\n        className=\"bg-white rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden print:border-none print:shadow-none print:max-w-none print:max-h-none print:w-full print:rounded-none\"\n      >\n        {/* Modal Header - Hidden when printing */}\n        <div className=\"flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-slate-50 print:hidden\">\n          <div className=\"flex items-center gap-3\">\n            <div className=\"p-2.5 rounded-xl bg-emerald-100 text-emerald-800\">\n              <Tag className=\"w-5 h-5\" />\n            </div>\n            <div>\n              <div className=\"flex items-center gap-2\">\n                <h2 className=\"text-base sm:text-lg font-bold text-slate-900\">\n                  {isSpecificWork ? `Tejuelos: ${currentWorkTitle}` : 'Impresión y Descarga de Tejuelos (Lomos)'}\n                </h2>\n                {targetWork && (\n                  <span className=\"hidden sm:inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900\">\n                    CDD {targetWork.dewey_code} • {authorCutter}\n                  </span>\n                )}\n              </div>\n              <p className=\"text-xs text-slate-500\">\n                {targetWork ? `Por ${targetWork.author} • ` : ''}Medida exacta de corte: 25 × 38 mm • Calibrado para Hoja Carta\n              </p>\n            </div>\n          </div>\n\n          <div className=\"flex items-center gap-2\">\n            {/* Primary Action: Download PDF */}\n            <button\n              id=\"download-spine-pdf-btn\"\n              onClick={() => handleDownloadPDF('sheet')}\n              disabled={selectedCopies.length === 0}\n              className=\"px-3.5 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950/20 transition cursor-pointer\"\n              title=\"Descargar archivo PDF con los tejuelos (25x38 mm) listos para imprimir\"\n            >\n              <FileDown className=\"w-4 h-4 text-emerald-200\" />\n              <span>Descargar PDF</span>\n            </button>\n\n            {/* Native Print */}\n            <button\n              id=\"native-print-btn\"\n              onClick={handleNativePrint}\n              disabled={selectedCopies.length === 0}\n              className=\"hidden sm:flex px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold items-center gap-1.5 shadow-2xs transition cursor-pointer\"\n              title=\"Imprimir directamente desde el navegador\"\n            >\n              <Printer className=\"w-4 h-4 text-slate-600\" />\n              <span>Imprimir</span>\n            </button>\n\n            {/* Quick Image Downloads */}\n            <div className=\"hidden md:flex items-center gap-1\">\n              <button\n                onClick={() => handleDownloadImages('png')}\n                disabled={selectedCopies.length === 0}\n                className=\"px-2.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 transition cursor-pointer\"\n                title=\"Descargar como imagen PNG (300 DPI)\"\n              >\n                <ImageIcon className=\"w-3.5 h-3.5 text-emerald-700\" />\n                <span>PNG</span>\n              </button>\n              <button\n                onClick={() => handleDownloadImages('svg')}\n                disabled={selectedCopies.length === 0}\n                className=\"px-2.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 transition cursor-pointer\"\n                title=\"Descargar como vector SVG\"\n              >\n                <Download className=\"w-3.5 h-3.5 text-blue-700\" />\n                <span>SVG</span>\n              </button>\n            </div>\n\n            <button\n              id=\"close-spine-modal-btn\"\n              onClick={onClose}\n              className=\"p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer\"\n            >\n              <X className=\"w-5 h-5\" />\n            </button>\n          </div>\n        </div>\n\n        {/* Controls Bar - Options */}\n        <div className=\"p-3 sm:px-6 bg-slate-100/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden\">\n          <div className=\"flex items-center gap-3 flex-wrap\">\n            <button\n              onClick={handleToggleSelectAll}\n              className=\"px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer flex items-center gap-1.5\"\n            >\n              <Check className=\"w-3.5 h-3.5 text-emerald-600\" />\n              {selectedCopyIds.length === copies.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}\n            </button>\n\n            <span className=\"text-slate-600 font-medium\">\n              {selectedCopies.length} de {copies.length} ejemplares seleccionados\n            </span>\n\n            {/* Repeat Label multiplier for single work */}\n            {isSpecificWork && (\n              <div className=\"flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200\">\n                <span className=\"text-slate-500 text-[11px] font-medium\">Copias de etiqueta:</span>\n                <select\n                  value={repeatCount}\n                  onChange={(e) => setRepeatCount(Number(e.target.value))}\n                  className=\"bg-slate-50 text-slate-800 font-bold rounded px-1.5 py-0.5 border border-slate-200 text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-700\"\n                >\n                  <option value={1}>1 copia</option>\n                  <option value={2}>2 copias</option>\n                  <option value={3}>3 copias</option>\n                  <option value={4}>4 copias</option>\n                  <option value={6}>6 copias</option>\n                  <option value={10}>10 copias</option>\n                </select>\n              </div>\n            )}\n          </div>\n\n          <div className=\"flex items-center gap-2 text-[11px] text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200\">\n            <span className=\"w-2 h-2 rounded-full bg-emerald-500\"></span>\n            Formato: <strong>25 × 38 mm</strong> • <strong>{labelsToRender.length}</strong> {labelsToRender.length === 1 ? 'tejuelo listo' : 'tejuelos listos'}\n          </div>\n        </div>\n\n        {/* Printable Sheet View */}\n        <div className=\"flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-200/50 print:bg-white print:p-0 print:overflow-visible\">\n          {/* Virtual Letter Page Sheet Preview */}\n          <div className=\"mx-auto bg-white p-6 sm:p-8 shadow-md border border-slate-300 rounded-lg max-w-[216mm] min-h-[279mm] print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none\">\n            {selectedCopies.length === 0 ? (\n              <div className=\"py-20 text-center text-slate-400 text-sm print:hidden space-y-2\">\n                <Tag className=\"w-8 h-8 mx-auto text-slate-300\" />\n                <p>No hay tejuelos seleccionados. Haz clic en las etiquetas para seleccionarlas.</p>\n              </div>\n            ) : (\n              <div className=\"space-y-4\">\n                {/* Visual Header on the print sheet */}\n                <div className=\"border-b border-slate-200 pb-2 mb-4 flex items-center justify-between text-[11px] text-slate-500 print:text-black\">\n                  <span>Biblioteca Miguel Otero Silva — Colegio Integral El Manglar</span>\n                  <span>{currentWorkTitle} ({labelsToRender.length} tejuelos)</span>\n                </div>\n\n                <div className=\"flex flex-wrap gap-2 items-start content-start justify-start print:gap-1.5\">\n                  {labelsToRender.map((label, index) => (\n                    <div \n                      key={`${label.deweyCode}-${label.authorLetters}-${label.copyNumber}-${index}`} \n                      className=\"cursor-pointer group relative print:cursor-default\"\n                      title={`Tejuelo: ${label.title} • Dewey: ${label.deweyCode} • Cutter: ${label.authorLetters}`}\n                    >\n                      <SpineLabel\n                        deweyCode={label.deweyCode}\n                        authorLetters={label.authorLetters}\n                        copyNumber={label.copyNumber}\n                        prefix={label.prefix}\n                        showCutGuide={true}\n                        className=\"transition-transform group-hover:scale-102 group-hover:shadow-md print:group-hover:scale-100\"\n                      />\n                    </div>\n                  ))}\n                </div>\n              </div>\n            )}\n          </div>\n        </div>\n\n        {/* Modal Footer */}\n        <div className=\"p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden\">\n          <div className=\"flex items-center gap-1.5 text-[11px] text-slate-500\">\n            <Info className=\"w-3.5 h-3.5 text-emerald-700 shrink-0\" />\n            <span>\n              El archivo <strong>PDF</strong> está calibrado a escala exacta 100% (25×38 mm por tejuelo) con líneas punteadas para recortar fácilmente.\n            </span>\n          </div>\n\n          <div className=\"flex items-center gap-2\">\n            <button\n              onClick={() => handleDownloadPDF('sheet')}\n              disabled={selectedCopies.length === 0}\n              className=\"px-4 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer\"\n            >\n              <FileDown className=\"w-4 h-4 text-emerald-200\" />\n              <span>Descargar PDF ({labelsToRender.length})</span>\n            </button>\n            <button\n              onClick={onClose}\n              className=\"px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-semibold transition cursor-pointer\"\n            >\n              Cerrar\n            </button>\n          </div>\n        </div>\n      </div>\n    </div>\n  );\n};\n\nexport default PrintSpineLabelsModal;\n
+      return {
+        deweyCode: dewey,
+        authorLetters: cutter,
+        copyNumber: copyNum,
+        prefix: prefix,
+        title: work?.title || currentWorkTitle
+      };
+    });
+
+    if (repeatCount <= 1) {
+      return baseLabels;
+    }
+
+    // Multiplicar etiquetas si el usuario seleccionó repetir
+    const multiplied: SpineLabelData[] = [];
+    for (let r = 0; r < repeatCount; r++) {
+      baseLabels.forEach(lbl => multiplied.push({ ...lbl }));
+    }
+    return multiplied;
+  };
+
+  // Descargar PDF usando jsPDF (100% exacto y compatible con cualquier navegador/impresora)
+  const handleDownloadPDF = (mode: 'sheet' | 'single' = 'sheet') => {
+    const labelsData = getPreparedLabelsData();
+    if (labelsData.length === 0) return;
+
+    downloadSpineLabelsPDF(labelsData, {
+      mode: mode,
+      title: currentWorkTitle
+    });
+  };
+
+  // Impresión nativa del navegador
+  const handleNativePrint = () => {
+    // Si estamos en un iframe o queremos imprimir limpiamente, generamos la orden de impresión
+    window.print();
+  };
+
+  // Descargar PNG o SVG de los tejuelos seleccionados
+  const handleDownloadImages = (format: 'png' | 'svg') => {
+    const labelsData = getPreparedLabelsData();
+    if (labelsData.length === 0) return;
+
+    labelsData.forEach((label, idx) => {
+      setTimeout(() => {
+        if (format === 'png') {
+          downloadSpineLabelPNG({
+            deweyCode: label.deweyCode,
+            authorLetters: label.authorLetters,
+            copyNumber: label.copyNumber,
+            prefix: label.prefix,
+            title: label.title
+          });
+        } else {
+          downloadSpineLabelSVG({
+            deweyCode: label.deweyCode,
+            authorLetters: label.authorLetters,
+            copyNumber: label.copyNumber,
+            prefix: label.prefix,
+            title: label.title
+          });
+        }
+      }, idx * 120);
+    });
+  };
+
+  const labelsToRender = getPreparedLabelsData();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs print:p-0 print:bg-white print:static print:inset-auto">
+      <div 
+        id="print-spine-labels-modal"
+        className="bg-white rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden print:border-none print:shadow-none print:max-w-none print:max-h-none print:w-full print:rounded-none"
+      >
+        {/* Modal Header - Hidden when printing */}
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-slate-50 print:hidden">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-800">
+              <Tag className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  {isSpecificWork ? `Tejuelos: ${currentWorkTitle}` : 'Impresión y Descarga de Tejuelos (Lomos)'}
+                </h2>
+                {targetWork && (
+                  <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900">
+                    CDD {targetWork.dewey_code} • {authorCutter}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">
+                {targetWork ? `Por ${targetWork.author} • ` : ''}Medida exacta de corte: 25 × 38 mm • Calibrado para Hoja Carta
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Primary Action: Download PDF */}
+            <button
+              id="download-spine-pdf-btn"
+              onClick={() => handleDownloadPDF('sheet')}
+              disabled={selectedCopies.length === 0}
+              className="px-3.5 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950/20 transition cursor-pointer"
+              title="Descargar archivo PDF con los tejuelos (25x38 mm) listos para imprimir"
+            >
+              <FileDown className="w-4 h-4 text-emerald-200" />
+              <span>Descargar PDF</span>
+            </button>
+
+            {/* Native Print */}
+            <button
+              id="native-print-btn"
+              onClick={handleNativePrint}
+              disabled={selectedCopies.length === 0}
+              className="hidden sm:flex px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold items-center gap-1.5 shadow-2xs transition cursor-pointer"
+              title="Imprimir directamente desde el navegador"
+            >
+              <Printer className="w-4 h-4 text-slate-600" />
+              <span>Imprimir</span>
+            </button>
+
+            {/* Quick Image Downloads */}
+            <div className="hidden md:flex items-center gap-1">
+              <button
+                onClick={() => handleDownloadImages('png')}
+                disabled={selectedCopies.length === 0}
+                className="px-2.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                title="Descargar como imagen PNG (300 DPI)"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-emerald-700" />
+                <span>PNG</span>
+              </button>
+              <button
+                onClick={() => handleDownloadImages('svg')}
+                disabled={selectedCopies.length === 0}
+                className="px-2.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                title="Descargar como vector SVG"
+              >
+                <Download className="w-3.5 h-3.5 text-blue-700" />
+                <span>SVG</span>
+              </button>
+            </div>
+
+            <button
+              id="close-spine-modal-btn"
+              onClick={onClose}
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Controls Bar - Options */}
+        <div className="p-3 sm:px-6 bg-slate-100/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleToggleSelectAll}
+              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer flex items-center gap-1.5"
+            >
+              <Check className="w-3.5 h-3.5 text-emerald-600" />
+              {selectedCopyIds.length === copies.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
+            </button>
+
+            <span className="text-slate-600 font-medium">
+              {selectedCopies.length} de {copies.length} ejemplares seleccionados
+            </span>
+
+            {/* Repeat Label multiplier for single work */}
+            {isSpecificWork && (
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                <span className="text-slate-500 text-[11px] font-medium">Copias de etiqueta:</span>
+                <select
+                  value={repeatCount}
+                  onChange={(e) => setRepeatCount(Number(e.target.value))}
+                  className="bg-slate-50 text-slate-800 font-bold rounded px-1.5 py-0.5 border border-slate-200 text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-700"
+                >
+                  <option value={1}>1 copia</option>
+                  <option value={2}>2 copias</option>
+                  <option value={3}>3 copias</option>
+                  <option value={4}>4 copias</option>
+                  <option value={6}>6 copias</option>
+                  <option value={10}>10 copias</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Formato: <strong>25 × 38 mm</strong> • <strong>{labelsToRender.length}</strong> {labelsToRender.length === 1 ? 'tejuelo listo' : 'tejuelos listos'}
+          </div>
+        </div>
+
+        {/* Printable Sheet View */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-200/50 print:bg-white print:p-0 print:overflow-visible">
+          {/* Virtual Letter Page Sheet Preview */}
+          <div className="mx-auto bg-white p-6 sm:p-8 shadow-md border border-slate-300 rounded-lg max-w-[216mm] min-h-[279mm] print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none">
+            {selectedCopies.length === 0 ? (
+              <div className="py-20 text-center text-slate-400 text-sm print:hidden space-y-2">
+                <Tag className="w-8 h-8 mx-auto text-slate-300" />
+                <p>No hay tejuelos seleccionados. Haz clic en las etiquetas para seleccionarlas.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Visual Header on the print sheet */}
+                <div className="border-b border-slate-200 pb-2 mb-4 flex items-center justify-between text-[11px] text-slate-500 print:text-black">
+                  <span>Biblioteca Miguel Otero Silva — Colegio Integral El Manglar</span>
+                  <span>{currentWorkTitle} ({labelsToRender.length} tejuelos)</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 items-start content-start justify-start print:gap-1.5">
+                  {labelsToRender.map((label, index) => (
+                    <div 
+                      key={`${label.deweyCode}-${label.authorLetters}-${label.copyNumber}-${index}`} 
+                      className="cursor-pointer group relative print:cursor-default"
+                      title={`Tejuelo: ${label.title} • Dewey: ${label.deweyCode} • Cutter: ${label.authorLetters}`}
+                    >
+                      <SpineLabel
+                        deweyCode={label.deweyCode}
+                        authorLetters={label.authorLetters}
+                        copyNumber={label.copyNumber}
+                        prefix={label.prefix}
+                        showCutGuide={true}
+                        className="transition-transform group-hover:scale-102 group-hover:shadow-md print:group-hover:scale-100"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <Info className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+            <span>
+              El archivo <strong>PDF</strong> está calibrado a escala exacta 100% (25×38 mm por tejuelo) con líneas punteadas para recortar fácilmente.
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleDownloadPDF('sheet')}
+              disabled={selectedCopies.length === 0}
+              className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+            >
+              <FileDown className="w-4 h-4 text-emerald-200" />
+              <span>Descargar PDF ({labelsToRender.length})</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-semibold transition cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PrintSpineLabelsModal;
