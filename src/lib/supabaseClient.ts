@@ -12,45 +12,45 @@ export const supabase = isSupabaseConfigured
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-// Initial curated store for Colegio Integral El Manglar
+// Initial curated store for Colegio Integral El Manglar with standard RFC-compliant UUIDs
 export const INITIAL_BRANCHES: Branch[] = [
   {
-    id: 'b_primaria',
+    id: '00000000-0000-4000-a000-000000000001',
     name: 'Biblioteca Miguel Otero Silva - Primaria',
     type: 'internal',
     location: 'Campus Principal, Módulo de Primaria',
     description: 'Fondo bibliográfico infantil, primeros lectores y colección formativa de educación primaria.',
   },
   {
-    id: 'b_bachillerato',
+    id: '00000000-0000-4000-a000-000000000002',
     name: 'Biblioteca Miguel Otero Silva - Bachillerato',
     type: 'internal',
     location: 'Campus Principal, Edificio Central de Bachillerato',
     description: 'Colección general, humanidades, ciencias, referencia y sala de estudio para educación media y diversificada.',
   },
   {
-    id: 'b_guarico',
+    id: '00000000-0000-4000-a000-000000000003',
     name: 'Semilla Manglareña - Guárico',
     type: 'external_donation',
     location: 'Estado Guárico, Escuelas Rurales de Los Llanos',
     description: 'Núcleo social de dotación y biblioteca comunitaria satélite en escuelas llaneras.',
   },
   {
-    id: 'b_caripe',
+    id: '00000000-0000-4000-a000-000000000004',
     name: 'Semilla Manglareña - Caripe',
     type: 'external_donation',
     location: 'Caripe del Guácharo, Estado Monagas',
     description: 'Módulo de lectura y dotación escolar en comunidades de la zona montañosa de Caripe.',
   },
   {
-    id: 'b_merida',
+    id: '00000000-0000-4000-a000-000000000005',
     name: 'Semilla Manglareña - Mérida',
     type: 'external_donation',
     location: 'Estado Mérida, Zona Andina',
     description: 'Biblioteca satélite rural para fomento del hábito lector en escuelas andinas.',
   },
   {
-    id: 'b_delta',
+    id: '00000000-0000-4000-a000-000000000006',
     name: 'Semilla Manglareña - Delta',
     type: 'external_donation',
     location: 'Delta Amacuro, Comunidades Fluviales',
@@ -62,15 +62,13 @@ export function getBranchCodePrefix(branchNameOrId?: string): string {
   if (!branchNameOrId) return 'MOS-BAC';
   const lower = branchNameOrId.toLowerCase().trim();
   
-  // Specific match for 6 branches
-  if (lower.includes('primaria') || lower === 'b_primaria') return 'MOS-PRI';
-  if (lower.includes('bachillerato') || lower === 'b_bachillerato') return 'MOS-BAC';
-  if (lower.includes('guárico') || lower.includes('guarico') || lower === 'b_guarico') return 'SM-GUA';
-  if (lower.includes('caripe') || lower === 'b_caripe') return 'SM-CAR';
-  if (lower.includes('mérida') || lower.includes('merida') || lower === 'b_merida') return 'SM-MER';
-  if (lower.includes('delta') || lower === 'b_delta') return 'SM-DEL';
+  if (lower.includes('primaria') || lower.endsWith('0001') || lower === 'b_primaria') return 'MOS-PRI';
+  if (lower.includes('bachillerato') || lower.endsWith('0002') || lower === 'b_bachillerato') return 'MOS-BAC';
+  if (lower.includes('guárico') || lower.includes('guarico') || lower.endsWith('0003') || lower === 'b_guarico') return 'SM-GUA';
+  if (lower.includes('caripe') || lower.endsWith('0004') || lower === 'b_caripe') return 'SM-CAR';
+  if (lower.includes('mérida') || lower.includes('merida') || lower.endsWith('0005') || lower === 'b_merida') return 'SM-MER';
+  if (lower.includes('delta') || lower.endsWith('0006') || lower === 'b_delta') return 'SM-DEL';
   
-  // Fallbacks
   if (lower.includes('semilla')) return 'SM-GUA';
   return 'MOS-BAC';
 }
@@ -124,7 +122,6 @@ export function getAuthorCutterCode(author?: string, title?: string): string {
   if (author && !isAnonymousOrCollective(author)) {
     const particles = new Set(['de', 'la', 'del', 'los', 'las', 'van', 'von', 'da', 'di', 'y', 'd']);
 
-    // Check if name is formatted "Surname, Name"
     if (author.includes(',')) {
       const surnamePart = author.split(',')[0].trim();
       const surnameWords = surnamePart.split(/\s+/).filter((w) => !particles.has(w.toLowerCase()));
@@ -223,11 +220,13 @@ export function generateMarbeteCode(
   return `${prefix}-${deweyPrefix}-${cutter}-${seq}`;
 }
 
+// Clean any legacy mock data on startup so inventory starts completely empty
 if (typeof window !== 'undefined') {
-  if (!localStorage.getItem('manglar_inventory_cleared_v4')) {
+  if (!localStorage.getItem('manglar_inventory_cleared_v5')) {
     localStorage.setItem('manglar_works', JSON.stringify([]));
     localStorage.setItem('manglar_copies', JSON.stringify([]));
-    localStorage.setItem('manglar_inventory_cleared_v4', 'true');
+    localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
+    localStorage.setItem('manglar_inventory_cleared_v5', 'true');
   }
 }
 
@@ -235,7 +234,8 @@ export function clearAllPlatformData(): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem('manglar_works', JSON.stringify([]));
     localStorage.setItem('manglar_copies', JSON.stringify([]));
-    localStorage.setItem('manglar_inventory_cleared_v4', 'true');
+    localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
+    localStorage.setItem('manglar_inventory_cleared_v5', 'true');
   }
 }
 
@@ -262,8 +262,14 @@ export function getStoredBranches(): Branch[] {
   }
   try {
     const parsed: Branch[] = JSON.parse(saved);
-    const hasAllSix = INITIAL_BRANCHES.every((ib) => parsed.some((pb) => pb.id === ib.id || pb.name === ib.name));
-    if (!hasAllSix || parsed.length < 6) {
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
+      return INITIAL_BRANCHES;
+    }
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const hasValidIds = parsed.every((b) => uuidRegex.test(b.id));
+    if (!hasValidIds) {
       localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
       return INITIAL_BRANCHES;
     }
@@ -290,6 +296,25 @@ export function getStoredCopies(): Copy[] {
 export const INITIAL_WORKS: Work[] = [];
 export const INITIAL_COPIES: Copy[] = [];
 
+// Helper to fetch live branches from Supabase with fallback
+export async function fetchLiveBranches(): Promise<Branch[]> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('branches').select('*').order('name');
+      if (!error && data && data.length > 0) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('manglar_branches', JSON.stringify(data));
+        }
+        return data;
+      }
+    } catch {
+      // Fall back to stored branches
+    }
+  }
+  return getStoredBranches();
+}
+
+// Helper to simulate local store operations and calculate inventory breakdown
 export function getWorksWithInventory(
   works: Work[],
   branches: Branch[],
