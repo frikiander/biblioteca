@@ -252,6 +252,32 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
     setCurrentStep('form');
   };
 
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
+    setInitialCopies((prev) =>
+      prev.map((c, idx) => {
+        const branch = branches.find((b) => b.id === c.branch_id);
+        return {
+          ...c,
+          internal_code: generateMarbeteCode(branch?.name || branch?.id, deweyCode, author, idx + 1, newTitle),
+        };
+      })
+    );
+  };
+
+  const handleAuthorChange = (newAuthor: string) => {
+    setAuthor(newAuthor);
+    setInitialCopies((prev) =>
+      prev.map((c, idx) => {
+        const branch = branches.find((b) => b.id === c.branch_id);
+        return {
+          ...c,
+          internal_code: generateMarbeteCode(branch?.name || branch?.id, deweyCode, newAuthor, idx + 1, title),
+        };
+      })
+    );
+  };
+
   const handleDeweyCodeChange = (newCode: string) => {
     setDeweyCode(newCode);
     // Update marbete codes for draft copies dynamically
@@ -783,7 +809,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                     type="text"
                     required
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    onChange={(e) => handleTitleChange(e.target.value)}
                     placeholder="Ej: Casas Muertas, Doña Bárbara, Biología General..."
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
                   />
@@ -799,7 +825,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                     type="text"
                     required
                     value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
+                    onChange={(e) => handleAuthorChange(e.target.value)}
                     placeholder="Ej: Miguel Otero Silva, Teresa de la Parra..."
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
                   />

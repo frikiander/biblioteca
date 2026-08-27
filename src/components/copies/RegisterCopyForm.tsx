@@ -443,15 +443,15 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
             <input
               id="cutter-code-input"
               type="text"
-              maxLength={3}
+              maxLength={4}
               value={cutterCode}
-              onChange={(e) => setCutterCode(e.target.value.toUpperCase().slice(0, 3))}
-              placeholder="Ej: OTE"
+              onChange={(e) => setCutterCode(e.target.value.slice(0, 4))}
+              placeholder="Ej: OTEc"
               required
-              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 uppercase focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
+              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
             />
             <p className="text-[11px] text-slate-500">
-              3 letras del apellido del autor o título (ej: <strong>OTE</strong>ro Silva). Orden alfabético en estante.
+              3 letras del autor en mayúscula + 1 inicial del título en minúscula (ej: <strong>OTEc</strong> para <em>Casas muertas</em>, <strong>OTEo</strong> para <em>Oficina #1</em>, <strong>SAIp</strong> para <em>El principito</em>).
             </p>
           </div>
 

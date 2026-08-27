@@ -1,11 +1,12 @@
 import React from 'react';
 import { jsPDF } from 'jspdf';
+import { formatCutterDisplay } from '../../lib/supabaseClient';
 
 export interface SpineLabelProps {
   /** Código de clasificación decimal Dewey (ej: "863.64", "863") */
   deweyCode?: string;
   dewey?: string;
-  /** Tres letras del código Cutter del autor o título (ej: "OTE", "USL", "PAR") */
+  /** Letras del código Cutter del autor + inicial de título (ej: "OTE c", "OTE o", "SAI p") */
   authorLetters: string;
   /** Número o identificador del ejemplar (ej: "Ej. 1", 1, "c. 1") */
   copyNumber: string | number;
@@ -38,7 +39,7 @@ function drawSpineLabelOnPDF(
   showGuide: boolean = true
 ) {
   const deweyDisplay = (label.deweyCode || '000').trim();
-  const cutterDisplay = (label.authorLetters || 'XXX').trim().toUpperCase();
+  const cutterDisplay = formatCutterDisplay(label.authorLetters);
   const copyDisplay = typeof label.copyNumber === 'number'
     ? `Ej. ${label.copyNumber}`
     : String(label.copyNumber).trim().startsWith('Ej.') || String(label.copyNumber).trim().startsWith('c.')
@@ -187,7 +188,7 @@ export function downloadSpineLabelPNG(options: {
 }) {
   const { deweyCode, authorLetters, copyNumber, prefix, title } = options;
   const deweyDisplay = (deweyCode || '000').trim();
-  const cutterDisplay = (authorLetters || 'XXX').trim().toUpperCase();
+  const cutterDisplay = formatCutterDisplay(authorLetters);
   const copyDisplay = typeof copyNumber === 'number' 
     ? `Ej. ${copyNumber}` 
     : String(copyNumber).trim().startsWith('Ej.') || String(copyNumber).trim().startsWith('c.')
@@ -220,22 +221,22 @@ export function downloadSpineLabelPNG(options: {
     ctx.fillStyle = '#444444';
     ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(prefix.toUpperCase(), width / 2, 45);
+    ctx.fillText(prefix.toUpperCase(), width / 2, topY + 28);
     
     ctx.strokeStyle = '#CCCCCC';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(30, 60);
-    ctx.lineTo(width - 30, 60);
+    ctx.moveTo(30, topY + 45);
+    ctx.lineTo(width - 30, topY + 45);
     ctx.stroke();
-    topY = 70;
+    topY += 35;
   }
 
   // Notación Dewey
   ctx.fillStyle = '#000000';
-  ctx.font = 'bold 36px "Courier New", monospace, sans-serif';
+  ctx.font = 'bold 36px monospace, Courier, monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(deweyDisplay, width / 2, topY + (prefix ? 95 : 120));
+  ctx.fillText(deweyDisplay, width / 2, topY + (prefix ? 85 : 105));
 
   // Separador intermedio
   ctx.strokeStyle = '#AAAAAA';
@@ -245,7 +246,7 @@ export function downloadSpineLabelPNG(options: {
   ctx.lineTo(width / 2 + 40, topY + (prefix ? 130 : 155));
   ctx.stroke();
 
-  // Código Cutter
+  // Código Cutter & Título (ej. "OTE c", "OTE o", "SAI p")
   ctx.fillStyle = '#000000';
   ctx.font = 'bold 44px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'center';
@@ -269,7 +270,8 @@ export function downloadSpineLabelPNG(options: {
   const dataUrl = canvas.toDataURL('image/png');
   const link = document.createElement('a');
   const cleanTitle = (title || 'tejuelo').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25);
-  link.download = `tejuelo_${cleanTitle}_${deweyDisplay}_${cutterDisplay}.png`;
+  const cleanCutter = cutterDisplay.replace(/\s+/g, '');
+  link.download = `tejuelo_${cleanTitle}_${deweyDisplay}_${cleanCutter}.png`;
   link.href = dataUrl;
   link.click();
 }
@@ -286,7 +288,7 @@ export function downloadSpineLabelSVG(options: {
 }) {
   const { deweyCode, authorLetters, copyNumber, prefix, title } = options;
   const deweyDisplay = (deweyCode || '000').trim();
-  const cutterDisplay = (authorLetters || 'XXX').trim().toUpperCase();
+  const cutterDisplay = formatCutterDisplay(authorLetters);
   const copyDisplay = typeof copyNumber === 'number' 
     ? `Ej. ${copyNumber}` 
     : String(copyNumber).trim().startsWith('Ej.') || String(copyNumber).trim().startsWith('c.')
@@ -299,7 +301,7 @@ export function downloadSpineLabelSVG(options: {
   <!-- Guía de corte manual 25x38 mm -->
   <rect x="0.5" y="0.5" width="24" height="37" fill="none" stroke="#666666" stroke-width="0.3" stroke-dasharray="1,0.7" />
   ${prefix ? `
-  <text x="12.5" y="4" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#444444" text-anchor="middle">${prefix}</text>
+  <text x="12.5" y="4" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#444444" text-anchor="middle">${prefix.toUpperCase()}</text>
   <line x1="3" y1="5.2" x2="22" y2="5.2" stroke="#cccccc" stroke-width="0.2" />
   ` : ''}
   <text x="12.5" y="${prefix ? '14' : '15'}" font-family="monospace" font-size="3.4" font-weight="bold" fill="#000000" text-anchor="middle">${deweyDisplay}</text>
@@ -313,7 +315,8 @@ export function downloadSpineLabelSVG(options: {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   const cleanTitle = (title || 'tejuelo').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25);
-  link.download = `tejuelo_${cleanTitle}_${deweyDisplay}_${cutterDisplay}.svg`;
+  const cleanCutter = cutterDisplay.replace(/\s+/g, '');
+  link.download = `tejuelo_${cleanTitle}_${deweyDisplay}_${cleanCutter}.svg`;
   link.href = url;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -334,7 +337,7 @@ export const SpineLabel: React.FC<SpineLabelProps> = ({
   showCutGuide = true,
 }) => {
   const deweyDisplay = (deweyCode || dewey || '000').trim();
-  const cutterDisplay = (authorLetters || 'XXX').trim().toUpperCase();
+  const cutterDisplay = formatCutterDisplay(authorLetters);
   
   // Normalizar el formato del número de ejemplar (ej. "1" -> "Ej. 1", "Ej. 1" -> "Ej. 1")
   const copyDisplay = typeof copyNumber === 'number' 
@@ -380,10 +383,10 @@ export const SpineLabel: React.FC<SpineLabelProps> = ({
         {/* Separador sutil o espacio de respiro */}
         <div className="w-4 h-[0.5px] bg-gray-300 print:bg-black/40" />
 
-        {/* Código Cutter (3 letras del Autor / Título) */}
+        {/* Código Cutter & Título (Autor + Inicial del Título en minúscula) */}
         <span 
-          className="font-bold text-[12px] leading-none tracking-widest text-black uppercase"
-          title={`Código Cutter: ${cutterDisplay}`}
+          className="font-bold text-[12px] leading-none tracking-wider text-black"
+          title={`Código Cutter & Título: ${cutterDisplay}`}
         >
           {cutterDisplay}
         </span>

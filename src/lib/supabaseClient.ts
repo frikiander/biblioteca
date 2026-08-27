@@ -137,7 +137,45 @@ export function getNextCopySequenceForWork(workId?: string): number {
   return workCopies.length + 1;
 }
 
-export function getAuthorCutterCode(author?: string, title?: string): string {
+/**
+ * Extrae la letra inicial del título en minúscula según las reglas internacionales de catalogación (Libris / Work mark).
+ * Omite artículos iniciales en español, inglés, francés, italiano y alemán.
+ */
+export function getTitleWorkMark(title?: string): string {
+  if (!title || !title.trim()) return '';
+
+  const articles = new Set([
+    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'lo', 'al', 'del',
+    'the', 'a', 'an',
+    'le', 'la', 'les', 'l', 'un', 'une', 'des', 'du',
+    'il', 'lo', 'la', 'i', 'gli', 'le', 'un', 'uno', 'una',
+    'der', 'die', 'das', 'ein', 'eine'
+  ]);
+
+  const cleanTitle = title
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+    .trim();
+
+  const words = cleanTitle.split(/\s+/).filter((w) => w.length > 0);
+  if (words.length === 0) return '';
+
+  let targetWord = words[0];
+  const firstWordClean = targetWord.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  if (articles.has(firstWordClean) && words.length > 1) {
+    targetWord = words[1];
+  }
+
+  const charOnly = targetWord.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return charOnly.length > 0 ? charOnly.charAt(0) : '';
+}
+
+/**
+ * Extrae las 3 letras principales del autor (o título en caso de obras colectivas/anónimas).
+ */
+export function getAuthor3Letters(author?: string, title?: string): string {
   const cleanStr = (s: string) =>
     s
       .normalize('NFD')
@@ -149,46 +187,27 @@ export function getAuthorCutterCode(author?: string, title?: string): string {
     if (!authStr || !authStr.trim()) return true;
     const lower = authStr.toLowerCase().trim();
     const collectiveTerms = [
-      'varios',
-      'varios autores',
-      'aa.vv',
-      'aa.vv.',
-      'vv.aa',
-      'vv.aa.',
-      'anonimo',
-      'anónimo',
-      'colectivo',
-      'editorial',
-      'equipo',
-      'santillana',
-      'larousse',
-      'oceano',
-      'océano',
-      'norma',
-      'sm',
-      'ninguno',
-      'desconocido',
-      'sin autor',
-      'diversos autores',
-      'autores varios',
+      'varios', 'varios autores', 'aa.vv', 'aa.vv.', 'vv.aa', 'vv.aa.', 'anonimo', 'anónimo',
+      'colectivo', 'editorial', 'equipo', 'santillana', 'larousse', 'oceano', 'océano',
+      'norma', 'sm', 'ninguno', 'desconocido', 'sin autor', 'diversos autores', 'autores varios',
     ];
     return collectiveTerms.some((term) => lower === term || lower.startsWith(term + ' ') || lower.startsWith(term + '/'));
   };
 
-  // 1. Author-based Cutter (3 letters from primary surname)
   if (author && !isAnonymousOrCollective(author)) {
     const particles = new Set(['de', 'la', 'del', 'los', 'las', 'van', 'von', 'da', 'di', 'y', 'd']);
+    const authClean = author.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    if (author.includes(',')) {
-      const surnamePart = author.split(',')[0].trim();
-      const surnameWords = surnamePart.split(/\s+/).filter((w) => !particles.has(w.toLowerCase()));
+    if (authClean.includes(',')) {
+      const surnamePart = authClean.split(',')[0].trim();
+      const surnameWords = surnamePart.split(/\s+/).filter((w) => !particles.has(w.toLowerCase().replace(/[^a-z]/g, '')));
       if (surnameWords.length > 0) {
         const code = cleanStr(surnameWords[0]).slice(0, 3);
         if (code.length > 0) return code.padEnd(3, 'X');
       }
     }
 
-    const words = author.trim().split(/\s+/);
+    const words = authClean.trim().split(/[\s\-]+/);
     const meaningfulWords = words.filter((w) => !particles.has(w.toLowerCase().replace(/[^a-z]/g, '')));
 
     if (meaningfulWords.length === 1) {
@@ -209,42 +228,48 @@ export function getAuthorCutterCode(author?: string, title?: string): string {
     }
   }
 
-  // 2. Golden Rule: Entry by Title, omit initial articles
   if (title && title.trim()) {
-    const articles = new Set([
-      'el',
-      'la',
-      'los',
-      'las',
-      'un',
-      'una',
-      'unos',
-      'unas',
-      'lo',
-      'the',
-      'a',
-      'an',
-      'le',
-      'les',
-      'l',
-      'der',
-      'die',
-      'das',
-    ]);
-
+    const articles = new Set(['el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'lo', 'the', 'a', 'an', 'le', 'les', 'l']);
     const titleWords = title.trim().split(/\s+/);
     let targetWord = titleWords[0];
-
-    const cleanFirstWord = targetWord.toLowerCase().replace(/[^a-z]/g, '');
-    if (articles.has(cleanFirstWord) && titleWords.length > 1) {
+    const cleanFirst = targetWord.toLowerCase().replace(/[^a-z]/g, '');
+    if (articles.has(cleanFirst) && titleWords.length > 1) {
       targetWord = titleWords[1];
     }
-
     const code = cleanStr(targetWord).slice(0, 3);
     if (code.length > 0) return code.padEnd(3, 'X');
   }
 
   return 'BIB';
+}
+
+/**
+ * Código Cutter completo según la regla internacional:
+ * 3 letras mayúsculas del apellido del autor + 1 letra minúscula de la primera palabra con significado real del título.
+ */
+export function getAuthorCutterCode(author?: string, title?: string): string {
+  const authorLetters = getAuthor3Letters(author, title);
+  const workMark = getTitleWorkMark(title);
+  return `${authorLetters}${workMark}`;
+}
+
+/**
+ * Formatea el código Cutter para su presentación en el tejuelo impreso.
+ */
+export function formatCutterDisplay(authorLetters?: string): string {
+  if (!authorLetters) return 'XXX';
+  const clean = authorLetters.trim();
+  if (/^[A-Z]{3}[a-z]$/.test(clean)) {
+    return `${clean.slice(0, 3)} ${clean.slice(3)}`;
+  }
+  if (/^[A-Z]{3}\s+[a-z]$/i.test(clean)) {
+    const parts = clean.split(/\s+/);
+    return `${parts[0].toUpperCase()} ${parts[1].toLowerCase()}`;
+  }
+  if (/^[A-Za-z]{3}$/.test(clean)) {
+    return clean.toUpperCase();
+  }
+  return clean;
 }
 
 export function generateMarbeteCode(
@@ -257,9 +282,15 @@ export function generateMarbeteCode(
   const prefix = getBranchCodePrefix(branchNameOrId);
   const deweyPrefix = deweyCode ? deweyCode.split('.')[0].replace(/[^0-9]/g, '') || '800' : '800';
 
-  let cutter = 'OTE';
-  if (authorOrCutter && authorOrCutter.trim().length === 3 && /^[A-Za-z]{3}$/.test(authorOrCutter.trim())) {
-    cutter = authorOrCutter.trim().toUpperCase();
+  let cutter = 'OTEc';
+  if (authorOrCutter && /^[A-Za-z]{3}[a-z]?$/.test(authorOrCutter.trim())) {
+    const raw = authorOrCutter.trim();
+    if (raw.length === 4) {
+      cutter = raw.slice(0, 3).toUpperCase() + raw.charAt(3).toLowerCase();
+    } else if (raw.length === 3) {
+      const workMark = title ? getTitleWorkMark(title) : '';
+      cutter = raw.toUpperCase() + workMark;
+    }
   } else {
     cutter = getAuthorCutterCode(authorOrCutter, title);
   }
@@ -349,16 +380,32 @@ export function getStoredCopies(): Copy[] {
 
     let modified = false;
     const cleaned = list.map((c) => {
-      if (c.internal_code && (c.internal_code.includes('CIM') || c.internal_code.includes('CIEM'))) {
+      let code = c.internal_code;
+      if (code && (code.includes('CIM') || code.includes('CIEM'))) {
         modified = true;
-        const newCode = c.internal_code
+        code = code
           .replace(/^CIEM-PRI/i, 'MOS-PRI')
           .replace(/^CIEM-BAC/i, 'MOS-BAC')
           .replace(/^CIEM/i, 'MOS-PRI')
           .replace(/^CIM-PRI/i, 'MOS-PRI')
           .replace(/^CIM-BAC/i, 'MOS-BAC')
           .replace(/^CIM/i, 'MOS-PRI');
-        return { ...c, internal_code: newCode };
+      }
+
+      // Upgrade 3-letter Cutter (e.g. MOS-BAC-860-OTE-001 -> MOS-BAC-860-OTEc-001) if work title is present
+      if (code && c.work?.title) {
+        const match3 = code.match(/^([A-Z]{2,4}-[A-Z0-9]{3,4}-\d{3})-([A-Z]{3})-(\d{3})$/);
+        if (match3) {
+          const wm = getTitleWorkMark(c.work.title);
+          if (wm) {
+            code = `${match3[1]}-${match3[2]}${wm}-${match3[3]}`;
+            modified = true;
+          }
+        }
+      }
+
+      if (code !== c.internal_code) {
+        return { ...c, internal_code: code };
       }
       return c;
     });

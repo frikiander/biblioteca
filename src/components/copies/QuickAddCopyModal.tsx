@@ -306,7 +306,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
                   <UserCheck className="w-3 h-3 text-emerald-700" />
-                  2. Cutter (Autor)
+                  2. Cutter (Autor + Título)
                 </label>
                 <button
                   type="button"
@@ -318,12 +318,12 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
               </div>
               <input
                 type="text"
-                maxLength={3}
+                maxLength={4}
                 value={cutterCode}
-                onChange={(e) => setCutterCode(e.target.value.toUpperCase().slice(0, 3))}
-                placeholder="OTE"
+                onChange={(e) => setCutterCode(e.target.value.slice(0, 4))}
+                placeholder="OTEc"
                 required
-                className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-xs font-bold text-slate-900 uppercase"
+                className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-xs font-bold text-slate-900"
               />
             </div>
 
