@@ -82,13 +82,16 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
   onClose,
   onWorkCreated,
 }) => {
+  // Modal Step: 'isbn_lookup' (initial entry) | 'form' (autofilled or manual entry)
   const [currentStep, setCurrentStep] = useState<'isbn_lookup' | 'form'>('isbn_lookup');
 
+  // ISBN search query state
   const [searchIsbnInput, setSearchIsbnInput] = useState('');
   const [isSearchingGoogle, setIsSearchingGoogle] = useState(false);
   const [searchLookupError, setSearchLookupError] = useState<string | null>(null);
   const [dataOrigin, setDataOrigin] = useState<'google_books' | 'manual'>('manual');
 
+  // Form State for Work (Dublin Core + CDD)
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [isbn, setIsbn] = useState('');
@@ -101,38 +104,43 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
   const [subjects, setSubjects] = useState<string[]>(['Literatura Venezolana', 'Biblioteca Escolar']);
   const [coverUrl, setCoverUrl] = useState(SAMPLE_COVERS[0].url);
 
+  // Available Branches
   const [branches, setBranches] = useState<Branch[]>(() => {
     return getStoredBranches();
   });
 
+  // Initial Copies Provisioning (Individual Configuration)
   const [createInitialCopies, setCreateInitialCopies] = useState<boolean>(true);
 
+  // Helper to generate smart internal codes based on branch, dewey, author cutter and sequence
   const generateSuggestedCode = (branchId: string, customDewey: string, indexOffset: number = 1) => {
-    const branch = branches.find((b) => b.id === branchId) || branches[0];
+    const branch = branches.find((b) => b.id === branchId || b.name === branchId) || branches[0];
     return generateMarbeteCode(branch?.name || branch?.id, customDewey, author, indexOffset, title);
   };
 
   const [initialCopies, setInitialCopies] = useState<InitialCopyDraft[]>([
     {
       id: 'draft_1',
-      branch_id: INITIAL_BRANCHES[0]?.id || 'b_primaria',
+      branch_id: INITIAL_BRANCHES[0]?.id || '00000000-0000-4000-a000-000000000001',
       condition: 'bueno',
-      internal_code: generateMarbeteCode(INITIAL_BRANCHES[0]?.name || 'b_primaria', '860', 'OTE', 1, 'Casas Muertas'),
+      internal_code: generateMarbeteCode(INITIAL_BRANCHES[0]?.name || 'Primaria', '860', 'OTE', 1, 'Casas Muertas'),
       notes: 'Ejemplar #1 - Biblioteca Miguel Otero Silva (Primaria)',
     },
     {
       id: 'draft_2',
-      branch_id: INITIAL_BRANCHES[1]?.id || 'b_bachillerato',
+      branch_id: INITIAL_BRANCHES[1]?.id || '00000000-0000-4000-a000-000000000002',
       condition: 'bueno',
-      internal_code: generateMarbeteCode(INITIAL_BRANCHES[1]?.name || 'b_bachillerato', '860', 'OTE', 2, 'Casas Muertas'),
+      internal_code: generateMarbeteCode(INITIAL_BRANCHES[1]?.name || 'Bachillerato', '860', 'OTE', 2, 'Casas Muertas'),
       notes: 'Ejemplar #2 - Biblioteca Miguel Otero Silva (Bachillerato)',
     },
   ]);
 
+  // Loading & Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Reset modal state when opened
   useEffect(() => {
     if (isOpen) {
       setCurrentStep('isbn_lookup');
@@ -143,14 +151,25 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
     }
   }, [isOpen]);
 
+  // Load branches from Supabase if configured
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
       supabase
         .from('branches')
         .select('*')
+        .order('name')
         .then(({ data }) => {
           if (data && data.length > 0) {
             setBranches(data);
+            setInitialCopies((prev) =>
+              prev.map((c, idx) => {
+                const matchedBranch = data[idx % data.length];
+                return {
+                  ...c,
+                  branch_id: matchedBranch.id,
+                };
+              })
+            );
           }
         });
     }
@@ -160,6 +179,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
 
   const currentDewey = getDeweyInfo(deweyCode);
 
+  // Apply autofilled metadata from Google Books
   const applyAutofilledMetadata = (meta: NormalizedBookMetadata) => {
     setTitle(meta.title);
     setAuthor(meta.author);
@@ -174,6 +194,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
     setDeweyCode(assignedDewey);
     setDataOrigin('google_books');
 
+    // Update suggested marbetes for the copies with the new Dewey code and author/title
     setInitialCopies((prev) =>
       prev.map((c, idx) => {
         const branch = branches.find((b) => b.id === c.branch_id);
@@ -187,6 +208,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
     setCurrentStep('form');
   };
 
+  // Google Books API Search handler
   const handlePerformGoogleSearch = async (isbnToSearch?: string) => {
     const rawTarget = isbnToSearch || searchIsbnInput;
     const clean = rawTarget.replace(/[^0-9X]/gi, '').trim();
@@ -223,6 +245,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
     }
   };
 
+  // Skip to manual entry
   const handleProceedToManual = () => {
     setDataOrigin('manual');
     setIsbn(searchIsbnInput.trim());
@@ -231,6 +254,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
 
   const handleDeweyCodeChange = (newCode: string) => {
     setDeweyCode(newCode);
+    // Update marbete codes for draft copies dynamically
     setInitialCopies((prev) =>
       prev.map((c, idx) => {
         const branch = branches.find((b) => b.id === c.branch_id);
@@ -253,6 +277,8 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
   const handleRemoveSubject = (tag: string) => {
     setSubjects(subjects.filter((s) => s !== tag));
   };
+
+  // --- Copy Management Handlers ---
 
   const handleAddCopy = (targetBranchId?: string) => {
     const targetBranch = targetBranchId
@@ -341,6 +367,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
     setFormError(null);
     setSuccessMessage(null);
 
+    // Validate Basic Work Info
     if (!title.trim()) {
       setFormError('El título de la obra es obligatorio.');
       return;
@@ -354,6 +381,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
       return;
     }
 
+    // Validate Individual Copies if enabled
     if (createInitialCopies && initialCopies.length > 0) {
       const codeSet = new Set<string>();
       for (let i = 0; i < initialCopies.length; i++) {
@@ -395,6 +423,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
       let generatedCopiesCount = 0;
 
       if (isSupabaseConfigured && supabase) {
+        // 1. Insert Work in Supabase
         const { data: insertedWork, error: workInsertError } = await (supabase as any)
           .from('works')
           .insert({
@@ -419,13 +448,14 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
         const realWorkId = insertedWork.id;
         workPayload.id = realWorkId;
 
+        // 2. Insert individual copies if configured
         if (createInitialCopies && initialCopies.length > 0) {
           const copiesToInsert = initialCopies.map((draft) => {
-            const branch = branches.find((b) => b.id === draft.branch_id);
+            const branch = branches.find((b) => b.id === draft.branch_id || b.name === draft.branch_id) || branches[0];
             const isExternal = branch?.type === 'external_donation';
             return {
               work_id: realWorkId,
-              branch_id: draft.branch_id,
+              branch_id: branch?.id || draft.branch_id,
               condition: draft.condition,
               internal_code: draft.internal_code.trim(),
               status: isExternal ? 'en_donacion' : 'disponible',
@@ -439,11 +469,13 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
 
           if (copiesError) {
             console.error('Error insertando ejemplares en Supabase:', copiesError);
+            throw new Error(`Obra creada pero ocurrió un error al registrar los ejemplares: ${copiesError.message}`);
           } else {
             generatedCopiesCount = copiesToInsert.length;
           }
         }
       } else {
+        // Local persistence fallback
         const savedWorks = localStorage.getItem('manglar_works');
         const currentWorks: Work[] = savedWorks ? JSON.parse(savedWorks) : INITIAL_WORKS;
         const updatedWorks = [workPayload, ...currentWorks];
@@ -493,6 +525,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
     }
   };
 
+  // Metric summaries for the individual copies
   const centralDraftCount = initialCopies.filter((c) => {
     const b = branches.find((br) => br.id === c.branch_id);
     return b?.type === 'internal';
@@ -512,6 +545,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
         id="register-work-modal"
         className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden my-4 sm:my-6"
       >
+        {/* Modal Header */}
         <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shadow-inner">
@@ -542,6 +576,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
           </button>
         </div>
 
+        {/* STEP 1: ISBN LOOKUP STEP */}
         {currentStep === 'isbn_lookup' && (
           <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full">
             <div className="text-center space-y-2">
@@ -569,6 +604,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               </div>
             </div>
 
+            {/* Error Message */}
             {searchLookupError && (
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3 animate-in fade-in">
                 <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -586,6 +622,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               </div>
             )}
 
+            {/* Search Input Box */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -613,6 +650,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                 </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                 <button
                   id="search-google-books-btn"
@@ -646,6 +684,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               </div>
             </form>
 
+            {/* Quick Test ISBN Presets */}
             <div className="pt-4 border-t border-slate-100 space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block text-center sm:text-left">
                 Ejemplos rápidos para prueba:
@@ -671,8 +710,10 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
           </div>
         )}
 
+        {/* STEP 2: FULL METADATA & INDIVIDUAL COPIES FORM */}
         {currentStep === 'form' && (
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+            {/* Origin Banner */}
             <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
               dataOrigin === 'google_books'
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
@@ -724,6 +765,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               </div>
             )}
 
+            {/* Section 1: Basic Bibliographic Identity */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
                 <FileText className="w-4 h-4 text-emerald-700" />
@@ -731,6 +773,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Title */}
                 <div className="sm:col-span-2 space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700">
                     Título de la Obra <span className="text-rose-500">*</span>
@@ -746,6 +789,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                   />
                 </div>
 
+                {/* Author / Creator */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700">
                     Autor o Creador <span className="text-rose-500">*</span>
@@ -761,6 +805,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                   />
                 </div>
 
+                {/* ISBN with quick Google Search trigger */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700">
                     ISBN / Código de Identificación
@@ -793,6 +838,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               </div>
             </div>
 
+            {/* Section 2: Dewey Decimal Classification (CDD) */}
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -845,6 +891,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               </div>
             </div>
 
+            {/* Section 3: Publishing & Catalog Metadata */}
             <div className="space-y-4 pt-2">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
                 <BookmarkCheck className="w-4 h-4 text-emerald-700" />
@@ -852,6 +899,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Publisher */}
                 <div className="sm:col-span-1 space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700">
                     Editorial
@@ -866,6 +914,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                   />
                 </div>
 
+                {/* Year */}
                 <div className="sm:col-span-1 space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700">
                     Año de Publicación
@@ -881,6 +930,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                   />
                 </div>
 
+                {/* Language */}
                 <div className="sm:col-span-1 space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700">
                     Idioma
@@ -900,6 +950,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                 </div>
               </div>
 
+              {/* Subject Keywords */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-700">
                   Materias y Palabras Clave
@@ -928,6 +979,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                   </button>
                 </div>
 
+                {/* Tag Chips */}
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {subjects.map((tag) => (
                     <span
@@ -948,6 +1000,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                 </div>
               </div>
 
+              {/* Description / Summary */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-700">
                   Sinopsis / Resumen Bibliográfico
@@ -962,6 +1015,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                 />
               </div>
 
+              {/* Book Cover Image selector */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-700">
                   Portada de la Obra (URL o Galería Predefinida)
@@ -983,6 +1037,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                       placeholder="https://..."
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
                     />
+                    {/* Preset quick cover selectors */}
                     <div className="flex items-center gap-1.5 overflow-x-auto text-[11px]">
                       <span className="text-slate-400 shrink-0">Preajustes:</span>
                       {SAMPLE_COVERS.map((sc, i) => (
@@ -1005,6 +1060,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               </div>
             </div>
 
+            {/* Section 4: Physical Copies Generation - INDIVIDUAL CONFIGURATION PER COPY */}
             <div className="space-y-4 pt-3 p-4 sm:p-5 rounded-3xl bg-slate-50 border border-slate-200">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 <div className="flex items-center gap-2">
@@ -1036,6 +1092,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
 
               {createInitialCopies && (
                 <div className="space-y-4">
+                  {/* Metrics Pill & Add Controls */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
                       <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-bold text-slate-800">
@@ -1049,6 +1106,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                       </span>
                     </div>
 
+                    {/* Add Copy Action Buttons */}
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -1074,6 +1132,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                     </div>
                   </div>
 
+                  {/* Copies List: Individual Cards */}
                   {initialCopies.length === 0 ? (
                     <div className="p-6 text-center bg-white rounded-2xl border border-dashed border-slate-300 text-slate-500 text-xs">
                       No has agregado ejemplares iniciales para esta obra. Haz clic en <strong>+ Ejemplar Central</strong> o <strong>+ Ejemplar Semilla</strong> para añadir uno.
@@ -1089,6 +1148,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                             key={copy.id}
                             className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3.5 hover:border-slate-300 transition"
                           >
+                            {/* Copy Header / Action bar */}
                             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                               <div className="flex items-center gap-2">
                                 <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">
@@ -1099,7 +1159,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                 </span>
                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                                   isDonation ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-                                }`}>
+                                }}`}>
                                   {isDonation ? 'Dotación Rural' : 'Sede Central'}
                                 </span>
                               </div>
@@ -1125,7 +1185,9 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                               </div>
                             </div>
 
+                            {/* Copy Fields Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs">
+                              {/* Branch Selector */}
                               <div className="sm:col-span-4 space-y-1">
                                 <label className="block font-bold text-slate-700 flex items-center gap-1">
                                   <Building2 className="w-3 h-3 text-slate-400" />
@@ -1153,6 +1215,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                 </select>
                               </div>
 
+                              {/* Individual Physical Condition (Individual buttons per copy) */}
                               <div className="sm:col-span-4 space-y-1">
                                 <label className="block font-bold text-slate-700">
                                   Estado Físico Individual
@@ -1188,6 +1251,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                 </div>
                               </div>
 
+                              {/* Individual Marbete Code Input with Regenerate Action */}
                               <div className="sm:col-span-4 space-y-1">
                                 <div className="flex items-center justify-between">
                                   <label className="block font-bold text-slate-700 flex items-center gap-1">
@@ -1211,6 +1275,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                 />
                               </div>
 
+                              {/* Individual Shelf / Location Notes */}
                               <div className="sm:col-span-12 space-y-1">
                                 <label className="block font-medium text-slate-600 text-[11px]">
                                   Ubicación en Estantería / Observaciones del Ejemplar
@@ -1235,6 +1300,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
           </form>
         )}
 
+        {/* Modal Footer Actions (only shown in 'form' step) */}
         {currentStep === 'form' && (
           <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
             <div className="text-xs text-slate-500 text-center sm:text-left">
