@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BookMarked, 
   RotateCcw, 
@@ -7,16 +7,23 @@ import {
   Sparkles, 
   Layers, 
   Library,
-  ArrowRight
+  ArrowRight,
+  Bookmark,
+  Wifi,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 import { CheckoutTab } from './CheckoutTab';
 import { CheckinTab } from './CheckinTab';
 import { LoanHistoryTraceability } from './LoanHistoryTraceability';
+import { HoldsTab } from './HoldsTab';
 import type { Loan } from '../../types/database';
 import { getStoredLoans } from '../../lib/loans';
+import { getStoredHolds } from '../../lib/holds';
+import { getOfflineQueue, processOfflineQueue } from '../../lib/offlineCirc';
 
 interface LoansHubProps {
-  initialTab?: 'checkout' | 'checkin' | 'history';
+  initialTab?: 'checkout' | 'checkin' | 'holds' | 'history';
   initialMarbeteCode?: string;
   onDataChange?: () => void;
 }
@@ -26,12 +33,40 @@ export const LoansHub: React.FC<LoansHubProps> = ({
   initialMarbeteCode = '',
   onDataChange,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'checkout' | 'checkin' | 'history'>(initialTab);
+  const [activeSubTab, setActiveSubTab] = useState<'checkout' | 'checkin' | 'holds' | 'history'>(initialTab);
   const [prefilledCheckinCode, setPrefilledCheckinCode] = useState<string>(initialMarbeteCode);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [offlineCount, setOfflineCount] = useState<number>(0);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    setOfflineCount(getOfflineQueue().length);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [refreshTrigger]);
 
   const loans = getStoredLoans();
   const activeLoansCount = loans.filter((l) => l.status === 'active' || l.status === 'overdue').length;
+  
+  const holds = getStoredHolds();
+  const activeHoldsCount = holds.filter((h) => h.status === 'waiting' || h.status === 'ready_for_pickup').length;
+
+  const handleSyncOffline = async () => {
+    setIsSyncing(true);
+    await processOfflineQueue();
+    setOfflineCount(getOfflineQueue().length);
+    setIsSyncing(false);
+    setRefreshTrigger((prev) => prev + 1);
+    if (onDataChange) onDataChange();
+  };
 
   const handleLoanCreated = (newLoan: Loan) => {
     setRefreshTrigger((prev) => prev + 1);
@@ -91,6 +126,30 @@ export const LoansHub: React.FC<LoansHubProps> = ({
           </button>
 
           <button
+            id="tab-loan-holds"
+            onClick={() => setActiveSubTab('holds')}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+              activeSubTab === 'holds'
+                ? 'bg-emerald-800 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Bookmark className="w-4 h-4" />
+            <span>Reservas (Holds)</span>
+            {activeHoldsCount > 0 && (
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  activeSubTab === 'holds'
+                    ? 'bg-amber-950 text-amber-200'
+                    : 'bg-amber-100 text-amber-900'
+                }`}
+              >
+                {activeHoldsCount} en espera
+              </span>
+            )}
+          </button>
+
+          <button
             id="tab-loan-history"
             onClick={() => setActiveSubTab('history')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
@@ -104,38 +163,25 @@ export const LoansHub: React.FC<LoansHubProps> = ({
           </button>
         </div>
 
-        <div className="hidden lg:flex items-center gap-2 text-xs text-slate-500 pr-3 font-medium">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
-          <span>Validación instantánea por código de marbete</span>
+        {/* Offline sync / network indicator */}
+        <div className="flex items-center gap-2 text-xs pr-3">
+          {offlineCount > 0 ? (
+            <button
+              onClick={handleSyncOffline}
+              disabled={isSyncing}
+              className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg flex items-center gap-1.5 shadow-xs transition"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              Sincronizar Offline ({offlineCount})
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5 text-slate-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>Modo Online</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Main Tab Panels */}
-      {activeSubTab === 'checkout' && (
-        <div className="max-w-4xl mx-auto">
-          <CheckoutTab
-            onLoanCreated={handleLoanCreated}
-            onNavigateToCheckin={handleNavigateToCheckin}
-          />
-        </div>
-      )}
-
-      {activeSubTab === 'checkin' && (
-        <div className="max-w-4xl mx-auto">
-          <CheckinTab
-            initialCode={prefilledCheckinCode}
-            onLoanReturned={handleLoanReturned}
-            onNavigateToCheckout={() => setActiveSubTab('checkout')}
-          />
-        </div>
-      )}
-
-      {activeSubTab === 'history' && (
-        <LoanHistoryTraceability
-          refreshTrigger={refreshTrigger}
-          onSelectCheckinCode={handleNavigateToCheckin}
-        />
-      )}
-    </div>
-  );
-};
+      {activeSubTab === 'checkout' && (\n        <div className=\"max-w-4xl mx-auto\">\n          <CheckoutTab\n            onLoanCreated={handleLoanCreated}\n            onNavigateToCheckin={handleNavigateToCheckin}\n          />\n        </div>\n      )}\n\n      {activeSubTab === 'checkin' && (\n        <div className=\"max-w-4xl mx-auto\">\n          <CheckinTab\n            initialCode={prefilledCheckinCode}\n            onLoanReturned={handleLoanReturned}\n            onNavigateToCheckout={() => setActiveSubTab('checkout')}\n          />\n        </div>\n      )}\n\n      {activeSubTab === 'holds' && (\n        <HoldsTab onNavigateToCheckout={() => setActiveSubTab('checkout')} />\n      )}\n\n      {activeSubTab === 'history' && (\n        <LoanHistoryTraceability\n          refreshTrigger={refreshTrigger}\n          onSelectCheckinCode={handleNavigateToCheckin}\n        />\n      )}\n    </div>\n  );\n};\n
