@@ -1,28 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building, MapPin, Layers, BookCheck, ArrowRight, HeartHandshake, ShieldCheck, Filter, Printer, Download, Image as ImageIcon, FileDown } from 'lucide-react';
 import type { Copy, Branch, Work } from '../../types/database';
-import { INITIAL_BRANCHES, INITIAL_COPIES, INITIAL_WORKS, getStoredBranches, getStoredCopies, getAuthorCutterCode } from '../../lib/supabaseClient';
+import { supabase, isSupabaseConfigured, INITIAL_BRANCHES, INITIAL_COPIES, INITIAL_WORKS, getStoredBranches, getStoredCopies, getAuthorCutterCode } from '../../lib/supabaseClient';
 import { PrintSpineLabelsModal } from '../copies/PrintSpineLabelsModal';
 import { downloadSpineLabelPNG, downloadSpineLabelsPDF } from '../copies/SpineLabel';
 
 export const BranchInventory: React.FC = () => {
-  const [branches] = useState<Branch[]>(() => {
+  const [branches, setBranches] = useState<Branch[]>(() => {
     return getStoredBranches();
   });
 
   const [filterCategory, setFilterCategory] = useState<'all' | 'internal' | 'external_donation'>('all');
 
-  const [copies] = useState<Copy[]>(() => {
+  const [copies, setCopies] = useState<Copy[]>(() => {
     return getStoredCopies();
   });
 
-  const [works] = useState<Work[]>(() => {
+  const [works, setWorks] = useState<Work[]>(() => {
     const saved = localStorage.getItem('manglar_works');
     return saved ? JSON.parse(saved) : INITIAL_WORKS;
   });
 
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(branches[0]?.id || 'b_primaria');
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(branches[0]?.id || '00000000-0000-4000-a000-000000000001');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+
+  // Live Supabase Sync
+  useEffect(() => {
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('branches').select('*').order('name').then(({ data }) => {
+        if (data && data.length > 0) {
+          setBranches(data);
+          setSelectedBranchId((prev) => {
+            const exists = data.some((b) => b.id === prev);
+            return exists ? prev : data[0].id;
+          });
+        }
+      });
+      supabase.from('copies').select('*, work:works(*), branch:branches(*)').then(({ data }) => {
+        if (data) setCopies(data as Copy[]);
+      });
+      supabase.from('works').select('*').then(({ data }) => {
+        if (data) setWorks(data as Work[]);
+      });
+    }
+  }, []);
 
   const selectedBranch = branches.find((b) => b.id === selectedBranchId) || branches[0];
   const branchCopies = copies.filter((c) => c.branch_id === selectedBranch?.id);
@@ -35,6 +56,7 @@ export const BranchInventory: React.FC = () => {
 
   return (
     <div id="branch-inventory-section" className="space-y-6">
+      {/* Category Filter Pills */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
         <div>
           <h2 className="text-base font-bold text-slate-900">Sedes de Asignación e Inventario Descentralizado</h2>
@@ -77,6 +99,7 @@ export const BranchInventory: React.FC = () => {
         </div>
       </div>
 
+      {/* Branches Selector Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {displayedBranches.map((branch) => {
           const count = copies.filter((c) => c.branch_id === branch.id).length;
@@ -131,6 +154,7 @@ export const BranchInventory: React.FC = () => {
         })}
       </div>
 
+      {/* Selected Branch Detail Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -268,6 +292,7 @@ export const BranchInventory: React.FC = () => {
         )}
       </div>
 
+      {/* Modal de Impresión de Tejuelos */}
       <PrintSpineLabelsModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}

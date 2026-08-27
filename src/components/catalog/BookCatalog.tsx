@@ -42,6 +42,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
   const [activeModalWork, setActiveModalWork] = useState<WorkWithCopiesCount | null>(null);
   const [dataSource, setDataSource] = useState<'supabase' | 'local'>('local');
 
+  // Modals state
   const [isRegisterWorkModalOpen, setIsRegisterWorkModalOpen] = useState<boolean>(false);
   const [quickAddCopyWork, setQuickAddCopyWork] = useState<WorkWithCopiesCount | null>(null);
   const [isPrintSpineModalOpen, setIsPrintSpineModalOpen] = useState<boolean>(false);
@@ -63,12 +64,14 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
     }
   };
 
+  // Fetch catalog data from Supabase or fallback store
   const fetchWorksCatalog = async () => {
     setLoading(true);
     setError(null);
 
     try {
       if (isSupabaseConfigured && supabase) {
+        // Fetch from live Supabase instance with joined copies and branches
         const { data: worksData, error: worksError } = await supabase
           .from('works')
           .select('*')
@@ -103,6 +106,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         setWorks(enriched);
         setDataSource('supabase');
       } else {
+        // Read from local sync store
         const savedCopiesStr = localStorage.getItem('manglar_copies');
         const currentCopies: Copy[] = savedCopiesStr ? JSON.parse(savedCopiesStr) : INITIAL_COPIES;
 
@@ -119,6 +123,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
       const message = err instanceof Error ? err.message : 'Error desconocido al cargar el catálogo bibliográfico';
       setError(message);
       
+      // Graceful fallback to initial seed
       const enriched = getWorksWithInventory(INITIAL_WORKS, getStoredBranches(), INITIAL_COPIES);
       setWorks(enriched);
       setDataSource('local');
@@ -131,8 +136,10 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
     fetchWorksCatalog();
   }, [refreshTrigger]);
 
+  // Filtered works computed efficiently
   const filteredWorks = useMemo(() => {
     return works.filter((work) => {
+      // 1. Text search (Title, Author, ISBN, Dewey Code, Subject keywords)
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !query ||
@@ -144,6 +151,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
 
       if (!matchesSearch) return false;
 
+      // 2. Dewey Category Filter
       if (selectedDewey !== 'all') {
         const rawDewey = (work.dewey_code || '').trim();
         const numOnly = rawDewey.split('.')[0].replace(/[^0-9]/g, '');
@@ -154,10 +162,12 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
           const targetGroup = selectedDewey.replace('group_', '');
           if (hundredGroup !== targetGroup) return false;
         } else if (selectedDewey.endsWith('00')) {
+          // If a broad class is selected (e.g. 800, 500, 000)
           if (hundredGroup !== selectedDewey && !rawDewey.startsWith(selectedDewey.charAt(0))) {
             return false;
           }
         } else {
+          // Specific 3-digit division (e.g. 860, 370, 510, 810, etc.)
           const divisionPrefix = selectedDewey.slice(0, 2);
           const matchesPrefix = padded.startsWith(divisionPrefix) || rawDewey.startsWith(divisionPrefix);
           const matchesExact = padded === selectedDewey || rawDewey === selectedDewey || rawDewey.startsWith(selectedDewey);
@@ -165,6 +175,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         }
       }
 
+      // 3. Branch filter
       if (selectedBranchFilter === 'all') {
         return true;
       } else if (selectedBranchFilter === 'central') {
@@ -176,6 +187,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
           (b) => b.branch_type === 'external_donation' && b.count > 0
         );
       } else {
+        // Specific branch matching ID or Name fragment
         return work.copies_by_branch.some(
           (b) => (b.branch_id === selectedBranchFilter || b.branch_name.toLowerCase().includes(selectedBranchFilter.toLowerCase())) && b.count > 0
         );
@@ -183,6 +195,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
     });
   }, [works, searchQuery, selectedDewey, selectedBranchFilter]);
 
+  // Total summary counts
   const totalCopiesCount = useMemo(() => {
     return works.reduce((sum, w) => sum + w.total_copies, 0);
   }, [works]);
@@ -198,6 +211,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
 
   return (
     <div id="book-catalog-container" className="space-y-6">
+      {/* Top Banner / Metrics bar */}
       <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -213,6 +227,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
             </p>
           </div>
 
+          {/* Quick Metrics & Actions */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200/70 text-right">
               <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total Ejemplares</span>
@@ -266,7 +281,9 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
           </div>
         </div>
 
+        {/* Search and Filters Control Row */}
         <div className="mt-5 grid grid-cols-1 sm:grid-cols-12 gap-3 pt-4 border-t border-slate-100">
+          {/* Search bar */}
           <div className="sm:col-span-6 relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -279,6 +296,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
             />
           </div>
 
+          {/* Dewey Category Selector */}
           <div className="sm:col-span-3">
             <select
               id="dewey-filter-select"
@@ -302,6 +320,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
             </select>
           </div>
 
+          {/* Branch filter */}
           <div className="sm:col-span-3">
             <select
               id="branch-filter-select"
@@ -311,14 +330,14 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
             >
               <option value="all">Todas las sedes (6)</option>
               <optgroup label="Sedes Centrales (Campus)">
-                <option value="b_primaria">Biblioteca Miguel Otero Silva - Primaria</option>
-                <option value="b_bachillerato">Biblioteca Miguel Otero Silva - Bachillerato</option>
+                <option value="primaria">Biblioteca Miguel Otero Silva - Primaria</option>
+                <option value="bachillerato">Biblioteca Miguel Otero Silva - Bachillerato</option>
               </optgroup>
               <optgroup label="Semilla Manglareña (Dotaciones Rurales)">
-                <option value="b_guarico">Semilla Manglareña - Guárico</option>
-                <option value="b_caripe">Semilla Manglareña - Caripe</option>
-                <option value="b_merida">Semilla Manglareña - Mérida</option>
-                <option value="b_delta">Semilla Manglareña - Delta</option>
+                <option value="guárico">Semilla Manglareña - Guárico</option>
+                <option value="caripe">Semilla Manglareña - Caripe</option>
+                <option value="merida">Semilla Manglareña - Mérida</option>
+                <option value="delta">Semilla Manglareña - Delta</option>
               </optgroup>
               <optgroup label="Filtros Generales">
                 <option value="central">Todas las Sedes Centrales</option>
@@ -328,6 +347,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
           </div>
         </div>
 
+        {/* Active Dewey Pills */}
         <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           <span className="text-slate-400 text-[11px] font-medium mr-1 shrink-0 flex items-center gap-1">
             <Filter className="w-3 h-3" /> Clases CDD:
@@ -395,6 +415,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         </div>
       </div>
 
+      {/* Toast Notification */}
       {toastNotification && (
         <div className="p-4 rounded-2xl bg-emerald-900 text-white shadow-lg flex items-center justify-between gap-3 animate-in slide-in-from-top-2">
           <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
@@ -410,6 +431,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         </div>
       )}
 
+      {/* Database Warning / Status Notice */}
       {error && (
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
           <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -422,6 +444,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         </div>
       )}
 
+      {/* Loading Skeletons */}
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {[...Array(6)].map((_, i) => (
@@ -442,6 +465,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         </div>
       )}
 
+      {/* Empty State */}
       {!loading && works.length === 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-lg mx-auto space-y-4 shadow-sm">
           <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-700 mx-auto flex items-center justify-center border border-emerald-100">
@@ -498,6 +522,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         </div>
       )}
 
+      {/* Grid of Books */}
       {!loading && filteredWorks.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filteredWorks.map((work) => (
@@ -520,11 +545,13 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         </div>
       )}
 
+      {/* Dublin Core Metadata Inspector Modal */}
       <DublinCoreModal
         work={activeModalWork}
         onClose={() => setActiveModalWork(null)}
       />
 
+      {/* Bulk / Single Spine Labels Modal */}
       <PrintSpineLabelsModal
         isOpen={isPrintSpineModalOpen}
         onClose={() => {
@@ -538,6 +565,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         singleWorkTitle={printModalTitle}
       />
 
+      {/* Register Work in Universal Catalog Modal */}
       <RegisterWorkModal
         isOpen={isRegisterWorkModalOpen}
         onClose={() => setIsRegisterWorkModalOpen(false)}
@@ -549,6 +577,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         }}
       />
 
+      {/* Quick Add Copy Modal */}
       <QuickAddCopyModal
         work={quickAddCopyWork}
         isOpen={Boolean(quickAddCopyWork)}

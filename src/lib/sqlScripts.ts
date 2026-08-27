@@ -149,17 +149,17 @@ CREATE POLICY "Permitir acceso a estudiantes" ON public.students FOR ALL USING (
 CREATE POLICY "Permitir acceso a prestamos" ON public.loans FOR ALL USING (true) WITH CHECK (true);
 
 -- -------------------------------------------------------------------------
--- SEDES INSTITUCIONALES (6 Sedes oficiales de Colegio El Manglar)
+-- SEDES INSTITUCIONALES (6 Sedes oficiales de Colegio El Manglar con UUIDs RFC-4122)
 -- -------------------------------------------------------------------------
-INSERT INTO public.branches (name, type, location, description)
+INSERT INTO public.branches (id, name, type, location, description)
 VALUES 
-    ('Biblioteca Miguel Otero Silva - Primaria', 'internal', 'Campus Colegio Integral El Manglar - Edificio Primaria', 'Biblioteca central y rincón de lectura para educación primaria y preescolar'),
-    ('Biblioteca Miguel Otero Silva - Bachillerato', 'internal', 'Campus Colegio Integral El Manglar - Edificio Bachillerato', 'Biblioteca central y sala de investigación de educación media general y diversificada'),
-    ('Semilla Manglareña - Guárico', 'external_donation', 'Estado Guárico - Módulo Rural', 'Dotación descentralizada de fomento lector para escuelas y comunidades rurales de Guárico'),
-    ('Semilla Manglareña - Caripe', 'external_donation', 'Municipio Caripe, Estado Monagas', 'Dotación de lectura comunitaria y escolar en la región de Caripe del Guácharo'),
-    ('Semilla Manglareña - Mérida', 'external_donation', 'Estado Mérida - Aldeas Andinas', 'Dotación de literatura infantil y juvenil para escuelas rurales andinas'),
-    ('Semilla Manglareña - Delta', 'external_donation', 'Delta Amacuro - Comunidades Fluviales', 'Dotación bibliográfica especializada para comunidades fluviales e indígenas')
-ON CONFLICT (name) DO NOTHING;
+    ('00000000-0000-4000-a000-000000000001', 'Biblioteca Miguel Otero Silva - Primaria', 'internal', 'Campus Colegio Integral El Manglar - Edificio Primaria', 'Biblioteca central y rincón de lectura para educación primaria y preescolar'),
+    ('00000000-0000-4000-a000-000000000002', 'Biblioteca Miguel Otero Silva - Bachillerato', 'internal', 'Campus Colegio Integral El Manglar - Edificio Bachillerato', 'Biblioteca central y sala de investigación de educación media general y diversificada'),
+    ('00000000-0000-4000-a000-000000000003', 'Semilla Manglareña - Guárico', 'external_donation', 'Estado Guárico - Módulo Rural', 'Dotación descentralizada de fomento lector para escuelas y comunidades rurales de Guárico'),
+    ('00000000-0000-4000-a000-000000000004', 'Semilla Manglareña - Caripe', 'external_donation', 'Municipio Caripe, Estado Monagas', 'Dotación de lectura comunitaria y escolar en la región de Caripe del Guácharo'),
+    ('00000000-0000-4000-a000-000000000005', 'Semilla Manglareña - Mérida', 'external_donation', 'Estado Mérida - Aldeas Andinas', 'Dotación de literatura infantil y juvenil para escuelas rurales andinas'),
+    ('00000000-0000-4000-a000-000000000006', 'Semilla Manglareña - Delta', 'external_donation', 'Delta Amacuro - Comunidades Fluviales', 'Dotación bibliográfica especializada para comunidades fluviales e indígenas')
+ON CONFLICT (name) DO UPDATE SET type = EXCLUDED.type;
 `;
 
 export const NEXTJS_FOLDER_STRUCTURE = `biblioteca-miguel-otero-silva/
