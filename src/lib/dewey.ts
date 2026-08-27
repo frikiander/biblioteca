@@ -268,7 +268,7 @@ export function getDeweyInfo(deweyCode: string): DeweyCategory {
   const division = ALL_DEWEY_DIVISIONS.find((d) => d.code === padded) ||
                    ALL_DEWEY_DIVISIONS.find((d) => d.code === hundredPrefix);
 
-  const displayName = division ? division.name : `${padded} ${group.name.replace(/^[0-9]+\s*/, '')}`;
+  const displayName = division ? division.name : `${padded} ${group.name.replace(/^[0-9]+\\s*/, '')}`;
 
   return {
     code: padded,
@@ -279,4 +279,3 @@ export function getDeweyInfo(deweyCode: string): DeweyCategory {
     badgeText: group.badgeText,
   };
 }
-
