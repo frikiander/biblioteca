@@ -75,4 +75,274 @@ export function BookCatalog() {
   }, [supabase]);
 
   if (loading) {
-    return (\n      <div className=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6\">\n        {[...Array(6)].map((_, i) => (\n          <div key={i} className=\"h-64 bg-slate-100 animate-pulse rounded-2xl border border-slate-200\" />\n        ))}\n      </div>\n    );\n  }\n\n  if (error) {\n    return (\n      <div className=\"p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm\">\n        Error al cargar catálogo: {error}\n      </div>\n    );\n  }\n\n  return (\n    <div className=\"space-y-6\">\n      <div className=\"flex items-center justify-between\">\n        <h2 className=\"text-xl font-bold text-slate-900\">Catálogo Universal de Obras</h2>\n        <span className=\"text-xs font-semibold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full\">\n          {works.length} Obras Disponibles\n        </span>\n      </div>\n\n      {/* Grid Responsivo Tailwind CSS */}\n      <div className=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6\">\n        {works.map((work) => (\n          <div \n            key={work.id} \n            className=\"bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition overflow-hidden flex flex-col\"\n          >\n            <div className=\"p-4 flex gap-4\">\n              <img\n                src={work.cover_url || '/placeholder-book.png'}\n                alt={work.title}\n                className=\"w-20 h-28 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0\"\n              />\n              <div className=\"flex-1 min-w-0\">\n                <span className=\"inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700\">\n                  CDD {work.dewey_code}\n                </span>\n                <h3 className=\"font-bold text-slate-900 text-sm mt-1 line-clamp-2\">{work.title}</h3>\n                <p className=\"text-xs text-slate-600 font-medium\">{work.author}</p>\n                <p className=\"text-[11px] text-slate-400 mt-1 font-mono\">{work.isbn || 'Sin ISBN'}</p>\n              </div>\n            </div>\n\n            <div className=\"mt-auto p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs\">\n              <span className=\"text-slate-500\">Estado general:</span>\n              <span className=\"font-semibold text-emerald-700\">Disponible</span>\n            </div>\n          </div>\n        ))}\n      </div>\n    </div>\n  );\n}\n`;\n\n  return (\n    <div id=\"architecture-hub-container\" className=\"bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden\">\n      {/* Tab Navigation */}\n      <div className=\"flex border-b border-slate-200 bg-slate-50/90 overflow-x-auto text-xs sm:text-sm font-semibold\">\n        <button\n          onClick={() => setActiveTab('sql')}\n          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${\n            activeTab === 'sql'\n              ? 'border-emerald-700 text-emerald-950 bg-white'\n              : 'border-transparent text-slate-500 hover:text-slate-800'\n          }`}\n        >\n          <Database className=\"w-4 h-4 text-emerald-700\" />\n          SQL Schema & RLS (Supabase)\n        </button>\n\n        <button\n          onClick={() => setActiveTab('nextjs_structure')}\n          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${\n            activeTab === 'nextjs_structure'\n              ? 'border-emerald-700 text-emerald-950 bg-white'\n              : 'border-transparent text-slate-500 hover:text-slate-800'\n          }`}\n        >\n          <FolderTree className=\"w-4 h-4 text-blue-600\" />\n          Estructura Next.js (App Router)\n        </button>\n\n        <button\n          onClick={() => setActiveTab('server_action_work')}\n          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${\n            activeTab === 'server_action_work'\n              ? 'border-emerald-700 text-emerald-950 bg-white'\n              : 'border-transparent text-slate-500 hover:text-slate-800'\n          }`}\n        >\n          <FileCode className=\"w-4 h-4 text-emerald-600\" />\n          Server Action (registerWork.ts)\n        </button>\n\n        <button\n          onClick={() => setActiveTab('server_action')}\n          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${\n            activeTab === 'server_action'\n              ? 'border-emerald-700 text-emerald-950 bg-white'\n              : 'border-transparent text-slate-500 hover:text-slate-800'\n          }`}\n        >\n          <Server className=\"w-4 h-4 text-purple-600\" />\n          Server Action (registerCopy.ts)\n        </button>\n\n        <button\n          onClick={() => setActiveTab('client_component')}\n          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${\n            activeTab === 'client_component'\n              ? 'border-emerald-700 text-emerald-950 bg-white'\n              : 'border-transparent text-slate-500 hover:text-slate-800'\n          }`}\n        >\n          <Code2 className=\"w-4 h-4 text-amber-600\" />\n          Componente Cliente (BookCatalog.tsx)\n        </button>\n      </div>\n\n      {/* Code Display Area */}\n      <div className=\"p-6 space-y-4\">\n        {/* SQL Tab */}\n        {activeTab === 'sql' && (\n          <div className=\"space-y-3\">\n            <div className=\"flex flex-col sm:flex-row sm:items-center justify-between gap-2\">\n              <div>\n                <h3 className=\"text-sm font-bold text-slate-900 flex items-center gap-2\">\n                  <ShieldCheck className=\"w-4 h-4 text-emerald-700\" />\n                  PostgreSQL DDL + Row Level Security (RLS) + Seed Data\n                </h3>\n                <p className=\"text-xs text-slate-500\">\n                  Tablas: <code className=\"text-emerald-800 font-mono\">works</code>, <code className=\"text-emerald-800 font-mono\">branches</code>, <code className=\"text-emerald-800 font-mono\">copies</code> con claves foráneas, validación de tipos y políticas de seguridad.\n                </p>\n              </div>\n              <button\n                onClick={() => copyToClipboard(SUPABASE_SQL_SCHEMA, 'sql')}\n                className=\"px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition flex items-center gap-1.5 self-start cursor-pointer\"\n              >\n                {copiedKey === 'sql' ? <Check className=\"w-3.5 h-3.5 text-emerald-700\" /> : <Copy className=\"w-3.5 h-3.5\" />}\n                {copiedKey === 'sql' ? '¡Copiado!' : 'Copiar SQL Completo'}\n              </button>\n            </div>\n\n            <pre className=\"p-4 bg-slate-950 text-slate-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed\">\n              <code>{SUPABASE_SQL_SCHEMA}</code>\n            </pre>\n          </div>\n        )}\n\n        {/* Folder Structure Tab */}\n        {activeTab === 'nextjs_structure' && (\n          <div className=\"space-y-3\">\n            <div className=\"flex flex-col sm:flex-row sm:items-center justify-between gap-2\">\n              <div>\n                <h3 className=\"text-sm font-bold text-slate-900 flex items-center gap-2\">\n                  <FolderTree className=\"w-4 h-4 text-blue-600\" />\n                  Arquitectura Modular Sugerida para Next.js 14/15 App Router\n                </h3>\n                <p className=\"text-xs text-slate-500\">\n                  Organización por rutas, Server Components, Server Actions (@supabase/ssr) y Componentes Clientes.\n                </p>\n              </div>\n              <button\n                onClick={() => copyToClipboard(NEXTJS_FOLDER_STRUCTURE, 'structure')}\n                className=\"px-3 py-1.5 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 text-xs font-semibold hover:bg-blue-100 transition flex items-center gap-1.5 self-start cursor-pointer\"\n              >\n                {copiedKey === 'structure' ? <Check className=\"w-3.5 h-3.5 text-blue-700\" /> : <Copy className=\"w-3.5 h-3.5\" />}\n                {copiedKey === 'structure' ? '¡Copiado!' : 'Copiar Estructura'}\n              </button>\n            </div>\n\n            <pre className=\"p-4 bg-slate-900 text-blue-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed\">\n              <code>{NEXTJS_FOLDER_STRUCTURE}</code>\n            </pre>\n          </div>\n        )}\n\n        {/* Server Action Catalog Work Tab */}\n        {activeTab === 'server_action_work' && (\n          <div className=\"space-y-3\">\n            <div className=\"flex flex-col sm:flex-row sm:items-center justify-between gap-2\">\n              <div>\n                <h3 className=\"text-sm font-bold text-slate-900 flex items-center gap-2\">\n                  <FileCode className=\"w-4 h-4 text-emerald-600\" />\n                  Server Action: <code className=\"text-emerald-800 font-mono\">registerWorkAction()</code>\n                </h3>\n                <p className=\"text-xs text-slate-500\">\n                  Catalogación universal de obras en tabla <code className=\"text-emerald-800 font-mono\">works</code> bajo Dublin Core y Dewey con aprovisionamiento opcional de ejemplares.\n                </p>\n              </div>\n              <button\n                onClick={() => copyToClipboard(REGISTER_WORK_ACTION_CODE, 'server_action_work')}\n                className=\"px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition flex items-center gap-1.5 self-start cursor-pointer\"\n              >\n                {copiedKey === 'server_action_work' ? <Check className=\"w-3.5 h-3.5 text-emerald-700\" /> : <Copy className=\"w-3.5 h-3.5\" />}\n                {copiedKey === 'server_action_work' ? '¡Copiado!' : 'Copiar Server Action'}\n              </button>\n            </div>\n\n            <pre className=\"p-4 bg-slate-950 text-emerald-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed\">\n              <code>{REGISTER_WORK_ACTION_CODE}</code>\n            </pre>\n          </div>\n        )}\n\n        {/* Server Action Tab */}\n        {activeTab === 'server_action' && (\n          <div className=\"space-y-3\">\n            <div className=\"flex flex-col sm:flex-row sm:items-center justify-between gap-2\">\n              <div>\n                <h3 className=\"text-sm font-bold text-slate-900 flex items-center gap-2\">\n                  <Server className=\"w-4 h-4 text-purple-600\" />\n                  Server Action: <code className=\"text-purple-800 font-mono\">registerCopyAction()</code>\n                </h3>\n                <p className=\"text-xs text-slate-500\">\n                  Asignación garantizada a la sede rural <strong>\"Semilla Manglareña\"</strong> con validación de obra, generación de marbete y revalidación de caché.\n                </p>\n              </div>\n              <button\n                onClick={() => copyToClipboard(SERVER_ACTION_CODE, 'server_action')}\n                className=\"px-3 py-1.5 rounded-lg bg-purple-50 text-purple-800 border border-purple-200 text-xs font-semibold hover:bg-purple-100 transition flex items-center gap-1.5 self-start cursor-pointer\"\n              >\n                {copiedKey === 'server_action' ? <Check className=\"w-3.5 h-3.5 text-purple-700\" /> : <Copy className=\"w-3.5 h-3.5\" />}\n                {copiedKey === 'server_action' ? '¡Copiado!' : 'Copiar Server Action'}\n              </button>\n            </div>\n\n            <pre className=\"p-4 bg-slate-950 text-purple-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed\">\n              <code>{SERVER_ACTION_CODE}</code>\n            </pre>\n          </div>\n        )}\n\n        {/* Client Component Tab */}\n        {activeTab === 'client_component' && (\n          <div className=\"space-y-3\">\n            <div className=\"flex flex-col sm:flex-row sm:items-center justify-between gap-2\">\n              <div>\n                <h3 className=\"text-sm font-bold text-slate-900 flex items-center gap-2\">\n                  <Code2 className=\"w-4 h-4 text-amber-600\" />\n                  Componente Cliente: <code className=\"text-amber-800 font-mono\">BookCatalog.tsx</code>\n                </h3>\n                <p className=\"text-xs text-slate-500\">\n                  Fetch tipado con <code className=\"text-amber-800 font-mono\">@supabase/supabase-js</code> y renderizado en cuadrícula Tailwind CSS responsiva.\n                </p>\n              </div>\n              <button\n                onClick={() => copyToClipboard(clientComponentSampleCode, 'client_component')}\n                className=\"px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold hover:bg-amber-100 transition flex items-center gap-1.5 self-start cursor-pointer\"\n              >\n                {copiedKey === 'client_component' ? <Check className=\"w-3.5 h-3.5 text-amber-700\" /> : <Copy className=\"w-3.5 h-3.5\" />}\n                {copiedKey === 'client_component' ? '¡Copiado!' : 'Copiar Componente'}\n              </button>\n            </div>\n\n            <pre className=\"p-4 bg-slate-950 text-amber-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed\">\n              <code>{clientComponentSampleCode}</code>\n            </pre>\n          </div>\n        )}\n      </div>\n    </div>\n  );\n};\n
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-64 bg-slate-100 animate-pulse rounded-2xl border border-slate-200" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm">
+        Error al cargar catálogo: {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-slate-900">Catálogo Universal de Obras</h2>
+        <span className="text-xs font-semibold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+          {works.length} Obras Disponibles
+        </span>
+      </div>
+
+      {/* Grid Responsivo Tailwind CSS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {works.map((work) => (
+          <div 
+            key={work.id} 
+            className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition overflow-hidden flex flex-col"
+          >
+            <div className="p-4 flex gap-4">
+              <img
+                src={work.cover_url || '/placeholder-book.png'}
+                alt={work.title}
+                className="w-20 h-28 object-cover rounded-lg border border-slate-200 bg-slate-50 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700">
+                  CDD {work.dewey_code}
+                </span>
+                <h3 className="font-bold text-slate-900 text-sm mt-1 line-clamp-2">{work.title}</h3>
+                <p className="text-xs text-slate-600 font-medium">{work.author}</p>
+                <p className="text-[11px] text-slate-400 mt-1 font-mono">{work.isbn || 'Sin ISBN'}</p>
+              </div>
+            </div>
+
+            <div className="mt-auto p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500">Estado general:</span>
+              <span className="font-semibold text-emerald-700">Disponible</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+`;
+
+  return (
+    <div id="architecture-hub-container" className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* Tab Navigation */}
+      <div className="flex border-b border-slate-200 bg-slate-50/90 overflow-x-auto text-xs sm:text-sm font-semibold">
+        <button
+          onClick={() => setActiveTab('sql')}
+          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            activeTab === 'sql'
+              ? 'border-emerald-700 text-emerald-950 bg-white'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Database className="w-4 h-4 text-emerald-700" />
+          SQL Schema & RLS (Supabase)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('nextjs_structure')}
+          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            activeTab === 'nextjs_structure'
+              ? 'border-emerald-700 text-emerald-950 bg-white'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <FolderTree className="w-4 h-4 text-blue-600" />
+          Estructura Next.js (App Router)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('server_action_work')}
+          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            activeTab === 'server_action_work'
+              ? 'border-emerald-700 text-emerald-950 bg-white'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <FileCode className="w-4 h-4 text-emerald-600" />
+          Server Action (registerWork.ts)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('server_action')}
+          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            activeTab === 'server_action'
+              ? 'border-emerald-700 text-emerald-950 bg-white'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Server className="w-4 h-4 text-purple-600" />
+          Server Action (registerCopy.ts)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('client_component')}
+          className={`px-5 py-3.5 flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
+            activeTab === 'client_component'
+              ? 'border-emerald-700 text-emerald-950 bg-white'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Code2 className="w-4 h-4 text-amber-600" />
+          Componente Cliente (BookCatalog.tsx)
+        </button>
+      </div>
+
+      {/* Code Display Area */}
+      <div className="p-6 space-y-4">
+        {/* SQL Tab */}
+        {activeTab === 'sql' && (
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                  PostgreSQL DDL + Row Level Security (RLS) + Seed Data
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Tablas: <code className="text-emerald-800 font-mono">works</code>, <code className="text-emerald-800 font-mono">branches</code>, <code className="text-emerald-800 font-mono">copies</code> con claves foráneas, validación de tipos y políticas de seguridad.
+                </p>
+              </div>
+              <button
+                onClick={() => copyToClipboard(SUPABASE_SQL_SCHEMA, 'sql')}
+                className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition flex items-center gap-1.5 self-start cursor-pointer"
+              >
+                {copiedKey === 'sql' ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === 'sql' ? '¡Copiado!' : 'Copiar SQL Completo'}
+              </button>
+            </div>
+
+            <pre className="p-4 bg-slate-950 text-slate-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed">
+              <code>{SUPABASE_SQL_SCHEMA}</code>
+            </pre>
+          </div>
+        )}
+
+        {/* Folder Structure Tab */}
+        {activeTab === 'nextjs_structure' && (
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <FolderTree className="w-4 h-4 text-blue-600" />
+                  Arquitectura Modular Sugerida para Next.js 14/15 App Router
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Organización por rutas, Server Components, Server Actions (@supabase/ssr) y Componentes Clientes.
+                </p>
+              </div>
+              <button
+                onClick={() => copyToClipboard(NEXTJS_FOLDER_STRUCTURE, 'structure')}
+                className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 text-xs font-semibold hover:bg-blue-100 transition flex items-center gap-1.5 self-start cursor-pointer"
+              >
+                {copiedKey === 'structure' ? <Check className="w-3.5 h-3.5 text-blue-700" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === 'structure' ? '¡Copiado!' : 'Copiar Estructura'}
+              </button>
+            </div>
+
+            <pre className="p-4 bg-slate-900 text-blue-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed">
+              <code>{NEXTJS_FOLDER_STRUCTURE}</code>
+            </pre>
+          </div>
+        )}
+
+        {/* Server Action Catalog Work Tab */}
+        {activeTab === 'server_action_work' && (
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <FileCode className="w-4 h-4 text-emerald-600" />
+                  Server Action: <code className="text-emerald-800 font-mono">registerWorkAction()</code>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Catalogación universal de obras en tabla <code className="text-emerald-800 font-mono">works</code> bajo Dublin Core y Dewey con aprovisionamiento opcional de ejemplares.
+                </p>
+              </div>
+              <button
+                onClick={() => copyToClipboard(REGISTER_WORK_ACTION_CODE, 'server_action_work')}
+                className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition flex items-center gap-1.5 self-start cursor-pointer"
+              >
+                {copiedKey === 'server_action_work' ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === 'server_action_work' ? '¡Copiado!' : 'Copiar Server Action'}
+              </button>
+            </div>
+
+            <pre className="p-4 bg-slate-950 text-emerald-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed">
+              <code>{REGISTER_WORK_ACTION_CODE}</code>
+            </pre>
+          </div>
+        )}
+
+        {/* Server Action Tab */}
+        {activeTab === 'server_action' && (
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Server className="w-4 h-4 text-purple-600" />
+                  Server Action: <code className="text-purple-800 font-mono">registerCopyAction()</code>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Asignación garantizada a la sede rural <strong>"Semilla Manglareña"</strong> con validación de obra, generación de marbete y revalidación de caché.
+                </p>
+              </div>
+              <button
+                onClick={() => copyToClipboard(SERVER_ACTION_CODE, 'server_action')}
+                className="px-3 py-1.5 rounded-lg bg-purple-50 text-purple-800 border border-purple-200 text-xs font-semibold hover:bg-purple-100 transition flex items-center gap-1.5 self-start cursor-pointer"
+              >
+                {copiedKey === 'server_action' ? <Check className="w-3.5 h-3.5 text-purple-700" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === 'server_action' ? '¡Copiado!' : 'Copiar Server Action'}
+              </button>
+            </div>
+
+            <pre className="p-4 bg-slate-950 text-purple-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed">
+              <code>{SERVER_ACTION_CODE}</code>
+            </pre>
+          </div>
+        )}
+
+        {/* Client Component Tab */}
+        {activeTab === 'client_component' && (
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Code2 className="w-4 h-4 text-amber-600" />
+                  Componente Cliente: <code className="text-amber-800 font-mono">BookCatalog.tsx</code>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Fetch tipado con <code className="text-amber-800 font-mono">@supabase/supabase-js</code> y renderizado en cuadrícula Tailwind CSS responsiva.
+                </p>
+              </div>
+              <button
+                onClick={() => copyToClipboard(clientComponentSampleCode, 'client_component')}
+                className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold hover:bg-amber-100 transition flex items-center gap-1.5 self-start cursor-pointer"
+              >
+                {copiedKey === 'client_component' ? <Check className="w-3.5 h-3.5 text-amber-700" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === 'client_component' ? '¡Copiado!' : 'Copiar Componente'}
+              </button>
+            </div>
+
+            <pre className="p-4 bg-slate-950 text-amber-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[500px] leading-relaxed">
+              <code>{clientComponentSampleCode}</code>
+            </pre>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
