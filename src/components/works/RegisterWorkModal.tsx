@@ -49,6 +49,7 @@ import {
   fetchBookDataCascade, 
   BookData, 
   GoogleBooksRateLimitError, 
+  GoogleBooksServiceUnavailableError,
   isGoogleBooksApiKeyConfigured 
 } from '../../lib/googleBooks';
 
@@ -248,6 +249,10 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
       if (err instanceof GoogleBooksRateLimitError) {
         setSearchLookupError(
           '⚠️ Límite de solicitudes alcanzado en Google Books API (HTTP 429). Por favor espera un momento antes de consultar nuevamente o procede con la carga manual.'
+        );
+      } else if (err instanceof GoogleBooksServiceUnavailableError) {
+        setSearchLookupError(
+          '⚠️ El servidor de Google Books API reportó sobrecarga o indisponibilidad temporal (HTTP 503). Puedes reintentar en unos momentos o proceder directamente con la carga manual.'
         );
       } else {
         const msg = err instanceof Error ? err.message : 'Error al consultar los servicios bibliográficos.';
@@ -647,16 +652,29 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
             {searchLookupError && (
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3 animate-in fade-in">
                 <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <p className="font-semibold">{searchLookupError}</p>
-                  <button
-                    type="button"
-                    onClick={handleProceedToManual}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-800 hover:bg-amber-900 text-white rounded-lg font-bold text-xs transition cursor-pointer"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    Proceder con Carga Manual ahora
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleProceedToManual}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-800 hover:bg-amber-900 text-white rounded-lg font-bold text-xs transition cursor-pointer shadow-2xs"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Proceder con Carga Manual ahora
+                    </button>
+                    {searchIsbnInput.trim() && (
+                      <a
+                        href={`https://www.todostuslibros.com/busquedas?keyword=${encodeURIComponent(searchIsbnInput.trim())}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-amber-300 rounded-lg font-medium text-xs transition"
+                      >
+                        <span>Buscar en TodosTusLibros</span>
+                        <ExternalLink className="w-3 h-3 text-slate-400" />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
