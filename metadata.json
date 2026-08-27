@@ -1,0 +1,6 @@
+{
+  "name": "Biblioteca Miguel Otero Silva",
+  "description": "Plataforma de gestión bibliotecaria multisede y dotaciones rurales para el Colegio Integral El Manglar con catálogo universal, clasificación Dewey, Dublin Core y control de ejemplares.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
