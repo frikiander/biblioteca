@@ -8,6 +8,8 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 2. Limpieza de tablas previas (en caso de reinicio de entorno)
+-- DROP TABLE IF EXISTS public.loans CASCADE;
+-- DROP TABLE IF EXISTS public.students CASCADE;
 -- DROP TABLE IF EXISTS public.copies CASCADE;
 -- DROP TABLE IF EXISTS public.works CASCADE;
 -- DROP TABLE IF EXISTS public.branches CASCADE;
@@ -133,149 +135,28 @@ CREATE INDEX IF NOT EXISTS idx_loans_student_id ON public.loans(student_id);
 -- ROW LEVEL SECURITY (RLS) - POLÍTICAS DE SEGURIDAD
 -- -------------------------------------------------------------------------
 
--- Activar RLS en todas las tablas del esquema
 ALTER TABLE public.branches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.works ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.copies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.loans ENABLE ROW LEVEL SECURITY;
 
--- 1. Políticas para 'branches'
-CREATE POLICY "Permitir lectura publica de sedes" ON public.branches FOR SELECT USING (true);
-CREATE POLICY "Permitir gestion de sedes a usuarios autenticados" ON public.branches FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
--- 2. Políticas para 'works'
-CREATE POLICY "Permitir lectura publica del catalogo de obras" ON public.works FOR SELECT USING (true);
-CREATE POLICY "Permitir gestion de obras a usuarios autenticados" ON public.works FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
--- 3. Políticas para 'copies'
-CREATE POLICY "Permitir lectura publica de ejemplares" ON public.copies FOR SELECT USING (true);
-CREATE POLICY "Permitir registro y modificacion de copias a autenticados" ON public.copies FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
--- 4. Políticas para 'students'
-CREATE POLICY "Permitir lectura publica de estudiantes" ON public.students FOR SELECT USING (true);
-CREATE POLICY "Permitir gestion de estudiantes a autenticados" ON public.students FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
--- 5. Políticas para 'loans'
-CREATE POLICY "Permitir lectura publica de prestamos" ON public.loans FOR SELECT USING (true);
-CREATE POLICY "Permitir gestion de prestamos a autenticados" ON public.loans FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Políticas de acceso completo para cliente público y autenticado
+CREATE POLICY "Permitir acceso a sedes" ON public.branches FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir acceso a obras" ON public.works FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir acceso a ejemplares" ON public.copies FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir acceso a estudiantes" ON public.students FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Permitir acceso a prestamos" ON public.loans FOR ALL USING (true) WITH CHECK (true);
 
 -- -------------------------------------------------------------------------
--- DATOS SEMILLA (SEED DATA)
+-- SEDES INSTITUCIONALES (6 Sedes oficiales de Colegio El Manglar)
 -- -------------------------------------------------------------------------
-
--- Sedes iniciales: 2 Bibliotecas del Campus y 4 Núcleos Semilla Manglareña
-INSERT INTO public.branches (id, name, type, location, description)
+INSERT INTO public.branches (name, type, location, description)
 VALUES 
-    ('a1111111-1111-1111-1111-111111111111', 'Biblioteca Miguel Otero Silva - Primaria', 'internal', 'Campus Colegio Integral El Manglar - Edificio Primaria', 'Biblioteca central y rincón de lectura para educación primaria y preescolar'),
-    ('a2222222-2222-2222-2222-222222222222', 'Biblioteca Miguel Otero Silva - Bachillerato', 'internal', 'Campus Colegio Integral El Manglar - Edificio Bachillerato', 'Biblioteca central y sala de investigación de educación media general y diversificada'),
-    ('b3333333-3333-3333-3333-333333333333', 'Semilla Manglareña - Guárico', 'external_donation', 'Estado Guárico - Módulo Rural', 'Dotación descentralizada de fomento lector para escuelas y comunidades rurales de Guárico'),
-    ('b4444444-4444-4444-4444-444444444444', 'Semilla Manglareña - Caripe', 'external_donation', 'Municipio Caripe, Estado Monagas', 'Dotación de lectura comunitaria y escolar en la región de Caripe del Guácharo'),
-    ('b5555555-5555-5555-5555-555555555555', 'Semilla Manglareña - Mérida', 'external_donation', 'Estado Mérida - Aldeas Andinas', 'Dotación de literatura infantil y juvenil para escuelas rurales andinas'),
-    ('b6666666-6666-6666-6666-666666666666', 'Semilla Manglareña - Delta', 'external_donation', 'Delta Amacuro - Comunidades Fluviales', 'Dotación bibliográfica especializada para comunidades fluviales e indígenas')
+    ('Biblioteca Miguel Otero Silva - Primaria', 'internal', 'Campus Colegio Integral El Manglar - Edificio Primaria', 'Biblioteca central y rincón de lectura para educación primaria y preescolar'),
+    ('Biblioteca Miguel Otero Silva - Bachillerato', 'internal', 'Campus Colegio Integral El Manglar - Edificio Bachillerato', 'Biblioteca central y sala de investigación de educación media general y diversificada'),
+    ('Semilla Manglareña - Guárico', 'external_donation', 'Estado Guárico - Módulo Rural', 'Dotación descentralizada de fomento lector para escuelas y comunidades rurales de Guárico'),
+    ('Semilla Manglareña - Caripe', 'external_donation', 'Municipio Caripe, Estado Monagas', 'Dotación de lectura comunitaria y escolar en la región de Caripe del Guácharo'),
+    ('Semilla Manglareña - Mérida', 'external_donation', 'Estado Mérida - Aldeas Andinas', 'Dotación de literatura infantil y juvenil para escuelas rurales andinas'),
+    ('Semilla Manglareña - Delta', 'external_donation', 'Delta Amacuro - Comunidades Fluviales', 'Dotación bibliográfica especializada para comunidades fluviales e indígenas')
 ON CONFLICT (name) DO NOTHING;
-
--- Obras iniciales de referencia (Honrando a Miguel Otero Silva y literatura clave)
-INSERT INTO public.works (id, title, author, isbn, dewey_code, cover_url, publisher, publication_year, subjects, description)
-VALUES
-    (
-        'w1111111-1111-1111-1111-111111111111',
-        'Casas Muertas',
-        'Miguel Otero Silva',
-        '978-9800101896',
-        '863.64',
-        'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600',
-        'Editorial Losada / Biblioteca Ayacucho',
-        1955,
-        ARRAY['Literatura Venezolana', 'Novela Histórica', 'Ortiz', 'Realismo Social'],
-        'Crónica conmovedora de la decadencia del pueblo de Ortiz tras la fiebre amarilla y el paludismo, símbolo de la Venezuela rural de principios del siglo XX.'
-    ),
-    (
-        'w2222222-2222-2222-2222-222222222222',
-        'Fiebre',
-        'Miguel Otero Silva',
-        '978-9802761234',
-        '863.64',
-        'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=600',
-        'Editorial Tiempo Nuevo',
-        1939,
-        ARRAY['Generación del 28', 'Narrativa Testimonial', 'Lucha Estudiantil', 'Gomecismo'],
-        'Novela sobre la huelga estudiantil universitaria contra la dictadura gomecista en 1928 y el presidio en el Castillo Libertador de Puerto Cabello.'
-    ),
-    (
-        'w3333333-3333-3333-3333-333333333333',
-        'Oficina N° 1',
-        'Miguel Otero Silva',
-        '978-9801234567',
-        '863.64',
-        'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=600',
-        'Editorial Losada',
-        1961,
-        ARRAY['Petróleo', 'Urbanización', 'El Tigre', 'Transformación Social'],
-        'Continuación espiritual de Casas Muertas que narra el nacimiento vertiginoso de la ciudad de El Tigre al calor del auge petrolero venezolano.'
-    ),
-    (
-        'w4444444-4444-4444-4444-444444444444',
-        'Ifigenia: Diario de una señorita que escribió porque se fastidiaba',
-        'Teresa de la Parra',
-        '978-9800102558',
-        '863.62',
-        'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=600',
-        'Editorial Monte Ávila',
-        1924,
-        ARRAY['Literatura Femenina', 'Caracas Colonial', 'Costumbrismo', 'Epistolar'],
-        'Obra cumbre de la literatura hispanoamericana que examina la sociedad caraqueña y los dilemas de libertad de María Eugenia Alonso.'
-    ),
-    (
-        'w5555555-5555-5555-5555-555555555555',
-        'Doña Bárbara',
-        'Rómulo Gallegos',
-        '978-8420658421',
-        '863.62',
-        'https://images.unsplash.com/photo-1476275466078-4007374efbbe?auto=format&fit=crop&q=80&w=600',
-        'Editorial Araluce / Alianza',
-        1929,
-        ARRAY['Llano Venezolano', 'Civilización y Barbarie', 'Santos Luzardo', 'Clásico Latinoamericano'],
-        'La máxima novela épica del llano venezolano, explorando el conflicto entre la ley y la barbarie en la sabana del Arauca.'
-    ),
-    (
-        'w6666666-6666-6666-6666-666666666666',
-        'Cosmos: Un viaje personal',
-        'Carl Sagan',
-        '978-0345331359',
-        '520.1',
-        'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=600',
-        'Planeta / Random House',
-        1980,
-        ARRAY['Astronomía', 'Divulgación Científica', 'Física', 'Evolución'],
-        'Pilar indispensable de la divulgación científica que recorre quince mil millones de años de evolución cósmica.'
-    )
-ON CONFLICT (id) DO NOTHING;
-
--- Ejemplares físicos de muestra
-INSERT INTO public.copies (work_id, branch_id, condition, internal_code, status, notes)
-VALUES
-    -- Casas Muertas
-    ('w1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'bueno', 'MOS-BAC-863-7159-001', 'disponible', 'Colección General - Estante 7159 (Copia 1)'),
-    ('w1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'regular', 'MOS-PRI-863-7159-002', 'prestado', 'Préstamo a sala de profesores de Primaria (Copia 2)'),
-    ('w1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222', 'bueno', 'SM-GUA-863-4210-003', 'en_donacion', 'Dotación Semilla Manglareña - Núcleo Llanero Guárico (Copia 3)'),
-    
-    -- Fiebre
-    ('w2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'bueno', 'MOS-BAC-863-7159-001', 'disponible', 'Colección Reserva Bachillerato (Copia 1)'),
-    ('w2222222-2222-2222-2222-222222222222', 'b2222222-2222-2222-2222-222222222222', 'bueno', 'SM-CAR-863-3180-002', 'en_donacion', 'Dotación Semilla Manglareña - Módulo Caripe (Copia 2)'),
-
-    -- Oficina N° 1
-    ('w3333333-3333-3333-3333-333333333333', 'a1111111-1111-1111-1111-111111111111', 'bueno', 'MOS-BAC-863-7159-001', 'disponible', 'Colección General Bachillerato (Copia 1)'),
-    ('w3333333-3333-3333-3333-333333333333', 'b2222222-2222-2222-2222-222222222222', 'regular', 'SM-MER-863-2415-002', 'en_donacion', 'Dotación Semilla Manglareña - Núcleo Mérida (Copia 2)'),
-
-    -- Ifigenia
-    ('w4444444-4444-4444-4444-444444444444', 'a1111111-1111-1111-1111-111111111111', 'bueno', 'MOS-BAC-863-7159-001', 'disponible', 'Colección Literatura Hispanoamericana (Copia 1)'),
-    ('w4444444-4444-4444-4444-444444444444', 'c3333333-3333-3333-3333-333333333333', 'bueno', 'SM-DEL-863-6302-002', 'en_donacion', 'Dotación Semilla Manglareña - Delta Amacuro (Copia 2)'),
-
-    -- Doña Bárbara
-    ('w5555555-5555-5555-5555-555555555555', 'a1111111-1111-1111-1111-111111111111', 'bueno', 'MOS-BAC-863-7159-001', 'disponible', 'Colección Clásicos Venezolanos (Copia 1)'),
-    ('w5555555-5555-5555-5555-555555555555', 'b2222222-2222-2222-2222-222222222222', 'bueno', 'SM-GUA-863-4210-002', 'en_donacion', 'Dotación Semilla Manglareña - Sede Guárico (Copia 2)'),
-
-    -- Cosmos
-    ('w6666666-6666-6666-6666-666666666666', 'a1111111-1111-1111-1111-111111111111', 'bueno', 'MOS-BAC-520-1040-001', 'disponible', 'Área de Ciencias y Astronomía - Bachillerato (Copia 1)')
-ON CONFLICT (internal_code) DO NOTHING;
