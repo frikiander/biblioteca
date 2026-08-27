@@ -45,7 +45,12 @@ import {
   getStoredCopies 
 } from '../../lib/supabaseClient';
 import { DEWEY_GROUPS, getDeweyInfo } from '../../lib/dewey';
-import { searchBookByISBN, NormalizedBookMetadata, isGoogleBooksApiKeyConfigured } from '../../lib/googleBooks';
+import { 
+  fetchBookDataCascade, 
+  BookData, 
+  GoogleBooksRateLimitError, 
+  isGoogleBooksApiKeyConfigured 
+} from '../../lib/googleBooks';
 
 interface RegisterWorkModalProps {
   isOpen: boolean;
@@ -89,7 +94,8 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
   const [searchIsbnInput, setSearchIsbnInput] = useState('');
   const [isSearchingGoogle, setIsSearchingGoogle] = useState(false);
   const [searchLookupError, setSearchLookupError] = useState<string | null>(null);
-  const [dataOrigin, setDataOrigin] = useState<'google_books' | 'manual'>('manual');
+  const [dataOrigin, setDataOrigin] = useState<'cascade' | 'google_books' | 'open_library' | 'manual'>('manual');
+  const [cddCategory, setCddCategory] = useState<string>('');
 
   // Form State for Work (Dublin Core + CDD)
   const [title, setTitle] = useState('');
@@ -179,20 +185,21 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
 
   const currentDewey = getDeweyInfo(deweyCode);
 
-  // Apply autofilled metadata from Google Books
-  const applyAutofilledMetadata = (meta: NormalizedBookMetadata) => {
+  // Apply autofilled metadata from Google Books + Open Library Cascade
+  const applyAutofilledMetadata = (meta: BookData) => {
     setTitle(meta.title);
-    setAuthor(meta.author);
+    setAuthor(meta.creator || (meta.authors && meta.authors.join(', ')) || 'Autor Desconocido');
     setIsbn(meta.isbn);
     setPublisher(meta.publisher);
-    setPublicationYear(meta.publicationYear);
+    setPublicationYear(typeof meta.publishYear === 'number' ? meta.publishYear : parseInt(String(meta.publishYear), 10) || new Date().getFullYear());
     setDescription(meta.description);
-    setSubjects(meta.subjects.length > 0 ? meta.subjects : ['Literatura General']);
+    setSubjects(meta.subjects && meta.subjects.length > 0 ? meta.subjects : ['Literatura General']);
     setCoverUrl(meta.coverUrl || SAMPLE_COVERS[0].url);
     setLanguage(meta.language || 'spa');
+    setCddCategory(meta.cddCategory || '');
     const assignedDewey = meta.suggestedDeweyCode || '860';
     setDeweyCode(assignedDewey);
-    setDataOrigin('google_books');
+    setDataOrigin(meta.source || 'cascade');
 
     // Update suggested marbetes for the copies with the new Dewey code and author/title
     setInitialCopies((prev) =>
@@ -200,7 +207,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
         const branch = branches.find((b) => b.id === c.branch_id);
         return {
           ...c,
-          internal_code: generateMarbeteCode(branch?.name || branch?.id, assignedDewey, meta.author, idx + 1, meta.title),
+          internal_code: generateMarbeteCode(branch?.name || branch?.id, assignedDewey, meta.creator, idx + 1, meta.title),
         };
       })
     );
@@ -208,7 +215,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
     setCurrentStep('form');
   };
 
-  // Google Books API Search handler
+  // Cascade API Search handler (Google Books + Open Library concurrent)
   const handlePerformGoogleSearch = async (isbnToSearch?: string) => {
     const rawTarget = isbnToSearch || searchIsbnInput;
     const clean = rawTarget.replace(/[^0-9X]/gi, '').trim();
@@ -227,19 +234,25 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
     setSearchLookupError(null);
 
     try {
-      const bookData = await searchBookByISBN(clean);
+      const bookData = await fetchBookDataCascade(clean);
 
       if (!bookData) {
         setSearchLookupError(
-          `No se encontró información en Google Books para el ISBN "${rawTarget}". Puedes verificar el código o continuar con la carga manual.`
+          `No se encontró información para el ISBN "${rawTarget}" en los catálogos en línea (Google Books ni Open Library). Puedes verificar el código o continuar con la carga manual.`
         );
         return;
       }
 
       applyAutofilledMetadata(bookData);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al consultar Google Books API.';
-      setSearchLookupError(msg);
+      if (err instanceof GoogleBooksRateLimitError) {
+        setSearchLookupError(
+          '⚠️ Límite de solicitudes alcanzado en Google Books API (HTTP 429). Por favor espera un momento antes de consultar nuevamente o procede con la carga manual.'
+        );
+      } else {
+        const msg = err instanceof Error ? err.message : 'Error al consultar los servicios bibliográficos.';
+        setSearchLookupError(msg);
+      }
     } finally {
       setIsSearchingGoogle(false);
     }
@@ -613,18 +626,18 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                 Ingresa el ISBN del libro
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
-                Consultaremos automáticamente la <strong>Google Books API</strong> para autocompletar el título, autor, portada, editorial, sinopsis y clasificación Dewey.
+                Consultaremos concurrentemente <strong>Google Books API</strong> y <strong>Open Library</strong> para extraer título, autor, editorial, sinopsis y clasificación Dewey (CDD).
               </p>
               <div className="flex items-center justify-center gap-2 pt-1">
                 {isGoogleBooksApiKeyConfigured ? (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold border border-emerald-200 shadow-xs">
                     <Sparkles className="w-3 h-3 text-emerald-600" />
-                    Google Books API Key Conectada
+                    Google Books + Open Library Conectados
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium border border-slate-200">
                     <Globe className="w-3 h-3 text-slate-500" />
-                    Modo Público (Sin API Key configurada)
+                    Búsqueda Dual Pública (Google Books + Open Library)
                   </span>
                 )}
               </div>
@@ -687,12 +700,12 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                   {isSearchingGoogle ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin text-emerald-300" />
-                      <span>Consultando Google Books API...</span>
+                      <span>Consultando catálogos en cascada...</span>
                     </>
                   ) : (
                     <>
                       <Globe className="w-4 h-4 text-emerald-300" />
-                      <span>Buscar en Google Books</span>
+                      <span>Buscar en Cascada (Google + Open Library)</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -741,26 +754,30 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
             {/* Origin Banner */}
             <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
-              dataOrigin === 'google_books'
+              dataOrigin === 'cascade' || dataOrigin === 'google_books' || dataOrigin === 'open_library'
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                 : 'bg-slate-50 border-slate-200 text-slate-700'
             }`}>
               <div className="flex items-center gap-2.5">
-                {dataOrigin === 'google_books' ? (
+                {dataOrigin === 'cascade' || dataOrigin === 'google_books' || dataOrigin === 'open_library' ? (
                   <Sparkles className="w-5 h-5 text-emerald-600 shrink-0" />
                 ) : (
                   <Edit3 className="w-5 h-5 text-slate-500 shrink-0" />
                 )}
                 <div>
                   <span className="font-bold block">
-                    {dataOrigin === 'google_books'
+                    {dataOrigin === 'cascade'
+                      ? '✨ Datos combinados en cascada (Google Books + Open Library CDD)'
+                      : dataOrigin === 'google_books'
                       ? '✨ Datos autocompletados desde Google Books API'
+                      : dataOrigin === 'open_library'
+                      ? '✨ Datos autocompletados desde Open Library'
                       : '📝 Modo de Carga Manual'}
                   </span>
                   <span className="text-[11px] opacity-80">
-                    {dataOrigin === 'google_books'
-                      ? 'Puedes ajustar cualquier campo y configurar las copias físicas individuales abajo.'
-                      : 'Ingresa los metadatos bibliográficos y configura los ejemplares físicos.'}
+                    {cddCategory
+                      ? `Clasificación CDD detectada en Open Library: "${cddCategory}". Puedes ajustar cualquier campo abajo.`
+                      : 'Puedes ajustar cualquier campo y configurar las copias físicas individuales abajo.'}
                   </span>
                 </div>
               </div>
