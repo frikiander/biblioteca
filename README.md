@@ -1,6 +1,6 @@
 # 📚 Biblioteca Miguel Otero Silva — Colegio Integral El Manglar
 
-Sistema integral de gestión bibliotecaria multisede, catalogación universal bajo estándar Dublin Core simplificado, Clasificación Decimal Dewey (CDD), autocompletado automatizado con **Google Books API**, generación/impresión de marbetes normalizados (Cutter-Sanborn) y módulo de circulación y préstamos.
+Sistema integral de gestión bibliotecaria multisede, catalogación universal bajo estándar Dublin Core simplificado, Clasificación Decimal Dewey (CDD), autocompletado automatizado con **Google Books API** y **OpenLibrary** , generación/impresión de marbetes normalizados (Cutter-Sanborn) y módulo de circulación y préstamos.
 
 ---
 
