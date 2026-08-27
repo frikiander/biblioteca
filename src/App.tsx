@@ -5,17 +5,29 @@ import {
   PlusCircle, 
   HeartHandshake, 
   Library, 
-  BookMarked,
-  Globe,
-  Share2,
-  Check
+  BookMarked, 
+  Globe, 
+  Share2, 
+  Check,
+  Users,
+  Bookmark,
+  ScanLine,
+  Lightbulb,
+  BarChart3
 } from 'lucide-react';
 import { BookCatalog } from './components/catalog/BookCatalog';
 import { RegisterCopyForm } from './components/copies/RegisterCopyForm';
 import { BranchInventory } from './components/branches/BranchInventory';
 import { LoansHub } from './components/loans/LoansHub';
+import { PatronManager } from './components/patrons/PatronManager';
+import { VirtualShelvesHub } from './components/shelves/VirtualShelvesHub';
+import { StocktakingHub } from './components/inventory/StocktakingHub';
+import { SuggestionsHub } from './components/suggestions/SuggestionsHub';
+import { KohaReportsDashboard } from './components/reports/KohaReportsDashboard';
 import { PublicCatalogPortal } from './components/public/PublicCatalogPortal';
 import { getStoredLoans } from './lib/loans';
+import { getStoredHolds } from './lib/holds';
+import { getStoredSuggestions } from './lib/suggestions';
 import type { Work, Copy } from './types/database';
 
 export default function App() {
@@ -26,11 +38,14 @@ export default function App() {
     return params.get('mode') === 'public' || params.get('view') === 'public' || params.get('public') === 'true';
   });
 
-  const [activeTab, setActiveTab] = useState<'catalog' | 'loans' | 'register_copy' | 'branches'>('catalog');
+  const [activeTab, setActiveTab] = useState<
+    'catalog' | 'loans' | 'patrons' | 'shelves' | 'inventory' | 'suggestions' | 'branches' | 'reports' | 'register_copy'
+  >('catalog');
+
   const [selectedWorkForCopy, setSelectedWorkForCopy] = useState<Work | null>(null);
   const [catalogRefreshCounter, setCatalogRefreshCounter] = useState<number>(0);
   const [prefilledLoanMarbete, setPrefilledLoanMarbete] = useState<string>('');
-  const [loanInitialTab, setLoanInitialTab] = useState<'checkout' | 'checkin' | 'history'>('checkout');
+  const [loanInitialTab, setLoanInitialTab] = useState<'checkout' | 'checkin' | 'holds' | 'history'>('checkout');
   const [copiedPublicUrl, setCopiedPublicUrl] = useState<boolean>(false);
 
   // Synchronize browser history / back-forward navigation for public mode
@@ -68,6 +83,8 @@ export default function App() {
   }
 
   const activeLoansCount = getStoredLoans().filter((l) => l.status === 'active' || l.status === 'overdue').length;
+  const activeHoldsCount = getStoredHolds().filter((h) => h.status === 'waiting' || h.status === 'ready_for_pickup').length;
+  const pendingSuggestionsCount = getStoredSuggestions().filter((s) => s.status === 'pending').length;
 
   const handleSelectWorkForCopy = (work: Work) => {
     setSelectedWorkForCopy(work);
@@ -76,12 +93,6 @@ export default function App() {
 
   const handleCopyRegistered = (newCopy: Copy) => {
     setCatalogRefreshCounter((prev) => prev + 1);
-  };
-
-  const handleOpenLoanForCopy = (marbeteCode: string, mode: 'checkout' | 'checkin' = 'checkout') => {
-    setPrefilledLoanMarbete(marbeteCode);
-    setLoanInitialTab(mode);
-    setActiveTab('loans');
   };
 
   return (
@@ -101,14 +112,14 @@ export default function App() {
                     Colegio Integral El Manglar
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-                    Multisede
+                    Koha Remix Edition
                   </span>
                 </div>
                 <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
                   Biblioteca Miguel Otero Silva
                 </h1>
                 <p className="text-[11px] text-slate-400 hidden sm:block">
-                  Catálogo universal (Dublin Core + CDD) y dotaciones descentralizadas para escuelas rurales
+                  ILS integral: Dublin Core + MARC21, Dewey CDD, Circulación Pro y Dotación Rural "Semilla Manglareña"
                 </p>
               </div>
             </div>
@@ -119,7 +130,7 @@ export default function App() {
                 id="btn-open-public-portal"
                 onClick={handleOpenPublicPortal}
                 className="px-3.5 py-2 bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md shadow-emerald-950/30 border border-emerald-500/30 transition cursor-pointer"
-                title="Abrir el portal de consulta pública exclusivo para estudiantes, docentes y familias"
+                title="Abrir el portal de consulta pública OPAC"
               >
                 <Globe className="w-4 h-4 text-emerald-200" />
                 <span className="hidden sm:inline">Ver Catálogo Público (OPAC)</span>
@@ -129,26 +140,26 @@ export default function App() {
               <button
                 onClick={handleCopyPublicLink}
                 className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-medium transition cursor-pointer"
-                title="Copiar enlace directo del catálogo público para compartir por WhatsApp o web"
+                title="Copiar enlace directo del catálogo público"
               >
                 {copiedPublicUrl ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
+          {/* Navigation Tabs (Koha-grade Modules) */}
           <nav className="flex space-x-1 border-t border-slate-800/80 overflow-x-auto py-1 text-xs sm:text-sm font-medium">
             <button
               id="tab-catalog"
               onClick={() => setActiveTab('catalog')}
-              className={`py-3 px-4 rounded-xl flex items-center gap-2 transition whitespace-nowrap cursor-pointer ${
+              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
                 activeTab === 'catalog'
                   ? 'bg-emerald-800 text-white font-semibold shadow-inner'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <BookOpen className="w-4 h-4" />
-              Catálogo Universal de Obras
+              <BookOpen className="w-4 h-4 text-emerald-400" />
+              <span>Catálogo & MARC21</span>
             </button>
 
             <button
@@ -158,45 +169,115 @@ export default function App() {
                 setLoanInitialTab('checkout');
                 setActiveTab('loans');
               }}
-              className={`py-3 px-4 rounded-xl flex items-center gap-2 transition whitespace-nowrap cursor-pointer ${
+              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
                 activeTab === 'loans'
                   ? 'bg-emerald-800 text-white font-semibold shadow-inner'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <BookMarked className="w-4 h-4 text-emerald-400" />
-              <span>Préstamos y Circulación</span>
-              {activeLoansCount > 0 && (
+              <span>Circulación & Reservas</span>
+              {(activeLoansCount > 0 || activeHoldsCount > 0) && (
                 <span className="text-[10px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.2 rounded-full shadow-2xs">
-                  {activeLoansCount}
+                  {activeLoansCount + activeHoldsCount}
                 </span>
               )}
             </button>
 
             <button
+              id="tab-patrons"
+              onClick={() => setActiveTab('patrons')}
+              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'patrons'
+                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Users className="w-4 h-4 text-emerald-400" />
+              <span>Lectores & Carnets</span>
+            </button>
+
+            <button
+              id="tab-shelves"
+              onClick={() => setActiveTab('shelves')}
+              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'shelves'
+                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Bookmark className="w-4 h-4 text-teal-400" />
+              <span>Estantes & Plan Lector</span>
+            </button>
+
+            <button
+              id="tab-inventory"
+              onClick={() => setActiveTab('inventory')}
+              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'inventory'
+                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <ScanLine className="w-4 h-4 text-indigo-400" />
+              <span>Inventario & Taller</span>
+            </button>
+
+            <button
+              id="tab-suggestions"
+              onClick={() => setActiveTab('suggestions')}
+              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'suggestions'
+                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Lightbulb className="w-4 h-4 text-amber-400" />
+              <span>Desideratas</span>
+              {pendingSuggestionsCount > 0 && (
+                <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.2 rounded-full">
+                  {pendingSuggestionsCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              id="tab-branches"
+              onClick={() => setActiveTab('branches')}
+              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'branches'
+                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Building2 className="w-4 h-4 text-blue-400" />
+              <span>Sedes & Donaciones</span>
+            </button>
+
+            <button
+              id="tab-reports"
+              onClick={() => setActiveTab('reports')}
+              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
+                activeTab === 'reports'
+                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 text-emerald-400" />
+              <span>Estadísticas & Reportes</span>
+            </button>
+
+            <button
               id="tab-register-copy"
               onClick={() => setActiveTab('register_copy')}
-              className={`py-3 px-4 rounded-xl flex items-center gap-2 transition whitespace-nowrap cursor-pointer ${
+              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
                 activeTab === 'register_copy'
                   ? 'bg-emerald-800 text-white font-semibold shadow-inner'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <PlusCircle className="w-4 h-4 text-emerald-400" />
-              Registrar Ejemplar Físico
-            </button>
-
-            <button
-              id="tab-branches"
-              onClick={() => setActiveTab('branches')}
-              className={`py-3 px-4 rounded-xl flex items-center gap-2 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'branches'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Building2 className="w-4 h-4" />
-              Sedes e Inventario Descentralizado
+              <span>+ Ejemplar Físico</span>
             </button>
           </nav>
         </div>
@@ -219,6 +300,34 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'patrons' && (
+          <PatronManager
+            onOpenLoanForPatron={(patron) => {
+              setActiveTab('loans');
+            }}
+          />
+        )}
+
+        {activeTab === 'shelves' && (
+          <VirtualShelvesHub />
+        )}
+
+        {activeTab === 'inventory' && (
+          <StocktakingHub />
+        )}
+
+        {activeTab === 'suggestions' && (
+          <SuggestionsHub />
+        )}
+
+        {activeTab === 'branches' && (
+          <BranchInventory />
+        )}
+
+        {activeTab === 'reports' && (
+          <KohaReportsDashboard />
+        )}
+
         {activeTab === 'register_copy' && (
           <div className="max-w-3xl mx-auto space-y-6">
             <RegisterCopyForm
@@ -237,10 +346,6 @@ export default function App() {
             </div>
           </div>
         )}
-
-        {activeTab === 'branches' && (
-          <BranchInventory />
-        )}
       </main>
 
       {/* Footer */}
@@ -251,10 +356,12 @@ export default function App() {
             <span>•</span>
             <span>Biblioteca Miguel Otero Silva</span>
             <span>•</span>
+            <span>Koha Remix ILS Architecture</span>
+            <span>•</span>
             <span>Proyecto Semilla Manglareña</span>
           </div>
           <p className="text-slate-400 max-w-xl mx-auto">
-            Plataforma Full-Stack desarrollada con Next.js (App Router), TypeScript, Tailwind CSS y Supabase PostgreSQL con RLS y estándares Dublin Core / Dewey.
+            Plataforma Full-Stack con soporte para Dublin Core, MARC21, Clasificación Dewey, Circulación Pro, Carnetización y Dotaciones Rurales.
           </p>
         </div>
       </footer>
