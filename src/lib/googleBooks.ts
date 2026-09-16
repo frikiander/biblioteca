@@ -501,11 +501,11 @@ async function fetchGoogleBooksByISBN(cleanIsbn: string): Promise<{ data: Partia
             }
 
             // Parse publication year
-            let publicationYear = new Date().getFullYear();
+            let publishYear = new Date().getFullYear();
             if (info.publishedDate) {
               const yearMatch = info.publishedDate.match(/\b\d{4}\b/);
               if (yearMatch) {
-                publicationYear = parseInt(yearMatch[0], 10);
+                publishYear = parseInt(yearMatch[0], 10);
               }
             }
 

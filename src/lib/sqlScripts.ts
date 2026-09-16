@@ -250,3 +250,88 @@ VALUES
     ('00000000-0000-4000-a000-000000000005', 'Semilla Manglareña - Mérida', 'external_donation', 'Estado Mérida - Aldeas Andinas', 'Dotación de literatura infantil y juvenil para escuelas rurales andinas'),
     ('00000000-0000-4000-a000-000000000006', 'Semilla Manglareña - Delta', 'external_donation', 'Delta Amacuro - Comunidades Fluviales', 'Dotación bibliográfica especializada para comunidades fluviales e indígenas')
 ON CONFLICT (name) DO UPDATE SET type = EXCLUDED.type;
+`;
+
+export const NEXTJS_FOLDER_STRUCTURE = `my-library-app/
+├── app/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── catalog/
+│   │   └── page.tsx
+│   ├── actions/
+│   │   ├── catalog.ts
+│   │   └── circulation.ts
+│   └── api/
+├── components/
+│   ├── catalog/
+│   ├── circulation/
+│   └── ui/
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts
+│   │   └── server.ts
+│   └── utils.ts
+├── types/
+│   └── database.ts
+├── .env.local
+├── package.json
+└── tsconfig.json`;
+
+export const REGISTER_WORK_ACTION_CODE = `'use server';
+
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
+
+export async function registerWorkAction(formData: FormData) {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: (c) => c.forEach(x => cookieStore.set(x)) } }
+  );
+
+  const title = formData.get('title') as string;
+  const author = formData.get('author') as string;
+  const isbn = formData.get('isbn') as string;
+  const dewey_code = formData.get('dewey_code') as string;
+
+  const { data, error } = await supabase
+    .from('works')
+    .insert([{ title, author, isbn, dewey_code }])
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath('/catalog');
+  return { success: true, work: data };
+}`;
+
+export const SERVER_ACTION_CODE = `'use server';
+
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
+
+export async function registerCopyAction(workId: string, branchId: string, condition: 'bueno' | 'regular' | 'malo') {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: (c) => c.forEach(x => cookieStore.set(x)) } }
+  );
+
+  const internal_code = 'EJ-' + Date.now().toString().slice(-6);
+
+  const { data, error } = await supabase
+    .from('copies')
+    .insert([{ work_id: workId, branch_id: branchId, condition, internal_code, status: 'disponible' }])
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath('/branches');
+  return { success: true, copy: data };
+}`;

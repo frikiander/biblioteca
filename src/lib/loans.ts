@@ -1,4 +1,4 @@
-import type { Loan, Student, Copy, CopyCondition, LoanStatus } from '../types/database';
+import type { Loan, Student, Copy, CopyCondition, LoanStatus, CopyStatus } from '../types/database';
 import { getStoredCopies, getStoredWorks, getStoredBranches } from './supabaseClient';
 
 export const INITIAL_STUDENTS: Student[] = [
@@ -314,7 +314,7 @@ export interface CopyTraceability {
   branchName: string;
   totalLoansCount: number;
   uniqueHandsCount: number; // Por cuántas manos/alumnos distintos ha pasado
-  currentStatus: 'disponible' | 'prestado' | 'en_donacion' | 'baja' | 'en_traslado';
+  currentStatus: CopyStatus;
   activeLoan: Loan | null;
   history: Loan[];
 }

@@ -14,6 +14,7 @@ import {
 } from '../../lib/supabaseClient';
 import { PrintSpineLabelsModal } from '../copies/PrintSpineLabelsModal';
 import { downloadSpineLabelPNG, downloadSpineLabelsPDF } from '../copies/SpineLabel';
+import type { Branch, Copy, Work } from '../../types/database';
 
 export const BranchInventory: React.FC = () => {
   const [branches, setBranches] = useState<Branch[]>(() => {
