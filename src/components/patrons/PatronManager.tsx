@@ -149,17 +149,17 @@ export function PatronManager({ onOpenLoanForPatron }: PatronManagerProps) {
           <button
             onClick={() => setSelectedPatronsForPrint(filteredPatrons)}
             disabled={filteredPatrons.length === 0}
-            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-xs transition cursor-pointer"
+            className="px-4 py-2.5 bg-white hover:bg-neutral-50 disabled:opacity-50 text-neutral-800 border border-[#D3D2D3] font-bold text-xs rounded-xl flex items-center gap-2 shadow-2xs transition cursor-pointer"
           >
-            <Printer className="w-4 h-4 text-emerald-400" />
+            <Printer className="w-4 h-4 text-[#83B141]" strokeWidth={1.75} />
             Imprimir Carnets ({filteredPatrons.length})
           </button>
 
           <button
             onClick={handleOpenCreateModal}
-            className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md shadow-emerald-950/20 transition cursor-pointer"
+            className="px-4 py-2.5 bg-[#83B141] hover:bg-[#719b35] text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm transition cursor-pointer"
           >
-            <UserPlus className="w-4 h-4" />
+            <UserPlus className="w-4 h-4" strokeWidth={1.75} />
             Nuevo Lector
           </button>
         </div>
@@ -179,13 +179,13 @@ export function PatronManager({ onOpenLoanForPatron }: PatronManagerProps) {
               onClick={() => setSelectedRole(cat.role)}
               className={`p-4 rounded-2xl border transition cursor-pointer ${
                 selectedRole === cat.role
-                  ? 'bg-emerald-900 text-white border-emerald-700 shadow-sm'
-                  : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300'
+                  ? 'bg-[#83B141] text-white border-[#83B141] shadow-xs'
+                  : 'bg-white text-neutral-800 border-[#D3D2D3] hover:border-neutral-400'
               }`}
             >
-              <div className="text-xs font-semibold opacity-80">{cat.name}</div>
+              <div className="text-xs font-semibold opacity-90">{cat.name}</div>
               <div className="text-2xl font-black mt-1">{count}</div>
-              <div className="text-[11px] opacity-70 mt-1">
+              <div className="text-[11px] opacity-80 mt-1">
                 Límite: {cat.maxLoans} libros • {cat.loanDays} días
               </div>
             </div>
@@ -194,22 +194,22 @@ export function PatronManager({ onOpenLoanForPatron }: PatronManagerProps) {
       </div>
 
       {/* Search & Filters */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3">
+      <div className="bg-white rounded-2xl p-4 border border-[#D3D2D3] shadow-2xs flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.5} />
           <input
             type="text"
             placeholder="Buscar por nombre, código de carnet, cédula/identificador o grado..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+            className="w-full pl-10 pr-4 py-2 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs sm:text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#83B141]/30 focus:border-[#83B141] focus:bg-white"
           />
         </div>
 
         <select
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value)}
-          className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="px-3.5 py-2 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs font-semibold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#83B141]/30 focus:border-[#83B141]"
         >
           <option value="all">Todas las Categorías</option>
           <option value="student">Estudiantes</option>

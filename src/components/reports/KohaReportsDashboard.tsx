@@ -115,22 +115,22 @@ export function KohaReportsDashboard() {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xs border border-[#D3D2D3] flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center shadow-md shadow-emerald-950/20 shrink-0">
-            <BarChart3 className="w-7 h-7" />
+          <div className="w-12 h-12 rounded-2xl bg-[#83B141]/15 text-[#83B141] border border-[#83B141]/30 flex items-center justify-center shadow-2xs shrink-0">
+            <BarChart3 className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#83B141] bg-[#f2f7ec] px-2.5 py-0.5 rounded-full border border-[#83B141]/30">
                 Koha Reports & Analytics
               </span>
-              <span className="text-xs text-slate-500">• Indicadores de Gestión Bibliotecaria</span>
+              <span className="text-xs text-neutral-500">• Indicadores de Gestión Bibliotecaria</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight mt-1">
               Tablero de Estadísticas y Analítica de Circulación
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1">
+            <p className="text-xs sm:text-sm text-neutral-600 max-w-2xl mt-1">
               Métricas cuantitativas del fondo documental, índice de rotación de préstamos, balance temático Dewey y alcance del programa de dotación rural "Semilla Manglareña".
             </p>
           </div>
@@ -139,42 +139,42 @@ export function KohaReportsDashboard() {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-[#D3D2D3] shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Títulos Catalogados</span>
-            <BookOpen className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs font-semibold text-neutral-500">Títulos Catalogados</span>
+            <BookOpen className="w-4 h-4 text-[#83B141]" strokeWidth={1.75} />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{totalWorksCount}</div>
-          <div className="text-[11px] text-slate-400 mt-1">{totalCopiesCount} ejemplares físicos</div>
+          <div className="text-2xl sm:text-3xl font-black text-neutral-900 mt-2">{totalWorksCount}</div>
+          <div className="text-[11px] text-neutral-400 mt-1">{totalCopiesCount} ejemplares físicos</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-[#D3D2D3] shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Préstamos Activos</span>
-            <TrendingUp className="w-4 h-4 text-blue-600" />
+            <span className="text-xs font-semibold text-neutral-500">Préstamos Activos</span>
+            <TrendingUp className="w-4 h-4 text-[#83B141]" strokeWidth={1.75} />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-blue-900 mt-2">{activeLoans.length}</div>
-          <div className="text-[11px] text-blue-600 font-semibold mt-1">
+          <div className="text-2xl sm:text-3xl font-black text-neutral-900 mt-2">{activeLoans.length}</div>
+          <div className="text-[11px] text-[#2c4210] font-semibold mt-1">
             {overdueLoans.length > 0 ? `${overdueLoans.length} con retraso` : 'Todos a tiempo'}
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-[#D3D2D3] shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Circulación Histórica</span>
-            <CheckCircle2 className="w-4 h-4 text-purple-600" />
+            <span className="text-xs font-semibold text-neutral-500">Circulación Histórica</span>
+            <CheckCircle2 className="w-4 h-4 text-[#83B141]" strokeWidth={1.75} />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{totalLoansCount}</div>
-          <div className="text-[11px] text-slate-400 mt-1">{returnedLoans.length} devoluciones procesadas</div>
+          <div className="text-2xl sm:text-3xl font-black text-neutral-900 mt-2">{totalLoansCount}</div>
+          <div className="text-[11px] text-neutral-400 mt-1">{returnedLoans.length} devoluciones procesadas</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-[#D3D2D3] shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Lectores Activos</span>
-            <Users className="w-4 h-4 text-amber-600" />
+            <span className="text-xs font-semibold text-neutral-500">Lectores Activos</span>
+            <Users className="w-4 h-4 text-[#EFDA18]" strokeWidth={1.75} />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{patrons.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Estudiantes y docentes</div>
+          <div className="text-2xl sm:text-3xl font-black text-neutral-900 mt-2">{patrons.length}</div>
+          <div className="text-[11px] text-neutral-400 mt-1">Estudiantes y docentes</div>
         </div>
       </div>
 

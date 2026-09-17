@@ -68,19 +68,19 @@ export const BranchInventory: React.FC = () => {
   return (
     <div id="branch-inventory-section" className="space-y-6">
       {/* Category Filter Pills */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#D3D2D3] shadow-2xs">
         <div>
-          <h2 className="text-base font-bold text-slate-900">Sedes de Asignación e Inventario Descentralizado</h2>
-          <p className="text-xs text-slate-500">6 sedes activas entre bibliotecas del campus y núcleos de dotación rural.</p>
+          <h2 className="text-base font-bold text-neutral-900">Sedes de Asignación e Inventario Descentralizado</h2>
+          <p className="text-xs text-neutral-500">6 sedes activas entre bibliotecas del campus y núcleos de dotación rural.</p>
         </div>
-        <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
+        <div className="flex items-center gap-1.5 custom-scrollbar-x pb-1 text-xs">
           <button
             type="button"
             onClick={() => setFilterCategory('all')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer whitespace-nowrap ${
               filterCategory === 'all'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-[#83B141] text-white shadow-xs'
+                : 'bg-[#F8F9F8] text-neutral-600 hover:bg-neutral-200 border border-[#D3D2D3]'
             }`}
           >
             Todas ({branches.length})
@@ -88,10 +88,10 @@ export const BranchInventory: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilterCategory('internal')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer whitespace-nowrap ${
               filterCategory === 'internal'
-                ? 'bg-blue-700 text-white shadow-xs'
-                : 'bg-blue-50 text-blue-800 hover:bg-blue-100'
+                ? 'bg-[#83B141] text-white shadow-xs'
+                : 'bg-[#F8F9F8] text-neutral-700 hover:bg-neutral-200 border border-[#D3D2D3]'
             }`}
           >
             Sedes Centrales (Primaria / Bachillerato)
@@ -99,10 +99,10 @@ export const BranchInventory: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilterCategory('external_donation')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer whitespace-nowrap ${
               filterCategory === 'external_donation'
-                ? 'bg-emerald-800 text-white shadow-xs'
-                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                ? 'bg-[#83B141] text-white shadow-xs'
+                : 'bg-[#F8F9F8] text-neutral-700 hover:bg-neutral-200 border border-[#D3D2D3]'
             }`}
           >
             Semilla Manglareña (4 Núcleos)
@@ -122,10 +122,8 @@ export const BranchInventory: React.FC = () => {
               onClick={() => setSelectedBranchId(branch.id)}
               className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                 isSelected
-                  ? branch.type === 'internal'
-                    ? 'bg-blue-50/80 border-blue-500 shadow-md ring-2 ring-blue-500/20'
-                    : 'bg-emerald-50/80 border-emerald-600 shadow-md ring-2 ring-emerald-600/20'
-                  : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
+                  ? 'bg-[#f2f7ec] border-[#83B141] shadow-md ring-2 ring-[#83B141]/20'
+                  : 'bg-white border-[#D3D2D3] hover:border-neutral-400 hover:shadow-2xs'
               }`}
             >
               <div>
@@ -133,8 +131,8 @@ export const BranchInventory: React.FC = () => {
                   <span
                     className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                       branch.type === 'internal'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-emerald-100 text-emerald-800'
+                        ? 'bg-neutral-100 text-neutral-800 border border-[#D3D2D3]'
+                        : 'bg-[#EFDA18]/30 text-neutral-900 border border-[#EFDA18]'
                     }`}
                   >
                     {branch.type === 'internal' ? 'Sede Central' : 'Dotación Rural'}

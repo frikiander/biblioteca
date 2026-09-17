@@ -252,11 +252,11 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por alumno, título del libro, código de marbete u observaciones..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#83B141]/30 focus:border-[#83B141] transition"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+          <div className="flex items-center gap-1.5 custom-scrollbar-x pb-1 md:pb-0">
             {[
               { id: 'all', label: `Todos (${totalLoans})` },
               { id: 'active', label: `Activos (${activeLoans.length})` },
@@ -269,8 +269,8 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                 onClick={() => setStatusFilter(tab.id as any)}
                 className={`px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                   statusFilter === tab.id
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-[#83B141] text-white shadow-xs'
+                    : 'bg-[#F8F9F8] text-neutral-600 hover:bg-neutral-200 border border-[#D3D2D3]'
                 }`}
               >
                 {tab.label}

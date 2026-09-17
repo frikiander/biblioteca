@@ -86,18 +86,18 @@ export const LoansHub: React.FC<LoansHubProps> = ({
   return (
     <div className="space-y-6">
       {/* Sub-Navigation Bar for Loans */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-2xs">
-        <div className="flex items-center gap-1.5 overflow-x-auto p-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-2.5 rounded-2xl border border-[#D3D2D3] shadow-2xs">
+        <div className="flex items-center gap-1.5 custom-scrollbar-x p-1">
           <button
             id="tab-loan-checkout"
             onClick={() => setActiveSubTab('checkout')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
               activeSubTab === 'checkout'
-                ? 'bg-emerald-800 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#83B141] text-white shadow-xs'
+                : 'text-neutral-600 hover:text-neutral-950 hover:bg-[#F8F9F8]'
             }`}
           >
-            <BookMarked className="w-4 h-4" />
+            <BookMarked className="w-4 h-4" strokeWidth={1.75} />
             <span>Prestar Libro (Checkout)</span>
           </button>
 
@@ -106,18 +106,18 @@ export const LoansHub: React.FC<LoansHubProps> = ({
             onClick={() => setActiveSubTab('checkin')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
               activeSubTab === 'checkin'
-                ? 'bg-emerald-800 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#83B141] text-white shadow-xs'
+                : 'text-neutral-600 hover:text-neutral-950 hover:bg-[#F8F9F8]'
             }`}
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-4 h-4" strokeWidth={1.75} />
             <span>Devolver Libro (Check-in)</span>
             {activeLoansCount > 0 && (
               <span
                 className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                   activeSubTab === 'checkin'
-                    ? 'bg-emerald-950 text-emerald-200'
-                    : 'bg-emerald-100 text-emerald-800'
+                    ? 'bg-white text-[#2c4210]'
+                    : 'bg-[#f2f7ec] text-[#2c4210] border border-[#83B141]/30'
                 }`}
               >
                 {activeLoansCount} activo{activeLoansCount === 1 ? '' : 's'}
@@ -130,18 +130,18 @@ export const LoansHub: React.FC<LoansHubProps> = ({
             onClick={() => setActiveSubTab('holds')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
               activeSubTab === 'holds'
-                ? 'bg-emerald-800 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#83B141] text-white shadow-xs'
+                : 'text-neutral-600 hover:text-neutral-950 hover:bg-[#F8F9F8]'
             }`}
           >
-            <Bookmark className="w-4 h-4" />
+            <Bookmark className="w-4 h-4" strokeWidth={1.75} />
             <span>Reservas (Holds)</span>
             {activeHoldsCount > 0 && (
               <span
                 className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                   activeSubTab === 'holds'
-                    ? 'bg-amber-950 text-amber-200'
-                    : 'bg-amber-100 text-amber-900'
+                    ? 'bg-white text-neutral-900'
+                    : 'bg-[#EFDA18] text-neutral-900 shadow-2xs'
                 }`}
               >
                 {activeHoldsCount} en espera
@@ -154,11 +154,11 @@ export const LoansHub: React.FC<LoansHubProps> = ({
             onClick={() => setActiveSubTab('history')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
               activeSubTab === 'history'
-                ? 'bg-emerald-800 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#83B141] text-white shadow-xs'
+                : 'text-neutral-600 hover:text-neutral-950 hover:bg-[#F8F9F8]'
             }`}
           >
-            <History className="w-4 h-4" />
+            <History className="w-4 h-4" strokeWidth={1.75} />
             <span>Historial y Trazabilidad</span>
           </button>
         </div>
@@ -169,14 +169,14 @@ export const LoansHub: React.FC<LoansHubProps> = ({
             <button
               onClick={handleSyncOffline}
               disabled={isSyncing}
-              className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg flex items-center gap-1.5 shadow-xs transition"
+              className="px-3 py-1.5 bg-[#EFDA18] hover:bg-[#d6c311] text-neutral-900 font-bold rounded-xl flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} strokeWidth={1.75} />
               Sincronizar Offline ({offlineCount})
             </button>
           ) : (
-            <div className="flex items-center gap-1.5 text-slate-400 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <div className="flex items-center gap-1.5 text-neutral-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-[#83B141]" />
               <span>Modo Online</span>
             </div>
           )}

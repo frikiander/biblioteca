@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  BookOpen, 
-  Building2, 
-  PlusCircle, 
-  HeartHandshake, 
-  Library, 
-  BookMarked, 
-  Globe, 
-  Share2, 
-  Check,
-  Users,
-  Bookmark,
-  ScanLine,
-  Lightbulb,
-  BarChart3
+  HeartHandshake
 } from 'lucide-react';
 import { BookCatalog } from './components/catalog/BookCatalog';
 import { RegisterCopyForm } from './components/copies/RegisterCopyForm';
@@ -25,9 +12,12 @@ import { StocktakingHub } from './components/inventory/StocktakingHub';
 import { SuggestionsHub } from './components/suggestions/SuggestionsHub';
 import { KohaReportsDashboard } from './components/reports/KohaReportsDashboard';
 import { PublicCatalogPortal } from './components/public/PublicCatalogPortal';
+import { AppSidebar, TabType } from './components/layout/AppSidebar';
+import { AppHeader } from './components/layout/AppHeader';
 import { getStoredLoans } from './lib/loans';
 import { getStoredHolds } from './lib/holds';
 import { getStoredSuggestions } from './lib/suggestions';
+import { getOfflineQueue } from './lib/offlineCirc';
 import type { Work, Copy } from './types/database';
 
 export default function App() {
@@ -38,15 +28,28 @@ export default function App() {
     return params.get('mode') === 'public' || params.get('view') === 'public' || params.get('public') === 'true';
   });
 
-  const [activeTab, setActiveTab] = useState<
-    'catalog' | 'loans' | 'patrons' | 'shelves' | 'inventory' | 'suggestions' | 'branches' | 'reports' | 'register_copy'
-  >('catalog');
-
+  const [activeTab, setActiveTab] = useState<TabType>('catalog');
   const [selectedWorkForCopy, setSelectedWorkForCopy] = useState<Work | null>(null);
   const [catalogRefreshCounter, setCatalogRefreshCounter] = useState<number>(0);
   const [prefilledLoanMarbete, setPrefilledLoanMarbete] = useState<string>('');
   const [loanInitialTab, setLoanInitialTab] = useState<'checkout' | 'checkin' | 'holds' | 'history'>('checkout');
-  const [copiedPublicUrl, setCopiedPublicUrl] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [offlineCount, setOfflineCount] = useState<number>(0);
+
+  // Synchronize network state
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    setOfflineCount(getOfflineQueue().length);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [catalogRefreshCounter]);
 
   // Synchronize browser history / back-forward navigation for public mode
   useEffect(() => {
@@ -69,14 +72,6 @@ export default function App() {
     window.history.pushState({}, '', window.location.pathname);
   };
 
-  const handleCopyPublicLink = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const publicUrl = `${window.location.origin}${window.location.pathname}?mode=public`;
-    navigator.clipboard.writeText(publicUrl);
-    setCopiedPublicUrl(true);
-    setTimeout(() => setCopiedPublicUrl(false), 2500);
-  };
-
   // If in public mode, render the dedicated Public Catalog Portal (OPAC)
   if (isPublicMode) {
     return <PublicCatalogPortal onSwitchToAdmin={handleReturnToAdmin} />;
@@ -91,280 +86,102 @@ export default function App() {
     setActiveTab('register_copy');
   };
 
-  const handleCopyRegistered = (newCopy: Copy) => {
+  const handleCopyRegistered = (_newCopy: Copy) => {
     setCatalogRefreshCounter((prev) => prev + 1);
   };
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-800 flex flex-col font-sans antialiased">
-      {/* Top Navbar */}
-      <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Institution Brand */}
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-md shadow-emerald-950/40 text-white shrink-0 ring-2 ring-emerald-400/30">
-                <Library className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">
-                    Colegio Integral El Manglar
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-                    Koha Remix Edition
-                  </span>
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F8F9F8] text-neutral-800 antialiased font-sans">
+      {/* Sleek Floating Sidebar Navigation (Image 1 reference) */}
+      <AppSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        activeLoansCount={activeLoansCount}
+        activeHoldsCount={activeHoldsCount}
+        pendingSuggestionsCount={pendingSuggestionsCount}
+        onOpenPublicPortal={handleOpenPublicPortal}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
+
+      {/* Main Content Viewport with Header and Independent Fluid Scroll */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+        {/* Modern Top Breadcrumb Header */}
+        <AppHeader
+          activeTab={activeTab}
+          onToggleMobileMenu={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          onOpenPublicPortal={handleOpenPublicPortal}
+          isOnline={isOnline}
+          offlineCount={offlineCount}
+        />
+
+        {/* Independent Scrollable Content Area */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-6 pb-12">
+            {activeTab === 'catalog' && (
+              <BookCatalog
+                onSelectWorkForCopy={handleSelectWorkForCopy}
+                refreshTrigger={catalogRefreshCounter}
+              />
+            )}
+
+            {activeTab === 'loans' && (
+              <LoansHub
+                initialTab={loanInitialTab}
+                initialMarbeteCode={prefilledLoanMarbete}
+                onDataChange={() => setCatalogRefreshCounter((prev) => prev + 1)}
+              />
+            )}
+
+            {activeTab === 'patrons' && (
+              <PatronManager
+                onOpenLoanForPatron={(_patron) => {
+                  setActiveTab('loans');
+                }}
+              />
+            )}
+
+            {activeTab === 'shelves' && (
+              <VirtualShelvesHub />
+            )}
+
+            {activeTab === 'inventory' && (
+              <StocktakingHub />
+            )}
+
+            {activeTab === 'suggestions' && (
+              <SuggestionsHub />
+            )}
+
+            {activeTab === 'branches' && (
+              <BranchInventory />
+            )}
+
+            {activeTab === 'reports' && (
+              <KohaReportsDashboard />
+            )}
+
+            {activeTab === 'register_copy' && (
+              <div className="max-w-3xl mx-auto space-y-6">
+                <RegisterCopyForm
+                  initialWork={selectedWorkForCopy}
+                  onCopyRegistered={handleCopyRegistered}
+                />
+
+                <div className="p-4 rounded-2xl bg-[#f2f7ec] border border-[#83B141]/30 text-xs text-[#2c4210] space-y-2">
+                  <div className="font-bold flex items-center gap-1.5 text-[#83B141]">
+                    <HeartHandshake className="w-4 h-4" strokeWidth={1.75} />
+                    Programa de Dotación Descentralizada "Semilla Manglareña"
+                  </div>
+                  <p className="leading-relaxed text-neutral-700">
+                    Este flujo registra unidades físicas que son transferidas a escuelas rurales aliadas en el oriente del país, manteniendo el marbete clasificado bajo el estándar decimal Dewey y permitiendo trazabilidad centralizada desde el Colegio Integral El Manglar.
+                  </p>
                 </div>
-                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                  Biblioteca Miguel Otero Silva
-                </h1>
-                <p className="text-[11px] text-slate-400 hidden sm:block">
-                  ILS integral: Dublin Core + MARC21, Dewey CDD, Circulación Pro y Dotación Rural "Semilla Manglareña"
-                </p>
               </div>
-            </div>
-
-            {/* Public Catalog Portal Action */}
-            <div className="flex items-center gap-2">
-              <button
-                id="btn-open-public-portal"
-                onClick={handleOpenPublicPortal}
-                className="px-3.5 py-2 bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md shadow-emerald-950/30 border border-emerald-500/30 transition cursor-pointer"
-                title="Abrir el portal de consulta pública OPAC"
-              >
-                <Globe className="w-4 h-4 text-emerald-200" />
-                <span className="hidden sm:inline">Ver Catálogo Público (OPAC)</span>
-                <span className="sm:hidden">Público</span>
-              </button>
-
-              <button
-                onClick={handleCopyPublicLink}
-                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-medium transition cursor-pointer"
-                title="Copiar enlace directo del catálogo público"
-              >
-                {copiedPublicUrl ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
-              </button>
-            </div>
+            )}
           </div>
-
-          {/* Navigation Tabs (Koha-grade Modules) */}
-          <nav className="flex space-x-1 border-t border-slate-800/80 overflow-x-auto py-1 text-xs sm:text-sm font-medium">
-            <button
-              id="tab-catalog"
-              onClick={() => setActiveTab('catalog')}
-              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'catalog'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 text-emerald-400" />
-              <span>Catálogo & MARC21</span>
-            </button>
-
-            <button
-              id="tab-loans"
-              onClick={() => {
-                setPrefilledLoanMarbete('');
-                setLoanInitialTab('checkout');
-                setActiveTab('loans');
-              }}
-              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'loans'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <BookMarked className="w-4 h-4 text-emerald-400" />
-              <span>Circulación & Reservas</span>
-              {(activeLoansCount > 0 || activeHoldsCount > 0) && (
-                <span className="text-[10px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.2 rounded-full shadow-2xs">
-                  {activeLoansCount + activeHoldsCount}
-                </span>
-              )}
-            </button>
-
-            <button
-              id="tab-patrons"
-              onClick={() => setActiveTab('patrons')}
-              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'patrons'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Users className="w-4 h-4 text-emerald-400" />
-              <span>Lectores & Carnets</span>
-            </button>
-
-            <button
-              id="tab-shelves"
-              onClick={() => setActiveTab('shelves')}
-              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'shelves'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Bookmark className="w-4 h-4 text-teal-400" />
-              <span>Estantes & Plan Lector</span>
-            </button>
-
-            <button
-              id="tab-inventory"
-              onClick={() => setActiveTab('inventory')}
-              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'inventory'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <ScanLine className="w-4 h-4 text-indigo-400" />
-              <span>Inventario & Taller</span>
-            </button>
-
-            <button
-              id="tab-suggestions"
-              onClick={() => setActiveTab('suggestions')}
-              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'suggestions'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Lightbulb className="w-4 h-4 text-amber-400" />
-              <span>Desideratas</span>
-              {pendingSuggestionsCount > 0 && (
-                <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.2 rounded-full">
-                  {pendingSuggestionsCount}
-                </span>
-              )}
-            </button>
-
-            <button
-              id="tab-branches"
-              onClick={() => setActiveTab('branches')}
-              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'branches'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Building2 className="w-4 h-4 text-blue-400" />
-              <span>Sedes & Donaciones</span>
-            </button>
-
-            <button
-              id="tab-reports"
-              onClick={() => setActiveTab('reports')}
-              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'reports'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4 text-emerald-400" />
-              <span>Estadísticas & Reportes</span>
-            </button>
-
-            <button
-              id="tab-register-copy"
-              onClick={() => setActiveTab('register_copy')}
-              className={`py-3 px-3.5 rounded-xl flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
-                activeTab === 'register_copy'
-                  ? 'bg-emerald-800 text-white font-semibold shadow-inner'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <PlusCircle className="w-4 h-4 text-emerald-400" />
-              <span>+ Ejemplar Físico</span>
-            </button>
-          </nav>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'catalog' && (
-          <BookCatalog
-            onSelectWorkForCopy={handleSelectWorkForCopy}
-            refreshTrigger={catalogRefreshCounter}
-          />
-        )}
-
-        {activeTab === 'loans' && (
-          <LoansHub
-            initialTab={loanInitialTab}
-            initialMarbeteCode={prefilledLoanMarbete}
-            onDataChange={() => setCatalogRefreshCounter((prev) => prev + 1)}
-          />
-        )}
-
-        {activeTab === 'patrons' && (
-          <PatronManager
-            onOpenLoanForPatron={(patron) => {
-              setActiveTab('loans');
-            }}
-          />
-        )}
-
-        {activeTab === 'shelves' && (
-          <VirtualShelvesHub />
-        )}
-
-        {activeTab === 'inventory' && (
-          <StocktakingHub />
-        )}
-
-        {activeTab === 'suggestions' && (
-          <SuggestionsHub />
-        )}
-
-        {activeTab === 'branches' && (
-          <BranchInventory />
-        )}
-
-        {activeTab === 'reports' && (
-          <KohaReportsDashboard />
-        )}
-
-        {activeTab === 'register_copy' && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            <RegisterCopyForm
-              initialWork={selectedWorkForCopy}
-              onCopyRegistered={handleCopyRegistered}
-            />
-
-            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-2">
-              <div className="font-bold flex items-center gap-1.5">
-                <HeartHandshake className="w-4 h-4 text-blue-700" />
-                Programa de Dotación Descentralizada "Semilla Manglareña"
-              </div>
-              <p className="text-blue-800 leading-relaxed">
-                Este flujo registra unidades físicas que son transferidas a escuelas rurales aliadas en el oriente del país, manteniendo el marbete clasificado bajo el estándar decimal Dewey y permitiendo trazabilidad centralizada desde el Colegio Integral El Manglar.
-              </p>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-8 text-center text-xs text-slate-500 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 space-y-2">
-          <div className="flex flex-wrap items-center justify-center gap-4 text-slate-700 font-semibold">
-            <span>Colegio Integral El Manglar</span>
-            <span>•</span>
-            <span>Biblioteca Miguel Otero Silva</span>
-            <span>•</span>
-            <span>Koha Remix ILS Architecture</span>
-            <span>•</span>
-            <span>Proyecto Semilla Manglareña</span>
-          </div>
-          <p className="text-slate-400 max-w-xl mx-auto">
-            Plataforma Full-Stack con soporte para Dublin Core, MARC21, Clasificación Dewey, Circulación Pro, Carnetización y Dotaciones Rurales.
-          </p>
-        </div>
-      </footer>
+        </main>
+      </div>
     </div>
   );
 }

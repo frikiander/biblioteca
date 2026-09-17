@@ -121,42 +121,42 @@ export function StocktakingHub() {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xs border border-[#D3D2D3] flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-700 text-white flex items-center justify-center shadow-md shadow-indigo-950/20 shrink-0">
-            <ScanLine className="w-7 h-7" />
+          <div className="w-12 h-12 rounded-2xl bg-[#83B141]/15 text-[#83B141] flex items-center justify-center shadow-2xs shrink-0 border border-[#83B141]/30">
+            <ScanLine className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#83B141] bg-[#f2f7ec] px-2.5 py-0.5 rounded-full border border-[#83B141]/30">
                 Koha Tools & Preservation
               </span>
-              <span className="text-xs text-slate-500">• Auditoría de Estantería y Restauración</span>
+              <span className="text-xs text-neutral-500">• Auditoría de Estantería y Restauración</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight mt-1">
               Inventario Físico y Taller de Preservación
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1">
+            <p className="text-xs sm:text-sm text-neutral-600 max-w-2xl mt-1">
               Control de estantería por escáner de marbete continuo para detectar libros extraviados o desubicados y gestión del taller de encuadernación.
             </p>
           </div>
         </div>
 
         {/* Tab switch */}
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        <div className="flex bg-[#F8F9F8] p-1.5 rounded-2xl border border-[#D3D2D3]">
           <button
             onClick={() => setActiveTab('audit')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-              activeTab === 'audit' ? 'bg-indigo-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'audit' ? 'bg-[#83B141] text-white shadow-xs' : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
-            <ScanLine className="w-4 h-4" />
+            <ScanLine className="w-4 h-4" strokeWidth={1.75} />
             Auditoría de Estantería
           </button>
           <button
             onClick={() => setActiveTab('preservation')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-              activeTab === 'preservation' ? 'bg-indigo-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'preservation' ? 'bg-[#83B141] text-white shadow-xs' : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
             <Wrench className="w-4 h-4" />

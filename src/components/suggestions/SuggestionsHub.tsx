@@ -143,22 +143,22 @@ export function SuggestionsHub() {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xs border border-[#D3D2D3] flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-md shadow-amber-950/20 shrink-0">
-            <Lightbulb className="w-7 h-7" />
+          <div className="w-12 h-12 rounded-2xl bg-[#EFDA18]/20 text-neutral-900 border border-[#EFDA18] flex items-center justify-center shadow-2xs shrink-0">
+            <Lightbulb className="w-6 h-6 text-neutral-900" strokeWidth={1.75} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#4e4404] bg-[#fefee8] px-2.5 py-0.5 rounded-full border border-[#EFDA18]">
                 Koha Purchase Suggestions
               </span>
-              <span className="text-xs text-slate-500">• Buzón de Desideratas y Adquisiciones</span>
+              <span className="text-xs text-neutral-500">• Buzón de Desideratas y Adquisiciones</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight mt-1">
               Sugerencias de Compra y Dotación Bibliográfica
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1">
+            <p className="text-xs sm:text-sm text-neutral-600 max-w-2xl mt-1">
               Canal participativo para que docentes y alumnos propongan nuevos títulos para el fondo de la biblioteca central o donaciones rurales, con votación comunitaria y flujo de aprobación.
             </p>
           </div>
@@ -166,23 +166,23 @@ export function SuggestionsHub() {
 
         <button
           onClick={() => setIsSubmitModalOpen(true)}
-          className="px-5 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md shadow-amber-950/20 transition cursor-pointer shrink-0"
+          className="px-5 py-3 bg-[#83B141] hover:bg-[#719b35] text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm transition cursor-pointer shrink-0"
         >
-          <PlusCircle className="w-4 h-4" />
+          <PlusCircle className="w-4 h-4" strokeWidth={1.75} />
           Proponer un Libro
         </button>
       </div>
 
       {/* Search & Status Filters */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3">
+      <div className="bg-white rounded-2xl p-4 border border-[#D3D2D3] shadow-2xs flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.5} />
           <input
             type="text"
             placeholder="Buscar por título propuesto, autor o solicitante..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:bg-white"
+            className="w-full pl-10 pr-4 py-2 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#83B141]/30 focus:border-[#83B141] focus:bg-white text-neutral-800"
           />
         </div>
 
