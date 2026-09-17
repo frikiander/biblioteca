@@ -27,14 +27,14 @@ interface AppHeaderProps {
 
 const TAB_METADATA: Record<TabType, { category: string; title: string; icon: React.FC<{ className?: string; strokeWidth?: number }> }> = {
   reports: { category: 'Métricas & KPIs', title: 'Dashboard General', icon: BarChart3 },
-  catalog: { category: 'Catálogo & Acervo', title: 'Catálogo Bibliográfico & MARC21', icon: BookOpen },
-  register_copy: { category: 'Catálogo & Acervo', title: 'Registro de Ejemplar Físico', icon: PlusCircle },
-  shelves: { category: 'Catálogo & Acervo', title: 'Estantes Virtuales & Plan Lector', icon: Bookmark },
-  suggestions: { category: 'Catálogo & Acervo', title: 'Desideratas & Sugerencias de Adquisición', icon: Lightbulb },
-  loans: { category: 'Circulación & Lectores', title: 'Circulación, Préstamos & Reservas', icon: BookMarked },
-  patrons: { category: 'Circulación & Lectores', title: 'Gestión de Lectores & Carnetización', icon: Users },
-  inventory: { category: 'Control Físico & Sedes', title: 'Inventario Físico & Taller de Encuadernación', icon: ScanLine },
-  branches: { category: 'Control Físico & Sedes', title: 'Sedes & Dotación Rural "Semilla Manglareña"', icon: Building2 },
+  catalog: { category: 'Inventario', title: 'Inventario', icon: BookOpen },
+  register_copy: { category: 'Inventario', title: 'Registrar Ejemplar', icon: PlusCircle },
+  shelves: { category: 'Inventario', title: 'Estantes & Plan Lector', icon: Bookmark },
+  suggestions: { category: 'Inventario', title: 'Desideratas', icon: Lightbulb },
+  loans: { category: 'Circulación & Lectores', title: 'Préstamos & Circulación', icon: BookMarked },
+  patrons: { category: 'Circulación & Lectores', title: 'Lectores & Carnetización', icon: Users },
+  inventory: { category: 'Control Físico & Sedes', title: 'Auditoría & Conservación', icon: ScanLine },
+  branches: { category: 'Control Físico & Sedes', title: 'Sedes & Semilla Manglareña', icon: Building2 },
 };
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -62,10 +62,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* Dynamic Breadcrumbs */}
         <div className="flex items-center gap-2 text-xs sm:text-sm">
-          <span className="text-neutral-400 font-medium hidden sm:inline">
-            {currentMeta.category}
-          </span>
-          <span className="text-neutral-300 hidden sm:inline">/</span>
+          {currentMeta.category !== currentMeta.title && (
+            <>
+              <span className="text-neutral-400 font-medium hidden sm:inline">
+                {currentMeta.category}
+              </span>
+              <span className="text-neutral-300 hidden sm:inline">/</span>
+            </>
+          )}
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-[#83B141]/10 text-[#83B141] flex items-center justify-center">
               <TabIcon className="w-4 h-4" strokeWidth={1.75} />

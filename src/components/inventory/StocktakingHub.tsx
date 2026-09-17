@@ -134,7 +134,7 @@ export function StocktakingHub() {
               <span className="text-xs text-neutral-500">• Auditoría de Estantería y Restauración</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight mt-1">
-              Inventario Físico y Taller de Preservación
+              Auditoría Física y Taller de Preservación
             </h2>
             <p className="text-xs sm:text-sm text-neutral-600 max-w-2xl mt-1">
               Control de estantería por escáner de marbete continuo para detectar libros extraviados o desubicados y gestión del taller de encuadernación.

@@ -258,7 +258,7 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
           <div className="relative z-10 max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Fondo Bibliográfico Escolar & Sala de Lectura</span>
+              <span>Inventario Escolar & Sala de Lectura</span>
             </div>
             
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
@@ -394,7 +394,7 @@ export const PublicCatalogPortal: React.FC<PublicCatalogPortalProps> = ({ onSwit
         {loading ? (
           <div className="py-20 text-center space-y-3">
             <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs text-slate-500 font-medium">Cargando catálogo bibliográfico...</p>
+            <p className="text-xs text-slate-500 font-medium">Cargando inventario...</p>
           </div>
         ) : filteredWorks.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xs space-y-3">

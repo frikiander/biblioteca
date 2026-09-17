@@ -146,7 +146,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </button>
           </div>
 
-          {/* Section 2: Colección & Catálogo (Collapsible Group with Tree Lines) */}
+          {/* Section 2: Inventario (Collapsible Group with Tree Lines) */}
           <div className="space-y-1">
             {/* Parent Header */}
             <button
@@ -155,7 +155,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             >
               <div className="flex items-center gap-2.5">
                 <Folder className="w-4 h-4 text-neutral-500" strokeWidth={1.5} />
-                <span className="text-[13px] font-bold text-neutral-800">Catálogo & Acervo</span>
+                <span className="text-[13px] font-bold text-neutral-800">Inventario</span>
               </div>
               {isCatalogOpen ? (
                 <ChevronUp className="w-3.5 h-3.5 text-neutral-400" strokeWidth={1.5} />
@@ -167,7 +167,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             {/* Tree Children Items */}
             {isCatalogOpen && (
               <div className="tree-connector-container ml-5 pl-4 space-y-1 pt-1">
-                {/* 1. Catálogo & MARC21 */}
+                {/* 1. Inventario */}
                 <div className="tree-connector-item">
                   <button
                     id="sidebar-tab-catalog"
@@ -180,7 +180,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                       }
                     `}
                   >
-                    <span className="text-[12.5px] truncate">Catálogo & MARC21</span>
+                    <span className="text-[12.5px] truncate">Inventario</span>
                   </button>
                 </div>
 
@@ -323,7 +323,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
             {isControlOpen && (
               <div className="tree-connector-container ml-5 pl-4 space-y-1 pt-1">
-                {/* 1. Inventario & Taller */}
+                {/* 1. Auditoría & Conservación */}
                 <div className="tree-connector-item">
                   <button
                     id="sidebar-tab-inventory"
@@ -336,7 +336,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                       }
                     `}
                   >
-                    <span className="text-[12.5px] truncate">Inventario & Taller</span>
+                    <span className="text-[12.5px] truncate">Auditoría & Conservación</span>
                   </button>
                 </div>
 

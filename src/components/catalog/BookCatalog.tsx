@@ -227,7 +227,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-widest text-[#83B141]">
-              Fondo Bibliográfico & Archivo Patrimonial
+              Inventario
             </span>
             <span className="text-neutral-300">•</span>
             <span className="text-xs font-semibold text-neutral-500">
@@ -236,13 +236,13 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
-            Catálogo de Colecciones
+            Inventario
           </h2>
 
           <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-neutral-600">
             <span className="inline-flex items-center gap-1.5 font-semibold text-neutral-900">
               <span className="w-2 h-2 rounded-full bg-[#83B141]" />
-              {works.length} Obras Catalogadas ({totalCopiesCount} Ejemplares)
+              {works.length} Obras ({totalCopiesCount} Ejemplares)
             </span>
             <span className="text-neutral-300">|</span>
             <span>Campus Central: <strong className="text-neutral-900">{totalCentralCount}</strong></span>
@@ -255,11 +255,11 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={handleRestoreCurated}
-            title="Cargar o restablecer obras fundamentales de Miguel Otero Silva y clásicos"
+            title="Cargar o restablecer inventario fundamental de Miguel Otero Silva y clásicos"
             className="px-3 py-2 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-700 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={1.75} />
-            <span className="hidden sm:inline">Colección Curada MOS</span>
+            <span className="hidden sm:inline">Inventario Curado MOS</span>
           </button>
 
           <button
@@ -305,7 +305,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
             className="px-4 py-2 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-2 cursor-pointer"
           >
             <BookPlus className="w-4 h-4" strokeWidth={2} />
-            <span>+ Catalogar Obra</span>
+            <span>+ Registrar Obra</span>
           </button>
         </div>
       </div>
@@ -357,7 +357,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
                     ? 'bg-white text-neutral-950 shadow-2xs'
                     : 'text-neutral-400 hover:text-neutral-800'
                 }`}
-                title="Vista de Galería de Portadas"
+                title="Vista de Galería"
               >
                 <LayoutGrid className="w-4 h-4" strokeWidth={1.75} />
               </button>
@@ -368,7 +368,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
                     ? 'bg-white text-neutral-950 shadow-2xs'
                     : 'text-neutral-400 hover:text-neutral-800'
                 }`}
-                title="Vista de Fichero de Archivo (Tabla)"
+                title="Vista de Inventario (Tabla)"
               >
                 <List className="w-4 h-4" strokeWidth={1.75} />
               </button>
@@ -486,9 +486,9 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
             <BookOpen className="w-7 h-7" strokeWidth={1.5} />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-neutral-900">Catálogo Listo para Cargar</h3>
+            <h3 className="text-lg font-bold text-neutral-900">Inventario Listo para Cargar</h3>
             <p className="text-xs text-neutral-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
-              El fondo bibliográfico está disponible. Puedes iniciar catalogando un libro por ISBN o cargar de inmediato la Colección Fundamental Miguel Otero Silva y Clásicos.
+              El inventario está disponible. Puedes iniciar registrando un libro por ISBN o cargar de inmediato el Inventario Fundamental Miguel Otero Silva y Clásicos.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -497,14 +497,14 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
               className="px-4 py-2 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" strokeWidth={1.75} />
-              <span>Cargar Colección Fundamental MOS</span>
+              <span>Cargar Inventario Fundamental MOS</span>
             </button>
             <button
               onClick={() => setIsRegisterWorkModalOpen(true)}
               className="px-4 py-2 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >
               <BookPlus className="w-4 h-4" strokeWidth={1.75} />
-              <span>+ Catalogar Manualmente</span>
+              <span>+ Registrar Obra</span>
             </button>
           </div>
         </div>
@@ -708,7 +708,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
           onClose={() => setIsRegisterWorkModalOpen(false)}
           onWorkCreated={(_newWork) => {
             fetchWorksCatalog();
-            showToast('Nueva obra catalogada exitosamente en el acervo universal.', 'success');
+            showToast('Nueva obra registrada exitosamente en el inventario.', 'success');
           }}
         />
       )}
