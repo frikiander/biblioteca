@@ -590,33 +590,33 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
         className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden my-4 sm:my-6"
       >
         {/* Modal Header */}
-        <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+        <div className="p-5 sm:p-6 bg-white border-b border-[#D3D2D3] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shadow-inner">
-              <BookPlus className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-2xl bg-[#f2f7ec] text-[#83B141] border border-[#83B141]/30 flex items-center justify-center">
+              <BookPlus className="w-6 h-6" strokeWidth={1.75} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#83B141]">
                   Colegio Integral El Manglar
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#f2f7ec] text-[#83B141] font-semibold border border-[#83B141]/30">
                   {currentStep === 'isbn_lookup' ? 'Paso 1: Consulta ISBN' : 'Paso 2: Ficha y Ejemplares'}
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900">
                 {currentStep === 'isbn_lookup'
                   ? 'Ingreso de Nueva Obra — Búsqueda por ISBN'
-                  : 'Catalogar Nueva Obra y Ejemplares Físicos'}
+                  : 'Registrar Nueva Obra y Ejemplares Físicos'}
               </h2>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="p-2 rounded-xl text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" strokeWidth={1.5} />
           </button>
         </div>
 
@@ -624,24 +624,24 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
         {currentStep === 'isbn_lookup' && (
           <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full">
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 mx-auto flex items-center justify-center shadow-sm">
-                <Search className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-2xl bg-[#f2f7ec] text-[#83B141] border border-[#83B141]/30 mx-auto flex items-center justify-center">
+                <Search className="w-8 h-8" strokeWidth={1.75} />
               </div>
-              <h3 className="text-xl font-bold text-slate-900">
+              <h3 className="text-xl font-bold text-neutral-900">
                 Ingresa el ISBN del libro
               </h3>
-              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
+              <p className="text-xs sm:text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
                 Consultaremos concurrentemente <strong>Google Books API</strong> y <strong>Open Library</strong> para extraer título, autor, editorial, sinopsis y clasificación Dewey (CDD).
               </p>
               <div className="flex items-center justify-center gap-2 pt-1">
                 {isGoogleBooksApiKeyConfigured ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold border border-emerald-200 shadow-xs">
-                    <Sparkles className="w-3 h-3 text-emerald-600" />
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#f2f7ec] text-[#2c4210] text-[11px] font-semibold border border-[#83B141]/30 shadow-2xs">
+                    <Sparkles className="w-3 h-3 text-[#83B141]" />
                     Google Books + Open Library Conectados
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium border border-slate-200">
-                    <Globe className="w-3 h-3 text-slate-500" />
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-700 text-[11px] font-semibold border border-[#D3D2D3]">
+                    <Globe className="w-3 h-3 text-neutral-500" />
                     Búsqueda Dual Pública (Google Books + Open Library)
                   </span>
                 )}
@@ -702,7 +702,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                     value={searchIsbnInput}
                     onChange={(e) => setSearchIsbnInput(e.target.value)}
                     placeholder="Ej: 9788437604947 o 978-980-01-0189-6"
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded-2xl text-base font-mono text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
+                    className="w-full pl-11 pr-4 py-3.5 bg-[#F8F9F8] border border-[#D3D2D3] rounded-2xl text-base font-mono text-neutral-900 placeholder-neutral-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#83B141]/20 focus:border-[#83B141] transition"
                   />
                 </div>
               </div>
@@ -713,16 +713,16 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                   id="search-google-books-btn"
                   type="submit"
                   disabled={isSearchingGoogle || !searchIsbnInput.trim()}
-                  className="w-full sm:flex-1 py-3.5 px-5 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white rounded-2xl font-bold text-sm shadow-md shadow-emerald-950/20 transition flex items-center justify-center gap-2.5 cursor-pointer"
+                  className="w-full sm:flex-1 py-3.5 px-5 bg-[#83B141] hover:bg-[#719b35] disabled:opacity-50 text-white rounded-2xl font-bold text-sm shadow-xs transition flex items-center justify-center gap-2.5 cursor-pointer"
                 >
                   {isSearchingGoogle ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin text-emerald-300" />
+                      <Loader2 className="w-5 h-5 animate-spin text-white" />
                       <span>Consultando catálogos en cascada...</span>
                     </>
                   ) : (
                     <>
-                      <Globe className="w-4 h-4 text-emerald-300" />
+                      <Globe className="w-4 h-4 text-white" />
                       <span>Buscar en Cascada (Google + Open Library)</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
@@ -733,17 +733,17 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                   type="button"
                   onClick={handleProceedToManual}
                   disabled={isSearchingGoogle}
-                  className="w-full sm:w-auto py-3.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer border border-slate-200"
+                  className="w-full sm:w-auto py-3.5 px-5 bg-white hover:bg-neutral-50 text-neutral-700 rounded-2xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer border border-[#D3D2D3]"
                 >
-                  <Edit3 className="w-4 h-4 text-slate-500" />
+                  <Edit3 className="w-4 h-4 text-neutral-500" />
                   <span>Carga Manual (Sin ISBN)</span>
                 </button>
               </div>
             </form>
 
             {/* Quick Test ISBN Presets */}
-            <div className="pt-4 border-t border-slate-100 space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block text-center sm:text-left">
+            <div className="pt-4 border-t border-[#D3D2D3]/60 space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 block text-center sm:text-left">
                 Ejemplos rápidos para prueba:
               </span>
               <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
@@ -755,11 +755,11 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                       setSearchIsbnInput(item.isbn);
                       handlePerformGoogleSearch(item.isbn);
                     }}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-200 border border-slate-200/80 rounded-xl text-xs font-medium text-slate-700 transition flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 bg-white hover:bg-[#f2f7ec] hover:text-[#83B141] hover:border-[#83B141]/50 border border-[#D3D2D3] rounded-xl text-xs font-medium text-neutral-700 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                   >
-                    <BookOpen className="w-3 h-3 text-slate-400" />
+                    <BookOpen className="w-3 h-3 text-neutral-400" />
                     <span>{item.label}</span>
-                    <span className="font-mono text-[10px] text-slate-400">({item.isbn.slice(-4)})</span>
+                    <span className="font-mono text-[10px] text-neutral-400">({item.isbn.slice(-4)})</span>
                   </button>
                 ))}
               </div>
@@ -1108,8 +1108,8 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                           onClick={() => setCoverUrl(sc.url)}
                           className={`px-2 py-0.5 rounded text-[10px] font-semibold transition shrink-0 cursor-pointer ${
                             coverUrl === sc.url
-                              ? 'bg-emerald-800 text-white'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              ? 'bg-[#83B141] text-white'
+                              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                           }`}
                         >
                           {sc.label}
@@ -1122,31 +1122,31 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
             </div>
 
             {/* Section 4: Physical Copies Generation - INDIVIDUAL CONFIGURATION PER COPY */}
-            <div className="space-y-4 pt-3 p-4 sm:p-5 rounded-3xl bg-slate-50 border border-slate-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+            <div className="space-y-4 pt-3 p-4 sm:p-5 rounded-2xl bg-[#F8F9F8] border border-[#D3D2D3]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#D3D2D3]/60 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                    <Barcode className="w-4 h-4" />
+                  <div className="w-8 h-8 rounded-xl bg-[#f2f7ec] text-[#83B141] flex items-center justify-center border border-[#83B141]/30">
+                    <Barcode className="w-4 h-4" strokeWidth={1.75} />
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                    <h4 className="text-xs sm:text-sm font-bold text-neutral-900">
                       4. Generación Individual de Ejemplares Físicos
                     </h4>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-neutral-500">
                       Configura de forma independiente el código marbete, sede y estado físico para cada ejemplar.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                  <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-[#D3D2D3] shadow-2xs">
                     <input
                       type="checkbox"
                       checked={createInitialCopies}
                       onChange={(e) => setCreateInitialCopies(e.target.checked)}
-                      className="rounded text-emerald-700 focus:ring-emerald-600 w-4 h-4 cursor-pointer"
+                      className="rounded text-[#83B141] focus:ring-[#83B141] w-4 h-4 cursor-pointer"
                     />
-                    <span className="text-xs font-bold text-slate-800">Registrar ejemplares ahora</span>
+                    <span className="text-xs font-bold text-neutral-800">Registrar ejemplares ahora</span>
                   </label>
                 </div>
               </div>
@@ -1155,11 +1155,11 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                 <div className="space-y-4">
                   {/* Metrics Pill & Add Controls */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
-                      <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-bold text-slate-800">
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-neutral-600">
+                      <span className="px-2.5 py-1 rounded-lg bg-white border border-[#D3D2D3] font-bold text-neutral-800">
                         Total: {initialCopies.length} {initialCopies.length === 1 ? 'ejemplar' : 'ejemplares'}
                       </span>
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
+                      <span className="px-2 py-0.5 rounded-md bg-[#f2f7ec] text-[#2c4210] border border-[#83B141]/30 text-[11px] font-semibold">
                         Sede Central: {centralDraftCount}
                       </span>
                       <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
@@ -1172,9 +1172,9 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleAddCopy(branches[0]?.id)}
-                        className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                        className="px-3 py-1.5 rounded-xl bg-[#83B141] hover:bg-[#719b35] text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
                       >
-                        <Plus className="w-3.5 h-3.5 text-emerald-400" />
+                        <Plus className="w-3.5 h-3.5" />
                         + Ejemplar Central
                       </button>
                       {branches.find((b) => b.type === 'external_donation') && (
@@ -1184,7 +1184,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                             const extBranch = branches.find((b) => b.type === 'external_donation');
                             if (extBranch) handleAddCopy(extBranch.id);
                           }}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-50 text-neutral-800 border border-[#D3D2D3] text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           + Ejemplar Semilla
@@ -1387,12 +1387,12 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="px-6 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-emerald-950/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 flex-1 sm:flex-initial"
+                className="px-6 py-2.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 flex-1 sm:flex-initial"
               >
                 {isSubmitting ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                    Guardando en Catálogo...
+                    Guardando en Inventario...
                   </>
                 ) : (
                   <>

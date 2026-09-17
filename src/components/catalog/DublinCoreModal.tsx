@@ -129,20 +129,20 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
         className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-slate-100 bg-slate-50/90 sticky top-0 backdrop-blur-md z-10">
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-[#D3D2D3] bg-white sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-800">
-              <BookOpen className="w-5 h-5" />
+            <div className="p-2.5 rounded-xl bg-[#f2f7ec] text-[#83B141] border border-[#83B141]/30">
+              <BookOpen className="w-5 h-5" strokeWidth={1.75} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Ficha Bibliográfica Catalográfica</h2>
-              <p className="text-xs text-slate-500">Biblioteca Miguel Otero Silva • Colegio Integral El Manglar</p>
+              <h2 className="text-lg font-bold text-neutral-900">Ficha Bibliográfica Catalográfica</h2>
+              <p className="text-xs text-neutral-500">Biblioteca Miguel Otero Silva • Colegio Integral El Manglar</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsPrintModalOpen(true)}
-              className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+              className="px-3 py-1.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
               title="Imprimir tejuelos (25x38 mm) para los ejemplares de esta obra"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -166,8 +166,8 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
               onClick={() => setActiveTab('catalog')}
               className={`pb-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
                 activeTab === 'catalog'
-                  ? 'border-emerald-700 text-emerald-800'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-[#83B141] text-[#83B141]'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800'
               }`}
             >
               <BookMarked className="w-4 h-4" />
@@ -417,24 +417,24 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setIsPrintModalOpen(true)}
-              className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-2xs"
+              className="px-4 py-2.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-xs"
             >
               <Printer className="w-4 h-4" />
               <span>Imprimir Tejuelos (25×38 mm)</span>
             </button>
             <button
               onClick={handleDownloadPDF}
-              className="px-3.5 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3.5 py-2.5 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
               title="Descargar archivo PDF listo para imprimir en hoja Carta"
             >
-              <FileDown className="w-4 h-4 text-emerald-700" />
+              <FileDown className="w-4 h-4 text-[#83B141]" />
               <span>Descargar PDF</span>
             </button>
             <button
               onClick={handleDownloadPNG}
-              className="px-3.5 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3.5 py-2.5 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             >
-              <ImageIcon className="w-3.5 h-3.5 text-emerald-700" />
+              <ImageIcon className="w-3.5 h-3.5 text-[#83B141]" />
               <span>Descargar PNG</span>
             </button>
           </div>
@@ -442,7 +442,7 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
           <button
             id="close-dublin-modal-footer-btn"
             onClick={onClose}
-            className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+            className="px-5 py-2.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-[#D3D2D3] rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs"
           >
             Cerrar Ficha
           </button>

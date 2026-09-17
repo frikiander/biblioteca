@@ -210,7 +210,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                 Lector & Plazo
               </span>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center text-[10px]">
+                <div className="w-6 h-6 rounded-full bg-[#83B141] text-white font-bold flex items-center justify-center text-[10px]">
                   {successLoan.student_name.charAt(0)}
                 </div>
                 <span className="font-bold text-slate-900 text-sm">{successLoan.student_name}</span>
@@ -219,14 +219,14 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
               <div className="flex items-center gap-1.5 text-slate-700 font-semibold pt-1">
                 {successLoan.is_indefinite || !successLoan.due_date ? (
                   <>
-                    <InfinityIcon className="w-4 h-4 text-teal-700" />
-                    <span className="text-teal-900 font-bold bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                    <InfinityIcon className="w-4 h-4 text-[#83B141]" />
+                    <span className="text-neutral-900 font-bold bg-[#83B141]/10 px-2 py-0.5 rounded border border-[#83B141]/30">
                       Plazo Indefinido (Sin fecha límite)
                     </span>
                   </>
                 ) : (
                   <>
-                    <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+                    <Calendar className="w-3.5 h-3.5 text-[#83B141]" />
                     <span>Devolución esperada: {new Date(successLoan.due_date).toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'short' })}</span>
                   </>
                 )}
@@ -238,7 +238,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
             <button
               type="button"
               onClick={handleResetForNextLoan}
-              className="w-full sm:w-auto px-6 py-3 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl font-bold text-sm transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-6 py-3 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl font-bold text-sm transition shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer"
             >
               <BookOpen className="w-4 h-4" />
               Prestar Otro Libro
@@ -250,17 +250,17 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
           {/* Main Card */}
           <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-6 border-b border-[#D3D2D3] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
-                  <BookMarked className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-bold text-[#83B141] uppercase tracking-widest flex items-center gap-1.5">
+                  <BookMarked className="w-3.5 h-3.5" strokeWidth={1.75} />
                   Módulo de Circulación • Salida de Material
                 </span>
-                <h2 className="text-xl font-bold text-white mt-0.5">
+                <h2 className="text-xl font-bold text-neutral-900 mt-0.5">
                   Prestar Libro Físico (Checkout)
                 </h2>
               </div>
-              <div className="text-xs text-slate-300 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl self-start sm:self-auto">
+              <div className="text-xs text-neutral-500 bg-[#F8F9F8] border border-[#D3D2D3] px-3 py-1.5 rounded-xl self-start sm:self-auto font-medium">
                 Sin códigos QR • Búsqueda instantánea por marbete
               </div>
             </div>
@@ -300,13 +300,13 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                       }
                     }}
                     placeholder="Teclea el marbete del libro aquí (ej: MOS-863-OTE-1)..."
-                    className="w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-2xl text-base font-mono font-bold text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10 transition uppercase tracking-wider"
+                    className="w-full px-4 py-3.5 bg-[#F8F9F8] border-2 border-[#D3D2D3] rounded-2xl text-base font-mono font-bold text-neutral-900 placeholder-neutral-400 focus:bg-white focus:outline-none focus:border-[#83B141] focus:ring-4 focus:ring-[#83B141]/10 transition uppercase tracking-wider"
                   />
                   {marbeteInput && (
                     <button
                       type="button"
                       onClick={() => handleValidateMarbete(marbeteInput)}
-                      className="absolute right-2 px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      className="absolute right-2 px-3 py-1.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs"
                     >
                       <Search className="w-3.5 h-3.5" />
                       Validar
@@ -462,12 +462,12 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                       onClick={() => handleDueDaysChange(preset.days)}
                       className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                         !isIndefinite && dueDays === preset.days
-                          ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          ? 'bg-[#83B141] text-white border-[#83B141] shadow-xs'
+                          : 'bg-[#F8F9F8] text-neutral-700 border-[#D3D2D3] hover:bg-neutral-100'
                       } ${(!detectedCopy || Boolean(activeLoanOnCopy)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <span>{preset.label}</span>
-                      <span className={`text-[10px] font-normal ${!isIndefinite && dueDays === preset.days ? 'text-emerald-100' : 'text-slate-400'}`}>
+                      <span className={`text-[10px] font-normal ${!isIndefinite && dueDays === preset.days ? 'text-white/90' : 'text-neutral-400'}`}>
                         {preset.sub}
                       </span>
                     </button>
@@ -481,32 +481,32 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                     onClick={handleSelectIndefinite}
                     className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                       isIndefinite
-                        ? 'bg-teal-800 text-white border-teal-800 shadow-xs ring-2 ring-teal-600/30'
-                        : 'bg-teal-50/60 text-teal-900 border-teal-200 hover:bg-teal-100/70'
+                        ? 'bg-[#83B141] text-white border-[#83B141] shadow-xs ring-2 ring-[#83B141]/30'
+                        : 'bg-neutral-50 text-neutral-700 border-[#D3D2D3] hover:bg-neutral-100'
                     } ${(!detectedCopy || Boolean(activeLoanOnCopy)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center gap-1">
                       <InfinityIcon className="w-3.5 h-3.5" />
                       <span>Indefinido</span>
                     </div>
-                    <span className={`text-[10px] font-normal ${isIndefinite ? 'text-teal-100' : 'text-teal-700'}`}>
+                    <span className={`text-[10px] font-normal ${isIndefinite ? 'text-white/90' : 'text-neutral-500'}`}>
                       Sin fecha límite
                     </span>
                   </button>
                 </div>
 
-                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2 text-slate-700 font-medium">
+                <div className="p-3.5 bg-[#F8F9F8] rounded-xl border border-[#D3D2D3] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-neutral-800 font-medium">
                     {isIndefinite ? (
                       <>
-                        <InfinityIcon className="w-4 h-4 text-teal-700 shrink-0" />
-                        <span className="font-bold text-teal-900">
+                        <InfinityIcon className="w-4 h-4 text-[#83B141] shrink-0" />
+                        <span className="font-bold text-neutral-900">
                           Plazo: Indefinido (Sin límite de fecha / Préstamo docente o de aula)
                         </span>
                       </>
                     ) : (
                       <>
-                        <Calendar className="w-4 h-4 text-emerald-700 shrink-0" />
+                        <Calendar className="w-4 h-4 text-[#83B141] shrink-0" />
                         <span>Fecha límite de retorno:</span>
                         <span className="font-bold text-emerald-900">
                           {new Date(customDueDate).toLocaleDateString('es-VE', {
@@ -579,7 +579,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                     !selectedStudent ||
                     isSubmitting
                   }
-                  className="flex-1 sm:flex-initial px-6 py-3 bg-emerald-800 hover:bg-emerald-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-1 sm:flex-initial px-6 py-3 bg-[#83B141] hover:bg-[#719b35] disabled:bg-neutral-200 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <span>Registrando...</span>

@@ -78,19 +78,19 @@ export function Marc21Modal({ work, onClose }: Marc21ModalProps) {
       <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+        <div className="px-6 py-4 bg-white text-neutral-900 flex items-center justify-between border-b border-[#D3D2D3]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
-              <FileCode className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-[#f2f7ec] text-[#83B141] flex items-center justify-center border border-[#83B141]/30">
+              <FileCode className="w-5 h-5" strokeWidth={1.75} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-[#83B141] bg-[#f2f7ec] px-2 py-0.5 rounded-full border border-[#83B141]/30">
                   Estándar MARC21 & Dublin Core
                 </span>
-                <span className="text-xs text-slate-400">Koha Biblio Engine</span>
+                <span className="text-xs text-neutral-400">Koha Biblio Engine</span>
               </div>
-              <h2 className="text-base sm:text-lg font-bold text-white truncate max-w-lg">
+              <h2 className="text-base sm:text-lg font-bold text-neutral-900 truncate max-w-lg">
                 {work.title}
               </h2>
             </div>
@@ -98,21 +98,21 @@ export function Marc21Modal({ work, onClose }: Marc21ModalProps) {
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
+            className="p-2 text-neutral-400 hover:text-neutral-900 rounded-xl hover:bg-neutral-100 transition cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" strokeWidth={1.5} />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center justify-between px-6 py-2 bg-slate-100 border-b border-slate-200 text-xs font-semibold overflow-x-auto">
+        <div className="flex items-center justify-between px-6 py-2 bg-[#F8F9F8] border-b border-[#D3D2D3] text-xs font-semibold overflow-x-auto">
           <div className="flex gap-1">
             <button
               onClick={() => setActiveTab('tags')}
               className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'tags'
-                  ? 'bg-emerald-800 text-white shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+                  ? 'bg-[#83B141] text-white shadow-xs font-bold'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-white'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -123,8 +123,8 @@ export function Marc21Modal({ work, onClose }: Marc21ModalProps) {
               onClick={() => setActiveTab('card')}
               className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'card'
-                  ? 'bg-emerald-800 text-white shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+                  ? 'bg-[#83B141] text-white shadow-xs font-bold'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-white'
               }`}
             >
               <Bookmark className="w-3.5 h-3.5" />
@@ -135,8 +135,8 @@ export function Marc21Modal({ work, onClose }: Marc21ModalProps) {
               onClick={() => setActiveTab('xml')}
               className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'xml'
-                  ? 'bg-emerald-800 text-white shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+                  ? 'bg-[#83B141] text-white shadow-xs font-bold'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-white'
               }`}
             >
               <Code className="w-3.5 h-3.5" />
@@ -147,8 +147,8 @@ export function Marc21Modal({ work, onClose }: Marc21ModalProps) {
               onClick={() => setActiveTab('json')}
               className={`px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'json'
-                  ? 'bg-emerald-800 text-white shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+                  ? 'bg-[#83B141] text-white shadow-xs font-bold'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-white'
               }`}
             >
               <Database className="w-3.5 h-3.5" />

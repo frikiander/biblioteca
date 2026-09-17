@@ -283,15 +283,15 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
   return (
     <div id="register-copy-section" className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="p-6 bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 text-white">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-            <Building2 className="w-6 h-6" />
+      <div className="p-6 bg-white border-b border-[#D3D2D3] flex items-center justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-xl bg-[#f2f7ec] text-[#83B141] border border-[#83B141]/30">
+            <Building2 className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Registro & Asignación de Ejemplar Físico</h2>
-            <p className="text-xs text-emerald-200">
-              Algoritmo de Marbetes: <span className="font-mono font-bold text-white">[PREFIJO]-[DEWEY]-[CUTTER]-[SECUENCIA]</span>
+            <h2 className="text-lg font-bold text-neutral-900">Registro & Asignación de Ejemplar Físico</h2>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Fórmula de Signatura: <span className="font-mono font-bold text-neutral-800">[PREFIJO]-[DEWEY]-[CUTTER]-[SECUENCIA]</span>
             </p>
           </div>
         </div>
@@ -346,18 +346,18 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
           )}
 
           {selectedWork && works.length > 0 && (
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs text-slate-600 mt-2">
+            <div className="p-3 rounded-xl bg-[#F8F9F8] border border-[#D3D2D3] flex items-center justify-between text-xs text-neutral-600 mt-2">
               <div className="flex items-center gap-3">
-                <BookOpen className="w-4 h-4 text-emerald-700 shrink-0" />
+                <BookOpen className="w-4 h-4 text-[#83B141] shrink-0" strokeWidth={1.75} />
                 <div>
-                  <span className="font-semibold text-slate-800">{selectedWork.title}</span> por {selectedWork.author}
+                  <span className="font-semibold text-neutral-900">{selectedWork.title}</span> por {selectedWork.author}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-md bg-blue-100 text-blue-900 font-mono font-bold text-xs">
+                <span className="px-2.5 py-1 rounded-md bg-[#EFDA18]/25 text-neutral-900 font-mono font-bold text-xs border border-[#EFDA18]/40">
                   Dewey: {deweyNum}
                 </span>
-                <span className="px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 font-mono font-bold text-xs">
+                <span className="px-2.5 py-1 rounded-md bg-[#f2f7ec] text-[#2c4210] font-mono font-bold text-xs border border-[#83B141]/30">
                   Cutter: {cutterCode}
                 </span>
               </div>
@@ -396,26 +396,22 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
           {selectedBranch && (
             <div className={`p-3.5 rounded-xl border flex items-center justify-between text-xs ${
               selectedBranch.type === 'internal'
-                ? 'bg-blue-50/80 border-blue-200 text-blue-950'
-                : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                ? 'bg-[#f2f7ec]/60 border-[#83B141]/30 text-neutral-900'
+                : 'bg-amber-50/70 border-amber-200 text-amber-950'
             }`}>
               <div className="flex items-center gap-2.5">
-                <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${
-                  selectedBranch.type === 'internal' ? 'bg-blue-600' : 'bg-emerald-600'
+                <span className={`w-2.5 h-2.5 rounded-full ${
+                  selectedBranch.type === 'internal' ? 'bg-[#83B141]' : 'bg-amber-500'
                 }`}></span>
                 <div>
                   <span className="font-bold text-sm">{selectedBranch.name}</span>
-                  <p className="text-[11px] text-slate-600 flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3 h-3 text-slate-400" />
+                  <p className="text-[11px] text-neutral-500 flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3 text-neutral-400" />
                     {selectedBranch.location || 'Ubicación registrada'}
                   </p>
                 </div>
               </div>
-              <span className={`px-2.5 py-1 rounded-lg font-mono font-bold text-xs ${
-                selectedBranch.type === 'internal'
-                  ? 'bg-blue-200/80 text-blue-900'
-                  : 'bg-emerald-200/80 text-emerald-900'
-              }`}>
+              <span className="px-2.5 py-1 rounded-lg font-mono font-bold text-xs bg-white border border-[#D3D2D3] text-neutral-800">
                 Prefijo: {prefix}-
               </span>
             </div>
@@ -483,53 +479,53 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
         </div>
 
         {/* Visual Formula Breakdown Banner */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white border border-slate-700 shadow-sm space-y-3">
+        <div className="p-5 rounded-2xl bg-[#F8F9F8] text-neutral-900 border border-[#D3D2D3] shadow-2xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-wider font-bold text-emerald-400 flex items-center gap-1.5">
+            <span className="text-[11px] uppercase tracking-wider font-bold text-[#83B141] flex items-center gap-1.5">
               <Barcode className="w-4 h-4" />
               Marbete Concatenado Resultante
             </span>
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[10px] font-semibold text-neutral-400">
               Fórmula Oficial Bibliotecológica
             </span>
           </div>
 
           {/* Visual token blocks */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-            <div className="p-2.5 rounded-xl bg-slate-800/90 border border-emerald-500/30">
-              <span className="text-[10px] text-emerald-300 font-medium block">1. Prefijo Sede</span>
-              <span className="font-mono font-bold text-sm sm:text-base text-emerald-400">{prefix}</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+            <div className="p-2.5 rounded-xl bg-white border border-[#D3D2D3] shadow-2xs">
+              <span className="text-[10px] text-neutral-500 font-medium block">1. Prefijo Sede</span>
+              <span className="font-mono font-bold text-sm sm:text-base text-neutral-900">{prefix}</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-slate-800/90 border border-blue-500/30">
-              <span className="text-[10px] text-blue-300 font-medium block">2. Dewey (CDD)</span>
-              <span className="font-mono font-bold text-sm sm:text-base text-blue-400">{deweyNum}</span>
+            <div className="p-2.5 rounded-xl bg-white border border-[#D3D2D3] shadow-2xs">
+              <span className="text-[10px] text-neutral-500 font-medium block">2. Dewey (CDD)</span>
+              <span className="font-mono font-bold text-sm sm:text-base text-[#83B141]">{deweyNum}</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-slate-800/90 border border-amber-500/30">
-              <span className="text-[10px] text-amber-300 font-medium block">3. Cutter (Autor)</span>
-              <span className="font-mono font-bold text-sm sm:text-base text-amber-400">{cutterCode || 'OTE'}</span>
+            <div className="p-2.5 rounded-xl bg-white border border-[#D3D2D3] shadow-2xs">
+              <span className="text-[10px] text-neutral-500 font-medium block">3. Cutter (Autor)</span>
+              <span className="font-mono font-bold text-sm sm:text-base text-amber-600">{cutterCode || 'OTE'}</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-slate-800/90 border border-purple-500/30">
-              <span className="text-[10px] text-purple-300 font-medium block">4. Copia #</span>
-              <span className="font-mono font-bold text-sm sm:text-base text-purple-400">{formattedSequence}</span>
+            <div className="p-2.5 rounded-xl bg-white border border-[#D3D2D3] shadow-2xs">
+              <span className="text-[10px] text-neutral-500 font-medium block">4. Copia #</span>
+              <span className="font-mono font-bold text-sm sm:text-base text-neutral-900">{formattedSequence}</span>
             </div>
           </div>
 
           {/* Resulting full code & Physical Spine Label Preview */}
-          <div className="p-4 bg-black/40 rounded-xl border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="p-4 bg-white rounded-xl border border-[#D3D2D3] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
             <div className="space-y-1 text-center sm:text-left">
-              <span className="text-xs text-slate-300 block">Código Marbete Oficial:</span>
-              <span className="font-mono text-base sm:text-lg font-extrabold text-emerald-300 tracking-wide block">
+              <span className="text-xs text-neutral-500 block font-medium">Código Marbete Oficial:</span>
+              <span className="font-mono text-base sm:text-lg font-extrabold text-[#83B141] tracking-wide block">
                 {internalCode}
               </span>
-              <span className="text-[11px] text-slate-400 block">
+              <span className="text-[11px] text-neutral-400 block">
                 Tejuelo de lomo: 25 × 38 mm con guía de corte para guillotina
               </span>
             </div>
 
             {/* Live SpineLabel Render */}
-            <div className="flex flex-col items-center gap-1 shrink-0 bg-slate-800/80 p-2.5 rounded-xl border border-slate-600">
-              <span className="text-[9px] uppercase font-bold text-slate-300 tracking-wider flex items-center gap-1">
-                <Tag className="w-2.5 h-2.5 text-emerald-400" />
+            <div className="flex flex-col items-center gap-1.5 shrink-0 bg-[#F8F9F8] p-3 rounded-xl border border-[#D3D2D3]">
+              <span className="text-[9px] uppercase font-bold text-neutral-500 tracking-wider flex items-center gap-1">
+                <Tag className="w-2.5 h-2.5 text-[#83B141]" />
                 Vista Previa Tejuelo (1:1)
               </span>
               <SpineLabel
@@ -570,7 +566,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
                     prefix: prefix,
                     title: selectedWork?.title
                   })}
-                  className="px-2 py-0.5 rounded bg-emerald-700/80 hover:bg-emerald-600 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition"
+                  className="px-2 py-0.5 rounded bg-[#83B141] hover:bg-[#719b35] text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition"
                   title="Descargar imagen PNG de este tejuelo"
                 >
                   <ImageIcon className="w-2.5 h-2.5" />
@@ -612,7 +608,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
                   className={`py-2.5 px-2 rounded-xl text-xs font-bold capitalize transition border flex flex-col items-center gap-1 cursor-pointer ${
                     condition === cond
                       ? cond === 'bueno'
-                        ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
+                        ? 'bg-[#83B141] text-white border-[#83B141] shadow-xs'
                         : cond === 'regular'
                         ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
                         : 'bg-rose-600 text-white border-rose-600 shadow-xs'
@@ -683,7 +679,7 @@ export const RegisterCopyForm: React.FC<RegisterCopyFormProps> = ({
             id="submit-register-copy-btn"
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
+            className="px-6 py-2.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting ? (
               <>

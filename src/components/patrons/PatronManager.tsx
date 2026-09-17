@@ -124,23 +124,23 @@ export function PatronManager({ onOpenLoanForPatron }: PatronManagerProps) {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-[#D3D2D3] flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center shadow-md shadow-emerald-950/20 shrink-0">
-            <Users className="w-7 h-7" />
+          <div className="w-14 h-14 rounded-2xl bg-[#83B141]/10 border border-[#83B141]/30 text-[#83B141] flex items-center justify-center shadow-xs shrink-0">
+            <Users className="w-7 h-7" strokeWidth={1.75} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Koha Patrons & Categories
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#83B141] bg-[#83B141]/10 px-2.5 py-0.5 rounded-full border border-[#83B141]/30">
+                Lectores & Credenciales
               </span>
-              <span className="text-xs text-slate-500">• {patrons.length} lectores registrados</span>
+              <span className="text-xs text-neutral-500">• {patrons.length} lectores registrados</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight mt-1">
               Directorio de Lectores y Carnetización
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1">
-              Gestión de estudiantes, docentes y miembros comunitarios con políticas de préstamo por categoría y generación instantánea de credenciales con código de barras.
+            <p className="text-xs sm:text-sm text-neutral-600 max-w-2xl mt-1">
+              Gestión de estudiantes, docentes y miembros de la comunidad con políticas de préstamo y generación instantánea de credenciales.
             </p>
           </div>
         </div>
@@ -329,8 +329,8 @@ export function PatronManager({ onOpenLoanForPatron }: PatronManagerProps) {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                  <UserPlus className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl bg-[#83B141]/10 text-[#83B141] flex items-center justify-center border border-[#83B141]/20">
+                  <UserPlus className="w-5 h-5" strokeWidth={1.75} />
                 </div>
                 <h3 className="font-bold text-base text-slate-900">
                   {editingPatron ? 'Editar Datos del Lector' : 'Registrar Nuevo Lector'}
@@ -430,7 +430,7 @@ export function PatronManager({ onOpenLoanForPatron }: PatronManagerProps) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-800 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm"
+                  className="px-5 py-2 bg-[#83B141] hover:bg-[#719b35] text-white font-bold rounded-xl shadow-sm transition cursor-pointer"
                 >
                   {editingPatron ? 'Guardar Cambios' : 'Registrar Lector'}
                 </button>

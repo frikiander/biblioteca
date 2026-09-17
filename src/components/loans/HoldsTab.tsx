@@ -97,27 +97,27 @@ export function HoldsTab({ onNavigateToCheckout }: HoldsTabProps) {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Top Banner */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl p-6 border border-[#D3D2D3] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              Koha Holds & Queue
+            <span className="text-[10px] uppercase font-bold tracking-widest text-[#83B141] bg-[#83B141]/10 px-2.5 py-0.5 rounded-full border border-[#83B141]/30">
+              Reservas & Solicitudes
             </span>
-            <span className="text-xs text-slate-500">• Gestión de Cola de Espera</span>
+            <span className="text-xs text-neutral-500">• Gestión de Cola de Espera</span>
           </div>
-          <h3 className="text-lg font-bold text-slate-900 mt-1">
+          <h3 className="text-lg font-bold text-neutral-900 mt-1">
             Reservas y Apartado de Libros
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-neutral-500 mt-0.5">
             Cuando un libro se encuentra en préstamo activo, los lectores pueden apartarlo por orden de solicitud prioritaria.
           </p>
         </div>
 
         <button
           onClick={() => setIsPlaceHoldModalOpen(true)}
-          className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer shrink-0"
+          className="px-4 py-2.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
         >
-          <PlusCircle className="w-4 h-4" />
+          <PlusCircle className="w-4 h-4" strokeWidth={1.75} />
           Nueva Reserva
         </button>
       </div>
@@ -208,7 +208,7 @@ export function HoldsTab({ onNavigateToCheckout }: HoldsTabProps) {
                 {hold.status === 'ready_for_pickup' && onNavigateToCheckout && (
                   <button
                     onClick={onNavigateToCheckout}
-                    className="px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm transition"
+                    className="px-3.5 py-1.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm transition cursor-pointer"
                   >
                     <span>Prestar Ahora</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -235,7 +235,7 @@ export function HoldsTab({ onNavigateToCheckout }: HoldsTabProps) {
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
             <h3 className="font-bold text-base text-slate-900 pb-3 border-b border-slate-100 flex items-center gap-2">
-              <Bookmark className="w-5 h-5 text-emerald-600" />
+              <Bookmark className="w-5 h-5 text-[#83B141]" />
               Apartar Libro (Reserva / Hold)
             </h3>
 
@@ -287,7 +287,7 @@ export function HoldsTab({ onNavigateToCheckout }: HoldsTabProps) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-800 text-white font-bold rounded-xl"
+                  className="px-5 py-2 bg-[#83B141] hover:bg-[#719b35] text-white font-bold rounded-xl shadow-xs transition cursor-pointer"
                 >
                   Registrar Reserva
                 </button>

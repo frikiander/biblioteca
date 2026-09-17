@@ -114,11 +114,11 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
 
       {/* Modal / Card of Specific Copy Traceability ("Por cuántas manos ha pasado un libro") */}
       {inspectedTraceability && (
-        <div className="p-6 bg-white rounded-3xl border-2 border-emerald-600 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="p-6 bg-white rounded-3xl border-2 border-[#83B141] shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wider">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#83B141]/10 text-[#83B141] border border-[#83B141]/30 uppercase tracking-wider">
                   Ficha de Trazabilidad Histórica
                 </span>
                 <span className="font-mono font-bold text-xs bg-slate-100 px-2 py-0.5 rounded border border-slate-300 text-slate-800">
@@ -139,10 +139,10 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
           </div>
 
           {/* Traceability Summary Highlights */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-[#F8F9F8] rounded-2xl border border-[#D3D2D3] text-xs">
             <div>
               <span className="text-slate-500 font-semibold uppercase text-[10px] block">Lectores Distintos</span>
-              <p className="text-xl font-bold text-emerald-950 mt-0.5">
+              <p className="text-xl font-bold text-neutral-900 mt-0.5">
                 {inspectedTraceability.uniqueHandsCount} {inspectedTraceability.uniqueHandsCount === 1 ? 'mano' : 'manos distintas'}
               </p>
               <p className="text-slate-600 text-[11px]">Alumnos que han tenido este ejemplar</p>
@@ -162,7 +162,7 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                 className={`inline-block mt-1 font-bold px-2.5 py-1 rounded-lg text-xs ${
                   inspectedTraceability.activeLoan
                     ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-[#83B141]/15 text-[#83B141] border border-[#83B141]/30'
                 }`}
               >
                 {inspectedTraceability.activeLoan ? 'En Préstamo Activo' : 'Disponible en Estantería'}
@@ -200,10 +200,10 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full self-start sm:self-auto ${
                           h.status === 'returned'
-                            ? 'bg-teal-100 text-teal-800'
+                            ? 'bg-neutral-100 text-neutral-700 border border-neutral-200'
                             : h.status === 'overdue'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-emerald-100 text-emerald-800'
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                            : 'bg-[#83B141]/15 text-[#83B141] border border-[#83B141]/30'
                         }`}
                       >
                         {h.status === 'returned' ? 'Devuelto' : h.status === 'overdue' ? 'Atrasado' : 'Préstamo Activo'}
@@ -325,12 +325,12 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             loan.status === 'returned'
-                              ? 'bg-teal-100 text-teal-800'
+                              ? 'bg-neutral-100 text-neutral-700 border border-neutral-200'
                               : isOverdue
-                              ? 'bg-rose-100 text-rose-800 font-bold'
+                              ? 'bg-rose-100 text-rose-800 font-bold border border-rose-200'
                               : isIndefinite
-                              ? 'bg-teal-100 text-teal-800 font-bold'
-                              : 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-[#83B141]/15 text-[#83B141] font-bold border border-[#83B141]/30'
+                              : 'bg-[#83B141]/15 text-[#83B141] border border-[#83B141]/30'
                           }`}
                         >
                           {loan.status === 'returned'
@@ -367,11 +367,11 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                         {loan.return_date ? (
                           <>Devuelto: <span className="font-medium text-emerald-800">{new Date(loan.return_date).toLocaleDateString('es-VE')}</span></>
                         ) : isIndefinite ? (
-                          <>Límite: <span className="font-bold text-teal-800">Plazo Indefinido</span></>
+                          <>Límite: <span className="font-bold text-[#83B141]">Plazo Indefinido</span></>
                         ) : loan.due_date ? (
                           <>Límite: <span className={`font-bold ${isOverdue ? 'text-rose-600' : 'text-slate-700'}`}>{new Date(loan.due_date).toLocaleDateString('es-VE')}</span></>
                         ) : (
-                          <>Límite: <span className="font-bold text-teal-800">Plazo Indefinido</span></>
+                          <>Límite: <span className="font-bold text-[#83B141]">Plazo Indefinido</span></>
                         )}
                       </p>
                     </div>
@@ -390,7 +390,7 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                         <button
                           type="button"
                           onClick={() => onSelectCheckinCode(loan.copy_internal_code)}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                          className="px-3 py-1.5 rounded-xl bg-[#83B141] hover:bg-[#719b35] text-white font-bold text-xs transition flex items-center gap-1 cursor-pointer shadow-xs"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           <span>Devolver</span>

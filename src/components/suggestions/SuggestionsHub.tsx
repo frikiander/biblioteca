@@ -423,7 +423,7 @@ export function SuggestionsHub() {
               </button>
               <button
                 onClick={() => handleUpdateStatus('approved')}
-                className="px-3 py-2 bg-emerald-800 text-white font-bold rounded-xl text-xs hover:bg-emerald-700 transition"
+                className="px-3 py-2 bg-[#83B141] text-white font-bold rounded-xl text-xs hover:bg-[#719b35] transition cursor-pointer"
               >
                 Aprobar Compra
               </button>

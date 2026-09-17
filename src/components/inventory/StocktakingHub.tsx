@@ -393,7 +393,7 @@ export function StocktakingHub() {
                     {item.status === 'en_tratamiento' && (
                       <button
                         onClick={() => handleUpdatePresStatus(item.id, 'restaurado')}
-                        className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1"
+                        className="px-3 py-1.5 bg-[#83B141] hover:bg-[#719b35] text-white font-bold rounded-xl text-xs flex items-center gap-1 cursor-pointer transition shadow-2xs"
                       >
                         <Check className="w-3.5 h-3.5" />
                         Restaurado y Disponible
@@ -450,7 +450,7 @@ export function StocktakingHub() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-indigo-900 text-white font-bold rounded-xl"
+                  className="px-5 py-2 bg-[#83B141] hover:bg-[#719b35] text-white font-bold rounded-xl shadow-xs transition cursor-pointer"
                 >
                   Iniciar Auditoría
                 </button>
@@ -529,7 +529,7 @@ export function StocktakingHub() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-indigo-900 text-white font-bold rounded-xl"
+                  className="px-5 py-2 bg-[#83B141] hover:bg-[#719b35] text-white font-bold rounded-xl shadow-xs transition cursor-pointer"
                 >
                   Registrar en Taller
                 </button>

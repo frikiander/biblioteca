@@ -78,12 +78,12 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
       {selectedStudent && !isOpen ? (
         <div
           onClick={() => !disabled && setIsOpen(true)}
-          className={`w-full p-3 bg-emerald-50/70 border border-emerald-300 rounded-xl flex items-center justify-between cursor-pointer transition hover:bg-emerald-100/60 ${
+          className={`w-full p-3 bg-[#83B141]/10 border border-[#83B141]/30 rounded-xl flex items-center justify-between cursor-pointer transition hover:bg-[#83B141]/15 ${
             disabled ? 'opacity-60 cursor-not-allowed' : ''
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-[#83B141] text-white flex items-center justify-center font-bold text-sm shadow-xs">
               {selectedStudent.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -96,7 +96,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
                 )}
               </div>
               <p className="text-xs text-slate-600 flex items-center gap-1.5 mt-0.5">
-                <GraduationCap className="w-3.5 h-3.5 text-emerald-700" />
+                <GraduationCap className="w-3.5 h-3.5 text-[#83B141]" />
                 <span>{selectedStudent.grade_section || 'Estudiante'}</span>
                 {selectedStudent.identifier && (
                   <span className="text-slate-400 font-mono text-[11px]">({selectedStudent.identifier})</span>
@@ -111,7 +111,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
               setIsOpen(true);
               setTimeout(() => inputRef.current?.focus(), 50);
             }}
-            className="text-xs text-emerald-800 font-bold hover:underline px-2 py-1 rounded-md hover:bg-emerald-200/50"
+            className="text-xs text-[#83B141] font-bold hover:underline px-2 py-1 rounded-md hover:bg-[#83B141]/10"
           >
             Cambiar
           </button>
@@ -131,7 +131,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
               }}
               onFocus={() => setIsOpen(true)}
               placeholder="Buscar alumno por nombre, grado o carnet..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#83B141]/20 focus:border-[#83B141] transition"
             />
           </div>
         </div>
@@ -141,12 +141,12 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
       {isOpen && (
         <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden max-h-80 flex flex-col">
           {/* Header with Search and Quick Action */}
-          <div className="p-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs text-slate-600">
+          <div className="p-2.5 bg-slate-50 border-b border-[#D3D2D3] flex items-center justify-between text-xs text-slate-600">
             <span className="font-semibold">Lista de Lectores & Estudiantes</span>
             <button
               type="button"
               onClick={() => setIsAddingCustom(!isAddingCustom)}
-              className="text-emerald-700 hover:text-emerald-900 font-bold inline-flex items-center gap-1 cursor-pointer"
+              className="text-[#83B141] hover:text-[#719b35] font-bold inline-flex items-center gap-1 cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>{isAddingCustom ? 'Ver lista' : '+ Registrar nuevo alumno'}</span>
@@ -155,8 +155,8 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
 
           {/* Inline Add Form */}
           {isAddingCustom ? (
-            <form onSubmit={handleCreateCustom} className="p-4 bg-emerald-50/50 border-b border-emerald-100 space-y-3">
-              <p className="text-xs font-bold text-emerald-950">Ingresar Nuevo Alumno o Docente</p>
+            <form onSubmit={handleCreateCustom} className="p-4 bg-[#F8F9F8] border-b border-[#D3D2D3] space-y-3">
+              <p className="text-xs font-bold text-neutral-900">Ingresar Nuevo Alumno o Docente</p>
               <div>
                 <input
                   type="text"
@@ -165,7 +165,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
                   placeholder="Nombre y Apellido del alumno..."
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+                  className="w-full px-3 py-2 bg-white border border-[#D3D2D3] rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#83B141]/20 focus:border-[#83B141]"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -174,11 +174,11 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
                   value={customGrade}
                   onChange={(e) => setCustomGrade(e.target.value)}
                   placeholder="Grado / Sección (ej. 4to Grado B)"
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+                  className="w-full px-3 py-2 bg-white border border-[#D3D2D3] rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#83B141]/20 focus:border-[#83B141]"
                 />
                 <button
                   type="submit"
-                  className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  className="w-full py-2 bg-[#83B141] hover:bg-[#719b35] text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <Check className="w-3.5 h-3.5" />
                   Guardar y Seleccionar
@@ -198,7 +198,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
                     setCustomName(searchTerm);
                     setIsAddingCustom(true);
                   }}
-                  className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
+                  className="px-3 py-1.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   Registrar "{searchTerm}" como nuevo alumno
@@ -214,7 +214,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
                     onClick={() => handleSelect(student)}
                     className={`w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-50 text-emerald-950 font-bold'
+                        ? 'bg-[#83B141]/10 text-neutral-900 font-bold'
                         : 'hover:bg-slate-50 text-slate-700'
                     }`}
                   >
@@ -224,7 +224,7 @@ export const StudentSearchDropdown: React.FC<StudentSearchDropdownProps> = ({
                           student.role === 'teacher'
                             ? 'bg-purple-100 text-purple-800'
                             : isSelected
-                            ? 'bg-emerald-700 text-white'
+                            ? 'bg-[#83B141] text-white'
                             : 'bg-slate-100 text-slate-700'
                         }`}
                       >

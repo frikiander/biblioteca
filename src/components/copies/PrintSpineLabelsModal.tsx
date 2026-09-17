@@ -230,23 +230,23 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
         className="bg-white rounded-2xl max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden print:border-none print:shadow-none print:max-w-none print:max-h-none print:w-full print:rounded-none"
       >
         {/* Modal Header - Hidden when printing */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-slate-50 print:hidden">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#D3D2D3] bg-white print:hidden">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-800">
-              <Tag className="w-5 h-5" />
+            <div className="p-2.5 rounded-xl bg-[#f2f7ec] text-[#83B141] border border-[#83B141]/30">
+              <Tag className="w-5 h-5" strokeWidth={1.75} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                <h2 className="text-base sm:text-lg font-bold text-neutral-900">
                   {isSpecificWork ? `Tejuelos: ${currentWorkTitle}` : 'Impresión y Descarga de Tejuelos (Lomos)'}
                 </h2>
                 {targetWork && (
-                  <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900">
+                  <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#EFDA18]/25 text-neutral-900 border border-[#EFDA18]/40">
                     CDD {targetWork.dewey_code} • {authorCutter}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-neutral-500">
                 {targetWork ? `Por ${targetWork.author} • ` : ''}Medida exacta de corte: 25 × 38 mm • Calibrado para Hoja Carta
               </p>
             </div>
@@ -258,10 +258,10 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
               id="download-spine-pdf-btn"
               onClick={() => handleDownloadPDF('sheet')}
               disabled={selectedCopies.length === 0}
-              className="px-3.5 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950/20 transition cursor-pointer"
+              className="px-3.5 py-2 bg-[#83B141] hover:bg-[#719b35] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
               title="Descargar archivo PDF con los tejuelos (25x38 mm) listos para imprimir"
             >
-              <FileDown className="w-4 h-4 text-emerald-200" />
+              <FileDown className="w-4 h-4 text-white" />
               <span>Descargar PDF</span>
             </button>
 
@@ -403,9 +403,9 @@ export const PrintSpineLabelsModal: React.FC<PrintSpineLabelsModalProps> = ({
             <button
               onClick={() => handleDownloadPDF('sheet')}
               disabled={selectedCopies.length === 0}
-              className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+              className="px-4 py-2 bg-[#83B141] hover:bg-[#719b35] disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
             >
-              <FileDown className="w-4 h-4 text-emerald-200" />
+              <FileDown className="w-4 h-4 text-white" />
               <span>Descargar PDF ({labelsToRender.length})</span>
             </button>
             <button

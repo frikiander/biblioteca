@@ -223,20 +223,20 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
         className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden my-6"
       >
         {/* Header */}
-        <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white flex items-center justify-between">
+        <div className="p-5 bg-white border-b border-[#D3D2D3] text-neutral-900 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center">
-              <PlusCircle className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-[#f2f7ec] text-[#83B141] border border-[#83B141]/30 flex items-center justify-center">
+              <PlusCircle className="w-5 h-5" strokeWidth={1.75} />
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                Inventario Físico Multisede
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#83B141]">
+                Inventario Multisede
               </span>
-              <h3 className="text-base font-bold text-white">Registrar Nuevo Ejemplar</h3>
+              <h3 className="text-base font-bold text-neutral-900">Registrar Nuevo Ejemplar</h3>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition cursor-pointer">
+            <X className="w-5 h-5" strokeWidth={1.5} />
           </button>
         </div>
 
@@ -415,7 +415,7 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
                     prefix: prefix,
                     title: work?.title
                   })}
-                  className="px-2 py-0.5 rounded bg-emerald-700/80 hover:bg-emerald-600 text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition"
+                  className="px-2 py-0.5 rounded bg-[#83B141] hover:bg-[#719b35] text-white text-[9px] font-bold flex items-center gap-1 cursor-pointer transition"
                   title="Descargar imagen PNG de este tejuelo"
                 >
                   <ImageIcon className="w-2.5 h-2.5" />
@@ -453,8 +453,8 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
                   onClick={() => setCondition(cond)}
                   className={`py-2 px-3 rounded-xl font-bold capitalize transition border cursor-pointer ${
                     condition === cond
-                      ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-[#83B141] text-white border-[#83B141] shadow-xs'
+                      : 'bg-[#F8F9F8] text-neutral-700 border-[#D3D2D3] hover:bg-neutral-100'
                   }`}
                 >
                   {cond}
@@ -488,9 +488,9 @@ export const QuickAddCopyModal: React.FC<QuickAddCopyModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2 rounded-xl bg-[#83B141] hover:bg-[#719b35] text-white font-bold transition flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-xs"
             >
-              <PlusCircle className="w-4 h-4" />
+              <PlusCircle className="w-4 h-4" strokeWidth={2} />
               {isSubmitting ? 'Guardando...' : `Registrar ${internalCode}`}
             </button>
           </div>

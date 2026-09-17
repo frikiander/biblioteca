@@ -107,22 +107,22 @@ export function VirtualShelvesHub() {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-2xs border border-[#D3D2D3] flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-700 text-white flex items-center justify-center shadow-md shadow-teal-950/20 shrink-0">
-            <Bookmark className="w-7 h-7" />
+          <div className="w-12 h-12 rounded-xl bg-[#f2f7ec] text-[#83B141] border border-[#83B141]/30 flex items-center justify-center shrink-0">
+            <Bookmark className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#83B141] bg-[#f2f7ec] px-2.5 py-0.5 rounded-full border border-[#83B141]/30">
                 Koha Virtual Shelves
               </span>
-              <span className="text-xs text-slate-500">• Listas Curadas & Plan Lector</span>
+              <span className="text-xs text-neutral-500">• Listas Curadas & Plan Lector</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight mt-1">
               Estantes Virtuales y Colecciones Destacadas
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1">
+            <p className="text-xs sm:text-sm text-neutral-600 max-w-2xl mt-1">
               Organiza fondos temáticos, guías de lectura por grado ("Plan Lector 2026") y bibliografía especializada para proyectar en el portal público de la biblioteca.
             </p>
           </div>
@@ -130,9 +130,9 @@ export function VirtualShelvesHub() {
 
         <button
           onClick={() => setIsNewShelfModalOpen(true)}
-          className="px-5 py-3 bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md shadow-emerald-950/20 transition cursor-pointer shrink-0"
+          className="px-4 py-2.5 bg-[#83B141] hover:bg-[#719b35] text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-xs transition cursor-pointer shrink-0"
         >
-          <PlusCircle className="w-4 h-4" />
+          <PlusCircle className="w-4 h-4" strokeWidth={2} />
           Nuevo Estante Virtual
         </button>
       </div>
@@ -157,35 +157,35 @@ export function VirtualShelvesHub() {
                   onClick={() => setSelectedShelf(getShelfWithPopulatedWorks(shelf))}
                   className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col justify-between ${
                     isSelected
-                      ? 'bg-slate-900 text-white border-slate-800 shadow-md ring-2 ring-emerald-500/50'
-                      : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      ? 'bg-white text-neutral-950 border-2 border-[#83B141] shadow-xs'
+                      : 'bg-white text-neutral-800 border-[#D3D2D3] hover:border-neutral-400 hover:bg-[#F8F9F8]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${
-                        isSelected ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-100 text-slate-700'
+                        isSelected ? 'bg-[#f2f7ec] text-[#83B141] border border-[#83B141]/30' : 'bg-neutral-100 text-neutral-600'
                       }`}>
-                        <BookOpen className="w-4 h-4" />
+                        <BookOpen className="w-4 h-4" strokeWidth={1.75} />
                       </div>
                       <div>
                         <h4 className="text-xs sm:text-sm font-bold leading-tight line-clamp-1">
                           {shelf.name}
                         </h4>
-                        <span className={`text-[10px] uppercase font-semibold ${isSelected ? 'text-emerald-400' : 'text-slate-400'}`}>
+                        <span className={`text-[10px] uppercase font-bold ${isSelected ? 'text-[#83B141]' : 'text-neutral-400'}`}>
                           {shelf.category.replace('_', ' ')}
                         </span>
                       </div>
                     </div>
 
-                    <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
-                      isSelected ? 'bg-emerald-500 text-slate-950' : 'bg-slate-100 text-slate-700'
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      isSelected ? 'bg-[#83B141] text-white' : 'bg-neutral-100 text-neutral-600'
                     }`}>
                       {count} {count === 1 ? 'libro' : 'libros'}
                     </span>
                   </div>
 
-                  <p className={`text-xs mt-2 line-clamp-2 leading-relaxed ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                  <p className="text-xs mt-2 line-clamp-2 leading-relaxed text-neutral-500">
                     {shelf.description}
                   </p>
                 </div>
@@ -195,25 +195,25 @@ export function VirtualShelvesHub() {
         </div>
 
         {/* Right: Selected Shelf Content */}
-        <div className="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+        <div className="lg:col-span-8 bg-white rounded-2xl p-6 sm:p-8 border border-[#D3D2D3] shadow-2xs space-y-6">
           {selectedShelf ? (
             <>
               {/* Selected Shelf Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#D3D2D3]/60">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#83B141] bg-[#f2f7ec] px-2.5 py-0.5 rounded-full border border-[#83B141]/30">
                       {selectedShelf.category.replace('_', ' ')}
                     </span>
-                    <span className="text-xs text-slate-400 flex items-center gap-1">
-                      <Globe className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-xs text-neutral-400 flex items-center gap-1">
+                      <Globe className="w-3.5 h-3.5 text-[#83B141]" />
                       Visible en OPAC Público
                     </span>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-slate-900 mt-1">
+                  <h3 className="text-lg sm:text-xl font-bold text-neutral-900 mt-1">
                     {selectedShelf.name}
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                  <p className="text-xs sm:text-sm text-neutral-600 mt-1">
                     {selectedShelf.description}
                   </p>
                 </div>
@@ -221,9 +221,9 @@ export function VirtualShelvesHub() {
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setIsAddBookModalOpen(true)}
-                    className="px-3.5 py-2 bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                    className="px-3.5 py-2 bg-[#83B141] hover:bg-[#719b35] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
                   >
-                    <PlusCircle className="w-4 h-4" />
+                    <PlusCircle className="w-4 h-4" strokeWidth={2} />
                     Añadir Obras
                   </button>
 
@@ -248,10 +248,10 @@ export function VirtualShelvesHub() {
                   </p>
                   <button
                     onClick={() => setIsAddBookModalOpen(true)}
-                    className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs rounded-xl transition cursor-pointer inline-flex items-center gap-1.5"
+                    className="px-4 py-2 bg-[#f2f7ec] hover:bg-[#83B141]/20 text-[#2c4210] font-bold text-xs rounded-xl transition cursor-pointer inline-flex items-center gap-1.5 border border-[#83B141]/30"
                   >
-                    <PlusCircle className="w-4 h-4" />
-                    Seleccionar libros del catálogo
+                    <PlusCircle className="w-4 h-4" strokeWidth={2} />
+                    Seleccionar libros del inventario
                   </button>
                 </div>
               ) : (
@@ -279,7 +279,7 @@ export function VirtualShelvesHub() {
                           )}
 
                           <div className="min-w-0">
-                            <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] font-mono font-bold text-neutral-900 bg-[#EFDA18]/25 border border-[#EFDA18]/40 px-1.5 py-0.5 rounded">
                               CDD {work.dewey_code}
                             </span>
                             <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight mt-1 line-clamp-2">
@@ -378,7 +378,7 @@ export function VirtualShelvesHub() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-800 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm"
+                  className="px-5 py-2 bg-[#83B141] hover:bg-[#719b35] text-white font-bold rounded-xl shadow-xs transition cursor-pointer"
                 >
                   Crear Estante
                 </button>
@@ -444,8 +444,8 @@ export function VirtualShelvesHub() {
                       disabled={isAlreadyInShelf}
                       className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 transition cursor-pointer shrink-0 ${
                         isAlreadyInShelf
-                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                          : 'bg-emerald-800 hover:bg-emerald-700 text-white'
+                          ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                          : 'bg-[#83B141] hover:bg-[#719b35] text-white'
                       }`}
                     >
                       {isAlreadyInShelf ? (
