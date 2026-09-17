@@ -213,7 +213,8 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-600">
                       <div>
                         <span className="font-semibold text-slate-700">Salida:</span>{' '}
-                        {new Date(h.loan_date).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {new Date(h.loan_date).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })}{' '}
+                        a las {new Date(h.loan_date).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true })}
                       </div>
                       <div>
                         <span className="font-semibold text-slate-700">Retorno:</span>{' '}
@@ -362,7 +363,7 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
 
                   <div className="flex flex-wrap lg:flex-col lg:items-end justify-between gap-2 text-xs border-t lg:border-t-0 pt-2 lg:pt-0">
                     <div className="text-slate-500 text-[11px] space-y-0.5 text-left lg:text-right">
-                      <p>Prestado: <span className="font-medium text-slate-700">{new Date(loan.loan_date).toLocaleDateString('es-VE')}</span></p>
+                      <p>Prestado: <span className="font-medium text-slate-700">{new Date(loan.loan_date).toLocaleDateString('es-VE')} a las {new Date(loan.loan_date).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true })}</span></p>
                       <p>
                         {loan.return_date ? (
                           <>Devuelto: <span className="font-medium text-emerald-800">{new Date(loan.return_date).toLocaleDateString('es-VE')}</span></>

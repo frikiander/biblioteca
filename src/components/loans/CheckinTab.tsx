@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   CheckCircle2, 
   RotateCcw, 
@@ -10,11 +10,15 @@ import {
   Tag, 
   Clock, 
   MessageSquare,
-  Sparkles,
-  ArrowRight
+  ArrowRight,
+  Barcode,
+  Layers,
+  X,
+  Building2,
+  BookmarkCheck
 } from 'lucide-react';
 import type { Loan, CopyCondition } from '../../types/database';
-import { findActiveLoanByCopyCode, returnLoan, findCopyByCode } from '../../lib/loans';
+import { findActiveLoanByCopyCode, returnLoan, findCopyByCode, getStoredLoans } from '../../lib/loans';
 
 interface CheckinTabProps {
   initialCode?: string;
@@ -27,6 +31,9 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
   onLoanReturned,
   onNavigateToCheckout,
 }) => {
+  // Navigation / search mode: 'search' (by book/patron/title) or 'scanner' (direct marbete entry)
+  const [searchMode, setSearchMode] = useState<'search' | 'scanner'>('search');
+  const [searchQuery, setSearchQuery] = useState('');
   const [marbeteInput, setMarbeteInput] = useState(initialCode);
   const [activeLoan, setActiveLoan] = useState<Loan | null>(null);
   const [returnNotes, setReturnNotes] = useState('');
@@ -35,10 +42,40 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [successReturn, setSuccessReturn] = useState<Loan | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [allLoans, setAllLoans] = useState<Loan[]>([]);
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const scannerInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSearchActiveLoan = (codeToSearch: string) => {
+  // Load all loans on mount
+  const refreshLoansList = () => {
+    setAllLoans(getStoredLoans());
+  };
+
+  useEffect(() => {
+    refreshLoansList();
+  }, []);
+
+  // Filter only loans that are currently active or overdue
+  const currentActiveLoans = useMemo(() => {
+    return allLoans.filter((l) => l.status === 'active' || l.status === 'overdue');
+  }, [allLoans]);
+
+  // Filtered active loans based on search query (by book title, author, student name, or marbete)
+  const filteredActiveLoans = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return currentActiveLoans;
+    return currentActiveLoans.filter((loan) => {
+      const matchTitle = loan.work_title.toLowerCase().includes(q);
+      const matchAuthor = loan.work_author.toLowerCase().includes(q);
+      const matchStudent = loan.student_name.toLowerCase().includes(q);
+      const matchMarbete = loan.copy_internal_code.toLowerCase().includes(q);
+      const matchDewey = loan.work_dewey_code ? loan.work_dewey_code.includes(q) : false;
+      return matchTitle || matchAuthor || matchStudent || matchMarbete || matchDewey;
+    });
+  }, [currentActiveLoans, searchQuery]);
+
+  // Handle direct code validation (scanner mode or prefilled initialCode)
+  const handleValidateMarbete = (codeToSearch: string) => {
     const clean = codeToSearch.trim();
     if (!clean) {
       setActiveLoan(null);
@@ -57,10 +94,10 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
       setErrorBanner(null);
     } else {
       setActiveLoan(null);
-      // Check if copy exists at all
+      // Check if copy exists in database
       const existingCopy = findCopyByCode(clean);
       if (existingCopy) {
-        setErrorBanner(`El ejemplar con marbete "${existingCopy.internal_code}" ("${existingCopy.work?.title}") NO tiene un préstamo activo en este momento. Ya está disponible en estantería.`);
+        setErrorBanner(`El ejemplar con marbete "${existingCopy.internal_code}" ("${existingCopy.work?.title}") NO tiene un préstamo activo en este momento. Ya se encuentra disponible en inventario.`);
       } else {
         setErrorBanner(`No se encontró ningún ejemplar registrado con el marbete "${clean.toUpperCase()}".`);
       }
@@ -70,15 +107,29 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
   useEffect(() => {
     if (initialCode) {
       setMarbeteInput(initialCode);
-      handleSearchActiveLoan(initialCode);
+      setSearchMode('scanner');
+      handleValidateMarbete(initialCode);
     }
   }, [initialCode]);
 
-  // Handle enter in the main search input
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Select an active loan from the visual picker
+  const handleSelectLoan = (loan: Loan) => {
+    setActiveLoan(loan);
+    setMarbeteInput(loan.copy_internal_code);
+    setErrorBanner(null);
+  };
+
+  const handleClearSelectedLoan = () => {
+    setActiveLoan(null);
+    setMarbeteInput('');
+    setErrorBanner(null);
+  };
+
+  // Handle Enter in scanner mode
+  const handleKeyDownScanner = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSearchActiveLoan(marbeteInput);
+      handleValidateMarbete(marbeteInput);
     }
   };
 
@@ -104,6 +155,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
 
     setSuccessReturn(result.loan);
     setActiveLoan(null);
+    refreshLoansList();
     if (onLoanReturned) {
       onLoanReturned(result.loan);
     }
@@ -111,13 +163,44 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
 
   const handleResetForNextReturn = () => {
     setMarbeteInput('');
+    setSearchQuery('');
     setActiveLoan(null);
     setReturnNotes('');
     setReturnCondition('bueno');
     setHasSearched(false);
     setErrorBanner(null);
     setSuccessReturn(null);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    refreshLoansList();
+    if (searchMode === 'scanner') {
+      setTimeout(() => scannerInputRef.current?.focus(), 50);
+    }
+  };
+
+  // Helper formatters
+  const formatDateTime = (dateStr?: string | null) => {
+    if (!dateStr) return 'No especificada';
+    const d = new Date(dateStr);
+    const dateFormatted = d.toLocaleDateString('es-VE', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    const timeFormatted = d.toLocaleTimeString('es-VE', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+    return `${dateFormatted} a las ${timeFormatted}`;
+  };
+
+  const formatDateOnly = (dateStr?: string | null) => {
+    if (!dateStr) return 'No especificada';
+    return new Date(dateStr).toLocaleDateString('es-VE', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   };
 
   // Calculate loan duration and days
@@ -144,29 +227,48 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
                 Devolución Procesada
               </span>
-              <h3 className="text-xl font-bold text-slate-900">
+              <h3 className="text-xl font-bold text-neutral-900">
                 ¡Libro Devuelto e Incorporado a Estantería!
               </h3>
             </div>
           </div>
 
-          <div className="p-5 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-xs space-y-2">
+          <div className="p-5 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-xs space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-bold text-slate-900 text-sm">{successReturn.work_title}</span>
-              <span className="font-mono font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
-                {successReturn.copy_internal_code}
+              <span className="font-bold text-neutral-900 text-sm">{successReturn.work_title}</span>
+              <span className="font-mono font-bold text-emerald-800 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
+                Marbete: {successReturn.copy_internal_code}
               </span>
             </div>
-            <p className="text-slate-600">
-              Entregado por: <span className="font-bold text-slate-800">{successReturn.student_name}</span> ({successReturn.student_grade || 'Alumno'})
-            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-neutral-700 pt-1">
+              <div>
+                <p className="text-neutral-500 text-[11px]">Lector que entregó:</p>
+                <p className="font-bold text-neutral-900">{successReturn.student_name} ({successReturn.student_grade || 'Alumno'})</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 text-[11px]">Fecha y hora de salida:</p>
+                <p className="font-bold text-neutral-900">{formatDateTime(successReturn.loan_date)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 text-[11px]">Fecha y hora de retorno:</p>
+                <p className="font-bold text-neutral-900">{formatDateTime(successReturn.return_date || new Date().toISOString())}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 text-[11px]">Estado del ejemplar:</p>
+                <p className="font-bold text-neutral-900 capitalize">{successReturn.return_condition || 'Bueno'}</p>
+              </div>
+            </div>
+
             {successReturn.return_notes && (
-              <p className="text-slate-700 italic bg-white/80 p-2 rounded-lg border border-emerald-100">
+              <p className="text-neutral-700 italic bg-white/80 p-2.5 rounded-xl border border-emerald-100">
                 Observación: "{successReturn.return_notes}"
               </p>
             )}
-            <p className="text-emerald-800 font-semibold pt-1">
-              ✨ El ejemplar ya se encuentra marcado como "Disponible" para el siguiente alumno.
+
+            <p className="text-emerald-800 font-semibold pt-1 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>El ejemplar ya se encuentra marcado como "Disponible" en el inventario para nuevos préstamos.</span>
             </p>
           </div>
 
@@ -185,7 +287,7 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
 
       {/* Main Check-in Form */}
       {!successReturn && (
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-3xl border border-[#D3D2D3] shadow-sm overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-[#D3D2D3] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -194,11 +296,11 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
                 Módulo de Circulación • Retorno de Material
               </span>
               <h2 className="text-xl font-bold text-neutral-900 mt-0.5">
-                Devolver Libro (Check-in Rápido)
+                Devolver Libro (Check-in)
               </h2>
             </div>
-            <div className="text-xs text-neutral-500 bg-[#F8F9F8] border border-[#D3D2D3] px-3 py-1.5 rounded-xl self-start sm:self-auto font-medium">
-              1 solo campo de texto • Presiona Enter para procesar
+            <div className="text-xs text-neutral-600 bg-[#F8F9F8] border border-[#D3D2D3] px-3.5 py-1.5 rounded-xl self-start sm:self-auto font-medium">
+              Búsqueda por libro, autor o lector • Verificación física de marbete
             </div>
           </div>
 
@@ -211,146 +313,372 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
           )}
 
           <div className="p-6 space-y-6">
-            {/* The single ultra-fast text field */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="checkin-marbete-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Código de Marbete en el Lomo del Libro Devuelto <span className="text-rose-500">*</span>
+            {/* Step 1: Mode selector and selection */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider">
+                  1. Localizar Libro o Préstamo para Devolución <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-[11px] text-slate-500 font-medium">
-                  Lee el lomo y presiona <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded font-mono text-[10px]">Enter</kbd>
-                </span>
+
+                {/* Search Mode Toggle */}
+                <div className="flex items-center gap-1 bg-[#F8F9F8] p-1 rounded-xl border border-[#D3D2D3] self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchMode('search');
+                      setErrorBanner(null);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      searchMode === 'search'
+                        ? 'bg-[#83B141] text-white shadow-xs'
+                        : 'text-neutral-600 hover:text-neutral-900'
+                    }`}
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                    <span>Buscar por Libro / Lector</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchMode('scanner');
+                      setErrorBanner(null);
+                      setTimeout(() => scannerInputRef.current?.focus(), 50);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      searchMode === 'scanner'
+                        ? 'bg-[#83B141] text-white shadow-xs'
+                        : 'text-neutral-600 hover:text-neutral-900'
+                    }`}
+                  >
+                    <Barcode className="w-3.5 h-3.5" />
+                    <span>Escanear Marbete</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="relative flex items-center">
-                <input
-                  ref={inputRef}
-                  id="checkin-marbete-input"
-                  type="text"
-                  required
-                  autoFocus
-                  value={marbeteInput}
-                  onChange={(e) => {
-                    setMarbeteInput(e.target.value);
-                    if (e.target.value.trim().length >= 3) {
-                      handleSearchActiveLoan(e.target.value);
-                    } else {
-                      setActiveLoan(null);
-                      setHasSearched(false);
-                    }
-                  }}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Teclea el marbete (ej. MOS-863-OTE-1) y presiona Enter..."
-                  className="w-full px-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-lg font-mono font-bold text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10 transition uppercase tracking-wider"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleSearchActiveLoan(marbeteInput)}
-                  className="absolute right-2.5 px-4 py-2 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Search className="w-3.5 h-3.5" />
-                  Buscar Préstamo
-                </button>
-              </div>
-            </div>
+              {/* MODE A: INTERACTIVE SEARCH OR DIRECT PICKER */}
+              {searchMode === 'search' && (
+                <div className="space-y-4">
+                  {!activeLoan ? (
+                    <div className="space-y-3">
+                      {/* Search bar */}
+                      <div className="relative flex items-center">
+                        <Search className="w-4 h-4 text-neutral-400 absolute left-4 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Buscar por título del libro, autor, nombre de alumno o marbete..."
+                          className="w-full pl-11 pr-4 py-3 bg-[#F8F9F8] border-2 border-[#D3D2D3] rounded-2xl text-sm font-medium text-neutral-900 placeholder-neutral-400 focus:bg-white focus:outline-none focus:border-[#83B141] focus:ring-4 focus:ring-[#83B141]/10 transition"
+                        />
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 p-1 text-neutral-400 hover:text-neutral-700 rounded-full"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
 
-            {/* Active Loan Details Detected */}
-            {activeLoan && (
-              <form onSubmit={handleConfirmReturn} className="space-y-6 pt-4 border-t border-slate-100 animate-in fade-in duration-200">
-                {/* Loan card details */}
-                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        Préstamo Activo Localizado
-                      </span>
-                      <h4 className="text-base font-bold text-slate-900">{activeLoan.work_title}</h4>
-                      <p className="text-xs text-slate-600 font-medium">{activeLoan.work_author}</p>
+                      {/* Header of the loans list */}
+                      <div className="flex items-center justify-between text-xs px-1">
+                        <span className="font-bold text-neutral-700 flex items-center gap-1.5">
+                          <BookmarkCheck className="w-3.5 h-3.5 text-[#83B141]" />
+                          {searchQuery
+                            ? `Resultados coincidentes (${filteredActiveLoans.length})`
+                            : `Préstamos Activos en Curso (${currentActiveLoans.length})`}
+                        </span>
+                        <span className="text-neutral-500 text-[11px]">
+                          Haz clic en el libro que están entregando para verificarlo
+                        </span>
+                      </div>
+
+                      {/* Active loans list / grid */}
+                      {filteredActiveLoans.length === 0 ? (
+                        <div className="p-8 text-center bg-[#F8F9F8] border border-dashed border-[#D3D2D3] rounded-2xl text-xs text-neutral-500 space-y-1">
+                          <BookOpen className="w-8 h-8 mx-auto text-neutral-300" />
+                          <p className="font-semibold text-neutral-700">
+                            {searchQuery
+                              ? `No hay préstamos activos que coincidan con "${searchQuery}"`
+                              : 'No hay libros prestados en este momento.'}
+                          </p>
+                          <p className="text-[11px] text-neutral-400">
+                            {searchQuery
+                              ? 'Intenta con otra palabra clave o utiliza la pestaña "Escanear Marbete".'
+                              : 'Todos los ejemplares del inventario están disponibles en sala.'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                          {filteredActiveLoans.map((loan) => {
+                            const isOverdueLoan = !loan.is_indefinite && loan.due_date && new Date(loan.due_date).getTime() < Date.now();
+
+                            return (
+                              <div
+                                key={loan.id}
+                                onClick={() => handleSelectLoan(loan)}
+                                className="p-3.5 rounded-2xl bg-white border border-[#D3D2D3] hover:border-[#83B141] hover:shadow-xs transition cursor-pointer flex flex-col justify-between gap-3 group"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="w-10 h-14 rounded-lg bg-[#F8F9F8] border border-[#D3D2D3] overflow-hidden shrink-0 flex items-center justify-center">
+                                    {loan.work_cover_url ? (
+                                      <img src={loan.work_cover_url} alt={loan.work_title} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <BookOpen className="w-5 h-5 text-[#83B141]" />
+                                    )}
+                                  </div>
+
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {loan.work_dewey_code && (
+                                        <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded bg-[#EFDA18] text-neutral-900 border border-[#EFDA18]/40">
+                                          CDD {loan.work_dewey_code}
+                                        </span>
+                                      )}
+                                      <span
+                                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                          isOverdueLoan
+                                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                            : loan.is_indefinite
+                                            ? 'bg-neutral-100 text-neutral-800'
+                                            : 'bg-[#83B141]/15 text-[#83B141] border border-[#83B141]/30'
+                                        }`}
+                                      >
+                                        {isOverdueLoan ? '⚠️ Atrasado' : loan.is_indefinite ? '♾️ Indefinido' : '✓ En Plazo'}
+                                      </span>
+                                    </div>
+
+                                    <h4 className="font-bold text-xs text-neutral-900 truncate mt-1 group-hover:text-[#83B141] transition">
+                                      {loan.work_title}
+                                    </h4>
+                                    <p className="text-[11px] text-neutral-500 truncate">{loan.work_author}</p>
+
+                                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-neutral-700">
+                                      <User className="w-3 h-3 text-[#83B141] shrink-0" />
+                                      <span className="font-semibold truncate">{loan.student_name}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Marbete & Dates footer in card */}
+                                <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-[11px]">
+                                  <div>
+                                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block">
+                                      Marbete
+                                    </span>
+                                    <span className="font-mono font-bold text-neutral-900">
+                                      {loan.copy_internal_code}
+                                    </span>
+                                  </div>
+
+                                  <div className="text-right">
+                                    <span className="text-[9px] text-neutral-400 block">Salida</span>
+                                    <span className="font-medium text-neutral-700">
+                                      {formatDateOnly(loan.loan_date)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
+                  ) : (
+                    /* Selected Loan Header with option to change */
+                    <div className="p-4 bg-white border border-[#D3D2D3] rounded-2xl shadow-2xs flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-12 h-16 rounded-xl bg-[#F8F9F8] border border-[#D3D2D3] overflow-hidden shrink-0 flex items-center justify-center">
+                          {activeLoan.work_cover_url ? (
+                            <img src={activeLoan.work_cover_url} alt={activeLoan.work_title} className="w-full h-full object-cover" />
+                          ) : (
+                            <BookOpen className="w-6 h-6 text-[#83B141]" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-bold text-[#83B141] uppercase tracking-wider">
+                              Libro en Proceso de Devolución
+                            </span>
+                            {activeLoan.work_dewey_code && (
+                              <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-[#EFDA18] text-neutral-900 border border-[#EFDA18]/40">
+                                CDD {activeLoan.work_dewey_code}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-bold text-base text-neutral-900 truncate mt-0.5">
+                            {activeLoan.work_title}
+                          </h3>
+                          <p className="text-xs text-neutral-600 truncate">{activeLoan.work_author}</p>
+                        </div>
+                      </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-xs bg-white border border-slate-300 text-slate-800 px-2.5 py-1 rounded-lg shadow-2xs">
-                        {activeLoan.copy_internal_code}
-                      </span>
-                      <span
-                        className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
-                          isOverdue
-                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                            : isIndefinite
-                            ? 'bg-neutral-100 text-neutral-800 border border-neutral-300'
-                            : 'bg-[#83B141]/15 text-[#83B141] border border-[#83B141]/30'
-                        }`}
+                      <button
+                        type="button"
+                        onClick={handleClearSelectedLoan}
+                        className="px-3 py-1.5 bg-[#F8F9F8] hover:bg-neutral-100 text-neutral-700 border border-[#D3D2D3] rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
                       >
-                        {isOverdue ? '⚠️ Atrasado' : isIndefinite ? '♾️ Plazo Indefinido' : '✅ En Plazo'}
-                      </span>
+                        <X className="w-3.5 h-3.5" />
+                        <span>Cambiar libro</span>
+                      </button>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* MODE B: DIRECT MARBETE SCANNER INPUT */}
+              {searchMode === 'scanner' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-neutral-500 font-medium">
+                      Escanea con la pistola lectora o teclea el marbete y presiona <kbd className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-300 rounded font-mono text-[10px]">Enter</kbd>
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                    <div className="p-3 bg-white rounded-xl border border-slate-200/80">
-                      <span className="text-slate-400 font-semibold block text-[10px] uppercase">Alumno que lo tenía</span>
-                      <p className="font-bold text-slate-900 text-sm mt-0.5">{activeLoan.student_name}</p>
-                      <p className="text-slate-500 text-[11px]">{activeLoan.student_grade || 'Estudiante'}</p>
+                  <div className="relative flex items-center">
+                    <input
+                      ref={scannerInputRef}
+                      id="checkin-marbete-input"
+                      type="text"
+                      value={marbeteInput}
+                      onChange={(e) => {
+                        setMarbeteInput(e.target.value);
+                        if (e.target.value.trim().length >= 3) {
+                          handleValidateMarbete(e.target.value);
+                        } else {
+                          setActiveLoan(null);
+                          setHasSearched(false);
+                        }
+                      }}
+                      onKeyDown={handleKeyDownScanner}
+                      placeholder="Teclea o escanea el marbete (ej. MOS-863-OTE-1)..."
+                      className="w-full px-4 py-3 bg-[#F8F9F8] border-2 border-[#D3D2D3] rounded-2xl text-base font-mono font-bold text-neutral-900 placeholder-neutral-400 focus:bg-white focus:outline-none focus:border-[#83B141] focus:ring-4 focus:ring-[#83B141]/10 transition uppercase tracking-wider"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleValidateMarbete(marbeteInput)}
+                      className="absolute right-2 px-3 py-1.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      Buscar Préstamo
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* PROMINENT MARBETE VERIFICATION & RETURN FORM */}
+            {activeLoan && (
+              <form onSubmit={handleConfirmReturn} className="space-y-6 pt-4 border-t border-[#D3D2D3] animate-in fade-in duration-200">
+                {/* Visual Marbete Verification Banner */}
+                <div className="p-4.5 rounded-2xl bg-[#F8F9F8] border-2 border-[#83B141] shadow-xs space-y-3">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-[#D3D2D3]">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-[#83B141]" />
+                      <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                        Paso de Verificación de Marbete Físico
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#83B141] bg-[#83B141]/10 px-2 py-0.5 rounded-full border border-[#83B141]/30">
+                      ✓ Ejemplar Identificado para Recepción
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
+                        Código de Marbete Impreso en el Lomo del Libro Devuelto:
+                      </span>
+                      <div className="inline-flex items-center gap-2 bg-white border-2 border-neutral-900 px-4 py-2 rounded-xl shadow-2xs">
+                        <Barcode className="w-5 h-5 text-neutral-700" />
+                        <span className="font-mono text-lg font-black text-neutral-900 tracking-wider select-all">
+                          {activeLoan.copy_internal_code}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="p-3 bg-white rounded-xl border border-slate-200/80">
-                      <span className="text-slate-400 font-semibold block text-[10px] uppercase">Fecha de Salida</span>
-                      <p className="font-bold text-slate-900 mt-0.5">
-                        {new Date(activeLoan.loan_date).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    <div className="text-xs text-neutral-600 bg-white p-3 rounded-xl border border-[#D3D2D3] sm:max-w-xs">
+                      <p className="font-semibold text-neutral-800">Verificación física en mano:</p>
+                      <p className="text-[11px] text-neutral-500 mt-0.5">
+                        Confirma que el marbete en el lomo del libro físico que estás recibiendo sea exactamente <span className="font-mono font-bold text-neutral-900">{activeLoan.copy_internal_code}</span>.
                       </p>
-                      <p className="text-slate-500 text-[11px]">Días en circulación: {loanDaysElapsed} días</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detailed Loan Information: Lector, Departure Date & Time, Due Date */}
+                <div className="p-4.5 rounded-2xl bg-white border border-[#D3D2D3] space-y-3">
+                  <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                    <span className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#83B141]" />
+                      Detalles del Préstamo Activo y Trazabilidad
+                    </span>
+                    <span
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                        isOverdue
+                          ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                          : isIndefinite
+                          ? 'bg-neutral-100 text-neutral-800 border border-neutral-300'
+                          : 'bg-[#83B141]/15 text-[#83B141] border border-[#83B141]/30'
+                      }`}
+                    >
+                      {isOverdue ? '⚠️ Préstamo Atrasado' : isIndefinite ? '♾️ Plazo Indefinido' : '✅ En Plazo Normal'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    {/* Student Info */}
+                    <div className="p-3 bg-[#F8F9F8] rounded-xl border border-[#D3D2D3]">
+                      <span className="text-neutral-500 font-semibold block text-[10px] uppercase">Lector que lo entrega</span>
+                      <p className="font-bold text-neutral-900 text-sm mt-0.5">{activeLoan.student_name}</p>
+                      <p className="text-neutral-500 text-[11px]">{activeLoan.student_grade || 'Estudiante Colegio El Manglar'}</p>
                     </div>
 
-                    <div className="p-3 bg-white rounded-xl border border-slate-200/80">
-                      <span className="text-slate-400 font-semibold block text-[10px] uppercase">Fecha Límite Prevista</span>
-                      <p className={`font-bold mt-0.5 ${isOverdue ? 'text-rose-700' : isIndefinite ? 'text-teal-900' : 'text-slate-900'}`}>
+                    {/* Departure Date and TIME */}
+                    <div className="p-3 bg-[#F8F9F8] rounded-xl border border-[#D3D2D3]">
+                      <span className="text-neutral-500 font-semibold block text-[10px] uppercase">Fecha y Hora de Salida</span>
+                      <p className="font-bold text-neutral-900 mt-0.5">
+                        {formatDateTime(activeLoan.loan_date)}
+                      </p>
+                      <p className="text-neutral-500 text-[11px] mt-0.5">
+                        Tiempo transcurrido: <strong className="text-neutral-800">{loanDaysElapsed} {loanDaysElapsed === 1 ? 'día' : 'días'}</strong>
+                      </p>
+                    </div>
+
+                    {/* Return Due Date */}
+                    <div className="p-3 bg-[#F8F9F8] rounded-xl border border-[#D3D2D3]">
+                      <span className="text-neutral-500 font-semibold block text-[10px] uppercase">Fecha Límite Prevista</span>
+                      <p className={`font-bold mt-0.5 ${isOverdue ? 'text-rose-700' : 'text-neutral-900'}`}>
                         {isIndefinite
                           ? 'Plazo Indefinido (Sin límite)'
                           : activeLoan.due_date
-                          ? new Date(activeLoan.due_date).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })
+                          ? formatDateOnly(activeLoan.due_date)
                           : 'Plazo Indefinido'}
                       </p>
-                      <p className="text-slate-500 text-[11px]">Sede: {activeLoan.branch_name}</p>
+                      <p className="text-neutral-500 text-[11px] mt-0.5">Sede: {activeLoan.branch_name || 'Sede Principal'}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* OBSERVATIONS FIELD (Required in user prompt) */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="return-notes-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <MessageSquare className="w-3.5 h-3.5 text-emerald-700" />
-                      Observaciones de la Devolución (Opcional)
-                    </label>
-                    <span className="text-[11px] text-slate-400">Comentario para el historial del libro</span>
-                  </div>
-
-                  <input
-                    id="return-notes-input"
-                    type="text"
-                    value={returnNotes}
-                    onChange={(e) => setReturnNotes(e.target.value)}
-                    placeholder="Ej: Entregado en perfecto estado, páginas limpias, cuidado excelente..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition font-medium"
-                  />
-                </div>
-
-                {/* Physical Condition Selector upon return */}
+                {/* Condition Selector upon Return */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider">
                     Estado Físico del Ejemplar al Retornar
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { value: 'bueno', label: 'Bueno (Impecable / Cuidado)' },
                       { value: 'regular', label: 'Regular (Desgaste menor)' },
-                      { value: 'malo', label: 'Malo (Requiere encuadernación)' },
+                      { value: 'malo', label: 'Malo (Requiere reparación)' },
                     ].map((cond) => (
                       <button
                         key={cond.value}
                         type="button"
                         onClick={() => setReturnCondition(cond.value as CopyCondition)}
-                        className={`p-2 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                        className={`p-2.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                           returnCondition === cond.value
                             ? 'bg-[#83B141] text-white border-[#83B141] shadow-xs'
                             : 'bg-[#F8F9F8] text-neutral-700 border-[#D3D2D3] hover:bg-neutral-100'
@@ -362,14 +690,30 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
                   </div>
                 </div>
 
-                {/* Action Buttons */}
+                {/* Return Observations */}
+                <div className="space-y-2">
+                  <label htmlFor="return-notes-input" className="block text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-[#83B141]" />
+                    Observaciones de la Devolución (Opcional)
+                  </label>
+                  <input
+                    id="return-notes-input"
+                    type="text"
+                    value={returnNotes}
+                    onChange={(e) => setReturnNotes(e.target.value)}
+                    placeholder="Ej: Entregado en perfecto estado, páginas limpias, cuidado excelente..."
+                    className="w-full px-4 py-3 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#83B141]/20 focus:border-[#83B141] transition font-medium"
+                  />
+                </div>
+
+                {/* Actions */}
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={handleResetForNextReturn}
-                    className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition"
+                    className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-neutral-500 hover:text-neutral-800 transition cursor-pointer"
                   >
-                    Cancelar
+                    Cancelar / Elegir otro libro
                   </button>
 
                   <button

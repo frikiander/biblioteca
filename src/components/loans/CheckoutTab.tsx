@@ -347,20 +347,53 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                 <span className="font-bold text-slate-900 text-sm">{successLoan.student_name}</span>
               </div>
               <p className="text-slate-600">{successLoan.student_grade || 'Alumno Colegio El Manglar'}</p>
-              <div className="flex items-center gap-1.5 text-slate-700 font-semibold pt-1">
-                {successLoan.is_indefinite || !successLoan.due_date ? (
-                  <>
-                    <InfinityIcon className="w-4 h-4 text-[#83B141]" />
-                    <span className="text-neutral-900 font-bold bg-[#83B141]/10 px-2 py-0.5 rounded border border-[#83B141]/30">
-                      Plazo Indefinido (Sin fecha límite)
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="w-3.5 h-3.5 text-[#83B141]" />
-                    <span>Devolución esperada: {new Date(successLoan.due_date).toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'short' })}</span>
-                  </>
-                )}
+              <div className="space-y-1.5 text-xs text-neutral-700 pt-1">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#83B141]" />
+                  <span>
+                    Fecha y hora de salida:{' '}
+                    <strong className="text-neutral-900">
+                      {new Date(successLoan.loan_date).toLocaleDateString('es-VE', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}{' '}
+                      a las{' '}
+                      {new Date(successLoan.loan_date).toLocaleTimeString('es-VE', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </strong>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {successLoan.is_indefinite || !successLoan.due_date ? (
+                    <>
+                      <InfinityIcon className="w-4 h-4 text-[#83B141]" />
+                      <span className="text-neutral-900 font-bold bg-[#83B141]/10 px-2 py-0.5 rounded border border-[#83B141]/30">
+                        Plazo Indefinido (Sin fecha límite)
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="w-3.5 h-3.5 text-[#83B141]" />
+                      <span>
+                        Devolución esperada:{' '}
+                        <strong className="text-neutral-900">
+                          {new Date(successLoan.due_date).toLocaleDateString('es-VE', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </strong>
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -734,9 +767,34 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                             <User className="w-4 h-4 text-amber-700" />
                             <span>{activeLoanOnCopy.student_name} ({activeLoanOnCopy.student_grade || 'Alumno'})</span>
                           </div>
-                          <span className="text-[11px] text-slate-500">
-                            Desde el {new Date(activeLoanOnCopy.loan_date).toLocaleDateString('es-VE')}
-                          </span>
+                          <div className="text-[11px] text-neutral-600 space-y-0.5 text-right">
+                            <span className="block">
+                              Salida: <strong className="text-neutral-900">
+                                {new Date(activeLoanOnCopy.loan_date).toLocaleDateString('es-VE', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}{' '}
+                                a las{' '}
+                                {new Date(activeLoanOnCopy.loan_date).toLocaleTimeString('es-VE', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: true,
+                                })}
+                              </strong>
+                            </span>
+                            <span className="block text-neutral-500">
+                              Retorno previsto: <strong className="text-amber-900">
+                                {activeLoanOnCopy.due_date
+                                  ? new Date(activeLoanOnCopy.due_date).toLocaleDateString('es-VE', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric',
+                                    })
+                                  : 'Indefinido'}
+                              </strong>
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -869,40 +927,67 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                   </button>
                 </div>
 
-                <div className="p-3.5 bg-[#F8F9F8] rounded-xl border border-[#D3D2D3] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2 text-neutral-800 font-medium">
-                    {isIndefinite ? (
-                      <>
-                        <InfinityIcon className="w-4 h-4 text-[#83B141] shrink-0" />
-                        <span className="font-bold text-neutral-900">
-                          Plazo: Indefinido (Sin límite de fecha / Préstamo docente o de aula)
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Calendar className="w-4 h-4 text-[#83B141] shrink-0" />
-                        <span>Fecha límite de retorno:</span>
-                        <span className="font-bold text-emerald-900">
-                          {new Date(customDueDate).toLocaleDateString('es-VE', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </span>
-                      </>
-                    )}
+                {/* Real-time departure datetime and return limit */}
+                <div className="p-3.5 bg-[#F8F9F8] rounded-xl border border-[#D3D2D3] space-y-2 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#D3D2D3]">
+                    <div className="flex items-center gap-2 text-neutral-700">
+                      <Clock className="w-4 h-4 text-[#83B141] shrink-0" />
+                      <span>Fecha y hora de salida de préstamo:</span>
+                      <strong className="text-neutral-900 font-semibold">
+                        {new Date().toLocaleDateString('es-VE', {
+                          weekday: 'short',
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}{' '}
+                        •{' '}
+                        {new Date().toLocaleTimeString('es-VE', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                      </strong>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#83B141] bg-[#83B141]/10 px-2 py-0.5 rounded border border-[#83B141]/30 self-start sm:self-auto">
+                      ● Registro en Tiempo Real
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500 text-[11px]">Personalizar fecha:</span>
-                    <input
-                      type="date"
-                      value={isIndefinite ? '' : customDueDate}
-                      disabled={!detectedCopy || Boolean(activeLoanOnCopy) || isIndefinite}
-                      onChange={(e) => handleCustomDateChange(e.target.value)}
-                      className="px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 disabled:bg-slate-100 disabled:text-slate-400"
-                    />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-neutral-800 font-medium">
+                      {isIndefinite ? (
+                        <>
+                          <InfinityIcon className="w-4 h-4 text-[#83B141] shrink-0" />
+                          <span className="font-bold text-neutral-900">
+                            Plazo: Indefinido (Sin límite de fecha / Préstamo docente o de aula)
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Calendar className="w-4 h-4 text-[#83B141] shrink-0" />
+                          <span>Fecha límite de retorno:</span>
+                          <span className="font-bold text-emerald-900">
+                            {new Date(customDueDate).toLocaleDateString('es-VE', {
+                              weekday: 'short',
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500 text-[11px]">Personalizar fecha:</span>
+                      <input
+                        type="date"
+                        value={isIndefinite ? '' : customDueDate}
+                        disabled={!detectedCopy || Boolean(activeLoanOnCopy) || isIndefinite}
+                        onChange={(e) => handleCustomDateChange(e.target.value)}
+                        className="px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#83B141]/20 disabled:bg-slate-100 disabled:text-slate-400"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
