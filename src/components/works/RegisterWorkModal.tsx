@@ -133,13 +133,6 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
       internal_code: generateMarbeteCode(INITIAL_BRANCHES[0]?.name || 'Primaria', '860', 'OTE', 1, 'Casas Muertas'),
       notes: 'Ejemplar #1 - Biblioteca Miguel Otero Silva (Primaria)',
     },
-    {
-      id: 'draft_2',
-      branch_id: INITIAL_BRANCHES[1]?.id || '00000000-0000-4000-a000-000000000002',
-      condition: 'bueno',
-      internal_code: generateMarbeteCode(INITIAL_BRANCHES[1]?.name || 'Bachillerato', '860', 'OTE', 2, 'Casas Muertas'),
-      notes: 'Ejemplar #2 - Biblioteca Miguel Otero Silva (Bachillerato)',
-    },
   ]);
 
   // Loading & Submission State
@@ -155,6 +148,23 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
       setSearchLookupError(null);
       setFormError(null);
       setSuccessMessage(null);
+      setTitle('');
+      setAuthor('');
+      setIsbn('');
+      setDeweyCode('860');
+      setPublisher('');
+      setPublicationYear(new Date().getFullYear());
+      setDescription('');
+      const defaultBranch = branches[0] || INITIAL_BRANCHES[0];
+      setInitialCopies([
+        {
+          id: 'draft_1',
+          branch_id: defaultBranch?.id || '00000000-0000-4000-a000-000000000001',
+          condition: 'bueno',
+          internal_code: generateMarbeteCode(defaultBranch?.name || 'Primaria', '860', '', 1, ''),
+          notes: `Ejemplar #1 - ${defaultBranch?.name || 'Biblioteca Miguel Otero Silva (Primaria)'}`,
+        },
+      ]);
     }
   }, [isOpen]);
 
@@ -1207,19 +1217,19 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                         return (
                           <div
                             key={copy.id}
-                            className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3.5 hover:border-slate-300 transition"
+                            className="bg-white rounded-2xl border border-[#D3D2D3] p-4 shadow-2xs space-y-3.5 hover:border-neutral-400 transition"
                           >
                             {/* Copy Header / Action bar */}
                             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                               <div className="flex items-center gap-2">
-                                <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">
+                                <span className="w-6 h-6 rounded-full bg-[#83B141] text-white text-xs font-bold flex items-center justify-center">
                                   {index + 1}
                                 </span>
                                 <span className="text-xs font-bold text-slate-800">
                                   Ejemplar #{index + 1}
                                 </span>
                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                  isDonation ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                                  isDonation ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-[#f2f7ec] text-[#2c4210] border border-[#83B141]/30'
                                 }`}>
                                   {isDonation ? 'Dotación Rural' : 'Sede Central'}
                                 </span>
@@ -1230,10 +1240,10 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                   type="button"
                                   onClick={() => handleDuplicateCopy(copy)}
                                   title="Duplicar configuración de este ejemplar"
-                                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer text-xs flex items-center gap-1"
+                                  className="p-1.5 text-slate-500 hover:text-[#83B141] hover:bg-[#83B141]/10 rounded-lg transition cursor-pointer text-xs flex items-center gap-1"
                                 >
                                   <CopyIcon className="w-3.5 h-3.5" />
-                                  <span className="hidden sm:inline text-[11px]">Duplicar</span>
+                                  <span className="hidden sm:inline text-[11px] font-semibold">Duplicar</span>
                                 </button>
                                 <button
                                   type="button"
@@ -1257,21 +1267,21 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                 <select
                                   value={copy.branch_id}
                                   onChange={(e) => handleUpdateCopy(copy.id, 'branch_id', e.target.value)}
-                                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+                                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:bg-white focus:ring-2 focus:ring-[#83B141]/20 focus:border-[#83B141]"
                                 >
                                   <optgroup label="Sedes Centrales (Campus Principal)">
                                     {branches.filter(b => b.type === 'internal').map((b) => (
-                                      <option key={b.id} value={b.id}>
-                                        {b.name} [{getBranchCodePrefix(b.name)}-]
-                                      </option>
-                                    ))}
+                                       <option key={b.id} value={b.id}>
+                                         {b.name} [{getBranchCodePrefix(b.name)}-]
+                                       </option>
+                                     ))}
                                   </optgroup>
                                   <optgroup label="Semilla Manglareña (Dotaciones Rurales)">
                                     {branches.filter(b => b.type === 'external_donation').map((b) => (
-                                      <option key={b.id} value={b.id}>
-                                        {b.name} [{getBranchCodePrefix(b.name)}-]
-                                      </option>
-                                    ))}
+                                       <option key={b.id} value={b.id}>
+                                         {b.name} [{getBranchCodePrefix(b.name)}-]
+                                       </option>
+                                     ))}
                                   </optgroup>
                                 </select>
                               </div>
@@ -1298,7 +1308,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                         className={`py-1.5 px-2 rounded-xl font-bold text-[11px] capitalize transition border cursor-pointer ${
                                           isSelected
                                             ? cond.key === 'bueno'
-                                              ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs'
+                                              ? 'bg-[#83B141] text-white border-[#83B141] shadow-2xs'
                                               : cond.key === 'regular'
                                               ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
                                               : 'bg-rose-700 text-white border-rose-700 shadow-2xs'
@@ -1322,7 +1332,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => handleRegenerateCode(copy.id)}
-                                    className="text-[10px] text-emerald-800 hover:text-emerald-950 font-semibold cursor-pointer"
+                                    className="text-[10px] text-[#83B141] hover:text-[#719b35] font-semibold cursor-pointer"
                                   >
                                     Regenerar
                                   </button>
@@ -1332,7 +1342,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                   value={copy.internal_code}
                                   onChange={(e) => handleUpdateCopy(copy.id, 'internal_code', e.target.value)}
                                   placeholder="MOS-PRI-863-XXXX"
-                                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs font-bold text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
+                                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs font-bold text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-[#83B141]/20 focus:border-[#83B141] transition"
                                 />
                               </div>
 
@@ -1346,7 +1356,7 @@ export const RegisterWorkModal: React.FC<RegisterWorkModalProps> = ({
                                   value={copy.notes}
                                   onChange={(e) => handleUpdateCopy(copy.id, 'notes', e.target.value)}
                                   placeholder="Ej: Estante A-2, Donación Familia Mendoza, Sala de lectura..."
-                                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
+                                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#83B141]/20 focus:border-[#83B141] transition"
                                 />
                               </div>
                             </div>
