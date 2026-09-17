@@ -7,28 +7,42 @@ import {
   Filter, 
   RefreshCw, 
   AlertCircle, 
-  Layers, 
-  Building2, 
-  GraduationCap,
   Sparkles,
-  Database,
   Plus,
   BookPlus,
   CheckCircle2,
   Printer,
   Trash2,
   Share2,
-  Globe
+  LayoutGrid,
+  List,
+  FileCode,
+  Info,
+  RotateCcw,
+  X
 } from 'lucide-react';
 import type { Work, Branch, Copy, WorkWithCopiesCount } from '../../types/database';
-import { supabase, isSupabaseConfigured, INITIAL_WORKS, INITIAL_BRANCHES, INITIAL_COPIES, getWorksWithInventory, getStoredBranches, getStoredCopies, clearAllPlatformData } from '../../lib/supabaseClient';
+import { 
+  supabase, 
+  isSupabaseConfigured, 
+  INITIAL_WORKS, 
+  INITIAL_BRANCHES, 
+  INITIAL_COPIES, 
+  CURATED_MOS_WORKS,
+  CURATED_MOS_COPIES,
+  loadCuratedCollection,
+  getWorksWithInventory, 
+  getStoredBranches, 
+  getStoredCopies, 
+  clearAllPlatformData 
+} from '../../lib/supabaseClient';
 import { BookCard } from './BookCard';
 import { DublinCoreModal } from './DublinCoreModal';
 import { Marc21Modal } from './Marc21Modal';
 import { RegisterWorkModal } from '../works/RegisterWorkModal';
 import { QuickAddCopyModal } from '../copies/QuickAddCopyModal';
 import { PrintSpineLabelsModal } from '../copies/PrintSpineLabelsModal';
-import { DEWEY_GROUPS, DEWEY_CLASSES } from '../../lib/dewey';
+import { DEWEY_GROUPS, getDeweyInfo } from '../../lib/dewey';
 
 interface BookCatalogProps {
   onSelectWorkForCopy?: (work: Work) => void;
@@ -42,9 +56,10 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDewey, setSelectedDewey] = useState<string>('all');
   const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'gallery' | 'table'>('gallery');
   const [activeModalWork, setActiveModalWork] = useState<WorkWithCopiesCount | null>(null);
   const [activeMarcWork, setActiveMarcWork] = useState<WorkWithCopiesCount | null>(null);
-  const [dataSource, setDataSource] = useState<'supabase' | 'local'>('local');
+  const [_dataSource, setDataSource] = useState<'supabase' | 'local'>('local');
 
   // Modals state
   const [isRegisterWorkModalOpen, setIsRegisterWorkModalOpen] = useState<boolean>(false);
@@ -61,11 +76,17 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
   };
 
   const handleClearAllData = () => {
-    if (window.confirm('¿Deseas vaciar todos los libros y ejemplares del inventario? Esta acción dejará la plataforma completamente limpia sin ningún registro.')) {
+    if (window.confirm('¿Deseas vaciar el inventario? Esta acción dejará el catálogo en blanco.')) {
       clearAllPlatformData();
       fetchWorksCatalog();
-      showToast('Inventario y plataforma limpiados exitosamente. No hay datos registrados.', 'info');
+      showToast('Inventario vaciado exitosamente.', 'info');
     }
+  };
+
+  const handleRestoreCurated = () => {
+    loadCuratedCollection();
+    fetchWorksCatalog();
+    showToast('Colección Fundamental de Miguel Otero Silva y Literatura Universal cargada exitosamente.', 'success');
   };
 
   // Fetch catalog data from Supabase or fallback store
@@ -75,35 +96,18 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
 
     try {
       if (isSupabaseConfigured && supabase) {
-        // Fetch from live Supabase instance with joined copies and branches
         const { data: worksData, error: worksError } = await supabase
           .from('works')
           .select('*')
           .order('title', { ascending: true });
 
-        if (worksError) {
-          throw new Error(`Error en Supabase works: ${worksError.message}`);
-        }
+        if (worksError) throw new Error(worksError.message);
 
-        const { data: branchesData, error: branchesError } = await supabase
-          .from('branches')
-          .select('*');
+        const { data: branchesData, error: branchesError } = await supabase.from('branches').select('*');
+        if (branchesError) throw new Error(branchesError.message);
 
-        if (branchesError) {
-          throw new Error(`Error en Supabase branches: ${branchesError.message}`);
-        }
-
-        const { data: copiesData, error: copiesError } = await supabase
-          .from('copies')
-          .select('*');
-
-        if (copiesError) {
-          throw new Error(`Error en Supabase copies: ${copiesError.message}`);
-        }
-
-        if (typeof window !== 'undefined' && copiesData) {
-          localStorage.setItem('manglar_copies', JSON.stringify(copiesData));
-        }
+        const { data: copiesData, error: copiesError } = await supabase.from('copies').select('*');
+        if (copiesError) throw new Error(copiesError.message);
 
         const enriched = getWorksWithInventory(
           (worksData as Work[]) || [],
@@ -114,12 +118,11 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         setWorks(enriched);
         setDataSource('supabase');
       } else {
-        // Read from local sync store
         const savedCopiesStr = localStorage.getItem('manglar_copies');
-        const currentCopies: Copy[] = savedCopiesStr ? JSON.parse(savedCopiesStr) : INITIAL_COPIES;
+        const currentCopies: Copy[] = savedCopiesStr ? JSON.parse(savedCopiesStr) : CURATED_MOS_COPIES;
 
         const savedWorksStr = localStorage.getItem('manglar_works');
-        const currentWorks: Work[] = savedWorksStr ? JSON.parse(savedWorksStr) : INITIAL_WORKS;
+        const currentWorks: Work[] = savedWorksStr ? JSON.parse(savedWorksStr) : CURATED_MOS_WORKS;
 
         const currentBranches: Branch[] = getStoredBranches();
 
@@ -128,11 +131,9 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         setDataSource('local');
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error desconocido al cargar el catálogo bibliográfico';
+      const message = err instanceof Error ? err.message : 'Error al cargar catálogo';
       setError(message);
-      
-      // Graceful fallback to initial seed
-      const enriched = getWorksWithInventory(INITIAL_WORKS, getStoredBranches(), INITIAL_COPIES);
+      const enriched = getWorksWithInventory(CURATED_MOS_WORKS, getStoredBranches(), CURATED_MOS_COPIES);
       setWorks(enriched);
       setDataSource('local');
     } finally {
@@ -147,7 +148,6 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
   // Filtered works computed efficiently
   const filteredWorks = useMemo(() => {
     return works.filter((work) => {
-      // 1. Text search (Title, Author, ISBN, Dewey Code, Subject keywords)
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !query ||
@@ -159,7 +159,6 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
 
       if (!matchesSearch) return false;
 
-      // 2. Dewey Category Filter
       if (selectedDewey !== 'all') {
         const rawDewey = (work.dewey_code || '').trim();
         const numOnly = rawDewey.split('.')[0].replace(/[^0-9]/g, '');
@@ -170,12 +169,10 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
           const targetGroup = selectedDewey.replace('group_', '');
           if (hundredGroup !== targetGroup) return false;
         } else if (selectedDewey.endsWith('00')) {
-          // If a broad class is selected (e.g. 800, 500, 000)
           if (hundredGroup !== selectedDewey && !rawDewey.startsWith(selectedDewey.charAt(0))) {
             return false;
           }
         } else {
-          // Specific 3-digit division (e.g. 860, 370, 510, 810, etc.)
           const divisionPrefix = selectedDewey.slice(0, 2);
           const matchesPrefix = padded.startsWith(divisionPrefix) || rawDewey.startsWith(divisionPrefix);
           const matchesExact = padded === selectedDewey || rawDewey === selectedDewey || rawDewey.startsWith(selectedDewey);
@@ -183,19 +180,13 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         }
       }
 
-      // 3. Branch filter
       if (selectedBranchFilter === 'all') {
         return true;
       } else if (selectedBranchFilter === 'central') {
-        return work.copies_by_branch.some(
-          (b) => b.branch_type === 'internal' && b.count > 0
-        );
+        return work.copies_by_branch.some((b) => b.branch_type === 'internal' && b.count > 0);
       } else if (selectedBranchFilter === 'semilla') {
-        return work.copies_by_branch.some(
-          (b) => b.branch_type === 'external_donation' && b.count > 0
-        );
+        return work.copies_by_branch.some((b) => b.branch_type === 'external_donation' && b.count > 0);
       } else {
-        // Specific branch matching ID or Name fragment
         return work.copies_by_branch.some(
           (b) => (b.branch_id === selectedBranchFilter || b.branch_name.toLowerCase().includes(selectedBranchFilter.toLowerCase())) && b.count > 0
         );
@@ -203,7 +194,6 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
     });
   }, [works, searchQuery, selectedDewey, selectedBranchFilter]);
 
-  // Total summary counts
   const totalCopiesCount = useMemo(() => {
     return works.reduce((sum, w) => sum + w.total_copies, 0);
   }, [works]);
@@ -232,102 +222,99 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
 
   return (
     <div id="book-catalog-container" className="space-y-6">
-      {/* Top Banner / Metrics bar */}
-      <div className="bg-white rounded-2xl border border-[#D3D2D3] p-5 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-neutral-900 tracking-tight">Catálogo Bibliográfico Universal</h2>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#83B141]/15 text-[#2c4210]">
-                <Sparkles className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={1.75} />
-                {works.length} Obras Catalogadas
-              </span>
-            </div>
-            <p className="text-xs text-neutral-500 mt-1">
-              Colegio Integral El Manglar • Clasificación Decimal Dewey & Formato Dublin Core
-            </p>
+      {/* 1. Header de Archivo Integrado (Sin cajas burbuja flotantes) */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[#83B141]">
+              Fondo Bibliográfico & Archivo Patrimonial
+            </span>
+            <span className="text-neutral-300">•</span>
+            <span className="text-xs font-semibold text-neutral-500">
+              Colegio Integral El Manglar
+            </span>
           </div>
 
-          {/* Quick Metrics & Actions */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="px-3 py-1.5 rounded-xl bg-[#F8F9F8] border border-[#D3D2D3] text-right">
-              <span className="text-[10px] uppercase font-bold text-neutral-400 block tracking-wider">Total</span>
-              <span className="text-sm font-bold text-neutral-800">{totalCopiesCount} uds.</span>
-            </div>
-            <div className="px-3 py-1.5 rounded-xl bg-[#f2f7ec] border border-[#83B141]/30 text-right">
-              <span className="text-[10px] uppercase font-bold text-[#83B141] block tracking-wider">Sede Central</span>
-              <span className="text-sm font-bold text-neutral-900">{totalCentralCount} uds.</span>
-            </div>
-            <div className="px-3 py-1.5 rounded-xl bg-[#fefee8] border border-[#EFDA18]/50 text-right">
-              <span className="text-[10px] uppercase font-bold text-[#4e4404] block tracking-wider">Dotación Rural</span>
-              <span className="text-sm font-bold text-neutral-900">{totalDonationsCount} uds.</span>
-            </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
+            Catálogo de Colecciones
+          </h2>
 
-            <button
-              id="refresh-catalog-btn"
-              onClick={fetchWorksCatalog}
-              disabled={loading}
-              title="Refrescar catálogo"
-              className="p-2.5 rounded-xl border border-[#D3D2D3] hover:bg-[#F8F9F8] text-neutral-600 transition disabled:opacity-50 cursor-pointer"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#83B141]' : ''}`} strokeWidth={1.5} />
-            </button>
-
-            <button
-              id="open-public-link-btn"
-              onClick={() => {
-                const publicUrl = `${window.location.origin}${window.location.pathname}?mode=public`;
-                navigator.clipboard.writeText(publicUrl);
-                showToast('¡Enlace del Catálogo Público copiado al portapapeles para compartir con alumnos y familias!', 'success');
-              }}
-              className="px-3 py-2 bg-[#f2f7ec] hover:bg-[#83B141]/20 border border-[#83B141]/40 text-[#2c4210] rounded-xl text-xs font-bold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
-              title="Copiar enlace del catálogo público para compartir con estudiantes y padres"
-            >
-              <Share2 className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={1.75} />
-              <span className="hidden sm:inline">Link Público Alumnos</span>
-            </button>
-
-            <button
-              id="open-print-spines-btn"
-              onClick={() => {
-                setPrintModalWork(null);
-                setPrintModalCopies(undefined);
-                setPrintModalTitle(undefined);
-                setIsPrintSpineModalOpen(true);
-              }}
-              className="px-3 py-2 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-700 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
-              title="Imprimir o descargar tejuelos (25x38 mm) en lote"
-            >
-              <Printer className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={1.75} />
-              <span className="hidden sm:inline">Imprimir Tejuelos</span>
-            </button>
-
-            {works.length > 0 && (
-              <button
-                id="clear-all-data-btn"
-                onClick={handleClearAllData}
-                className="p-2 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                title="Vaciar inventario y limpiar todos los datos"
-              >
-                <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-              </button>
-            )}
-
-            <button
-              id="open-register-work-btn"
-              onClick={() => setIsRegisterWorkModalOpen(true)}
-              className="px-3.5 py-2 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <BookPlus className="w-4 h-4 text-[#EFDA18]" strokeWidth={1.75} />
-              <span>+ Catalogar Obra</span>
-            </button>
+          <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-neutral-600">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-neutral-900">
+              <span className="w-2 h-2 rounded-full bg-[#83B141]" />
+              {works.length} Obras Catalogadas ({totalCopiesCount} Ejemplares)
+            </span>
+            <span className="text-neutral-300">|</span>
+            <span>Campus Central: <strong className="text-neutral-900">{totalCentralCount}</strong></span>
+            <span className="text-neutral-300">|</span>
+            <span>Semilla Manglareña: <strong className="text-[#83B141]">{totalDonationsCount}</strong></span>
           </div>
         </div>
 
-        {/* Search and Filters Control Row */}
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-12 gap-3 pt-4 border-t border-slate-100">
-          {/* Search bar */}
-          <div className="sm:col-span-6 relative">
+        {/* Acciones Curatoriales */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            onClick={handleRestoreCurated}
+            title="Cargar o restablecer obras fundamentales de Miguel Otero Silva y clásicos"
+            className="px-3 py-2 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-700 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={1.75} />
+            <span className="hidden sm:inline">Colección Curada MOS</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setPrintModalWork(null);
+              setPrintModalCopies(undefined);
+              setPrintModalTitle(undefined);
+              setIsPrintSpineModalOpen(true);
+            }}
+            className="px-3 py-2 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-700 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+            title="Imprimir o exportar tejuelos catalográficos (25x38 mm)"
+          >
+            <Printer className="w-3.5 h-3.5 text-neutral-600" strokeWidth={1.5} />
+            <span className="hidden sm:inline">Tejuelos</span>
+          </button>
+
+          <button
+            onClick={() => {
+              const publicUrl = `${window.location.origin}${window.location.pathname}?mode=public`;
+              navigator.clipboard.writeText(publicUrl);
+              showToast('Enlace de consulta pública OPAC copiado al portapapeles.', 'success');
+            }}
+            className="px-3 py-2 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-700 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+            title="Copiar enlace para estudiantes y familias"
+          >
+            <Share2 className="w-3.5 h-3.5 text-neutral-600" strokeWidth={1.5} />
+            <span className="hidden sm:inline">OPAC Alumnos</span>
+          </button>
+
+          {works.length > 0 && (
+            <button
+              onClick={handleClearAllData}
+              className="p-2 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 transition cursor-pointer"
+              title="Vaciar inventario"
+            >
+              <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+          )}
+
+          <button
+            id="open-register-work-btn"
+            onClick={() => setIsRegisterWorkModalOpen(true)}
+            className="px-4 py-2 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-2 cursor-pointer"
+          >
+            <BookPlus className="w-4 h-4" strokeWidth={2} />
+            <span>+ Catalogar Obra</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Barra Curatorial de Búsqueda y Filtros Unificada */}
+      <div className="bg-white border-y border-[#D3D2D3]/70 py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 space-y-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Campo de Búsqueda */}
+          <div className="relative flex-1 max-w-xl">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.5} />
             <input
               id="catalog-search-input"
@@ -335,122 +322,121 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por título, autor (e.g. Miguel Otero Silva), ISBN o CDD..."
-              className="w-full pl-9 pr-4 py-2 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs sm:text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#83B141]/30 focus:border-[#83B141] transition"
+              className="w-full pl-9 pr-8 py-2 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs sm:text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#83B141]/30 focus:border-[#83B141] transition"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 rounded cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Dewey Category Selector */}
-          <div className="sm:col-span-3">
-            <select
-              id="dewey-filter-select"
-              value={selectedDewey}
-              onChange={(e) => setSelectedDewey(e.target.value)}
-              className="w-full px-3 py-2 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs sm:text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#83B141]/30 focus:border-[#83B141] transition"
-            >
-              <option value="all">Todas las clases Dewey (000 - 990)</option>
-              {DEWEY_GROUPS.map((group) => (
-                <optgroup key={group.code} label={group.name}>
-                  <option value={`group_${group.code}`}>
-                    Toda la clase {group.code} — {group.name.replace(/^[0-9]+\s*/, '')}
-                  </option>
-                  {group.divisions.map((div) => (
-                    <option key={div.code} value={div.code}>
-                      CDD {div.code} — {div.name.replace(/^[0-9]+\s*/, '')}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-
-          {/* Branch filter */}
-          <div className="sm:col-span-3">
+          {/* Filtro de Sedes y Alternador de Vistas */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Filtro de Sedes */}
             <select
               id="branch-filter-select"
               value={selectedBranchFilter}
               onChange={(e) => setSelectedBranchFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs sm:text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#83B141]/30 focus:border-[#83B141] transition"
+              className="px-3 py-2 bg-[#F8F9F8] border border-[#D3D2D3] rounded-xl text-xs font-semibold text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#83B141]/30 focus:border-[#83B141] transition cursor-pointer"
             >
               <option value="all">Todas las sedes (6)</option>
-              <optgroup label="Sedes Centrales (Campus)">
-                <option value="primaria">Biblioteca Miguel Otero Silva - Primaria</option>
-                <option value="bachillerato">Biblioteca Miguel Otero Silva - Bachillerato</option>
-              </optgroup>
-              <optgroup label="Semilla Manglareña (Dotaciones Rurales)">
-                <option value="guárico">Semilla Manglareña - Guárico</option>
-                <option value="caripe">Semilla Manglareña - Caripe</option>
-                <option value="merida">Semilla Manglareña - Mérida</option>
-                <option value="delta">Semilla Manglareña - Delta</option>
-              </optgroup>
-              <optgroup label="Filtros Generales">
-                <option value="central">Todas las Sedes Centrales</option>
-                <option value="semilla">Todos los núcleos Semilla Manglareña</option>
-              </optgroup>
+              <option value="central">Campus Central (Primaria/Bachillerato)</option>
+              <option value="semilla">Semilla Manglareña (Dotación Rural)</option>
             </select>
+
+            {/* Alternador de Vista (Galería vs Tabla) */}
+            <div className="flex bg-[#F8F9F8] p-1 rounded-xl border border-[#D3D2D3]">
+              <button
+                onClick={() => setViewMode('gallery')}
+                className={`p-1.5 rounded-lg transition cursor-pointer ${
+                  viewMode === 'gallery'
+                    ? 'bg-white text-neutral-950 shadow-2xs'
+                    : 'text-neutral-400 hover:text-neutral-800'
+                }`}
+                title="Vista de Galería de Portadas"
+              >
+                <LayoutGrid className="w-4 h-4" strokeWidth={1.75} />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded-lg transition cursor-pointer ${
+                  viewMode === 'table'
+                    ? 'bg-white text-neutral-950 shadow-2xs'
+                    : 'text-neutral-400 hover:text-neutral-800'
+                }`}
+                title="Vista de Fichero de Archivo (Tabla)"
+              >
+                <List className="w-4 h-4" strokeWidth={1.75} />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Active Dewey Pills with Custom Lateral Scrollbar */}
-        <div className="mt-3 flex items-center gap-1.5 custom-scrollbar-x pb-2 text-xs">
+        {/* Barra de Filtros Dewey con Scroll Lateral Fino */}
+        <div className="flex items-center gap-1.5 custom-scrollbar-x pb-1 text-xs">
           <span className="text-neutral-400 text-[11px] font-medium mr-1 shrink-0 flex items-center gap-1">
-            <Filter className="w-3 h-3" strokeWidth={1.5} /> Clases CDD:
+            <Filter className="w-3 h-3 text-[#83B141]" strokeWidth={1.5} /> Clases CDD:
           </span>
           <button
             onClick={() => setSelectedDewey('all')}
-            className={`px-3 py-1 rounded-xl font-semibold transition shrink-0 cursor-pointer text-xs ${
+            className={`px-3 py-1 rounded-lg font-semibold transition shrink-0 cursor-pointer text-xs ${
               selectedDewey === 'all'
                 ? 'bg-[#83B141] text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border border-[#D3D2D3]'
+                : 'bg-white text-neutral-600 hover:bg-neutral-100 border border-[#D3D2D3]'
             }`}
           >
             Todas
           </button>
           <button
             onClick={() => setSelectedDewey('group_800')}
-            className={`px-3 py-1 rounded-xl font-semibold transition shrink-0 cursor-pointer text-xs ${
+            className={`px-3 py-1 rounded-lg font-semibold transition shrink-0 cursor-pointer text-xs ${
               selectedDewey === 'group_800' || selectedDewey === '800'
                 ? 'bg-[#83B141] text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-[#D3D2D3]'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-[#D3D2D3]'
             }`}
           >
             800 - Literatura
           </button>
           <button
             onClick={() => setSelectedDewey('860')}
-            className={`px-3 py-1 rounded-xl font-semibold transition shrink-0 cursor-pointer text-xs ${
+            className={`px-3 py-1 rounded-lg font-semibold transition shrink-0 cursor-pointer text-xs ${
               selectedDewey === '860'
                 ? 'bg-[#83B141] text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-[#D3D2D3]'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-[#D3D2D3]'
             }`}
           >
             860 - Literatura Hispanoamericana (Otero Silva)
           </button>
           <button
             onClick={() => setSelectedDewey('group_500')}
-            className={`px-3 py-1 rounded-xl font-semibold transition shrink-0 cursor-pointer text-xs ${
+            className={`px-3 py-1 rounded-lg font-semibold transition shrink-0 cursor-pointer text-xs ${
               selectedDewey === 'group_500' || selectedDewey === '500'
                 ? 'bg-[#83B141] text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-[#D3D2D3]'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-[#D3D2D3]'
             }`}
           >
             500 - Ciencias Puras
           </button>
           <button
             onClick={() => setSelectedDewey('group_300')}
-            className={`px-3 py-1 rounded-xl font-semibold transition shrink-0 cursor-pointer text-xs ${
+            className={`px-3 py-1 rounded-lg font-semibold transition shrink-0 cursor-pointer text-xs ${
               selectedDewey === 'group_300' || selectedDewey === '300'
                 ? 'bg-[#83B141] text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-[#D3D2D3]'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-[#D3D2D3]'
             }`}
           >
             300 - Ciencias Sociales
           </button>
           <button
             onClick={() => setSelectedDewey('group_900')}
-            className={`px-3 py-1 rounded-xl font-semibold transition shrink-0 cursor-pointer text-xs ${
+            className={`px-3 py-1 rounded-lg font-semibold transition shrink-0 cursor-pointer text-xs ${
               selectedDewey === 'group_900' || selectedDewey === '900'
                 ? 'bg-[#83B141] text-white shadow-xs'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border border-[#D3D2D3]'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-[#D3D2D3]'
             }`}
           >
             900 - Historia & Geografía
@@ -458,130 +444,110 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         </div>
       </div>
 
-      {/* Toast Notification */}
+      {/* Notificación Toast */}
       {toastNotification && (
-        <div className="p-4 rounded-2xl bg-emerald-900 text-white shadow-lg flex items-center justify-between gap-3 animate-in slide-in-from-top-2">
+        <div className="p-4 rounded-xl bg-neutral-900 text-white shadow-lg flex items-center justify-between gap-3 animate-in slide-in-from-top-2">
           <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#83B141] shrink-0" />
             <span>{toastNotification.message}</span>
           </div>
           <button
             onClick={() => setToastNotification(null)}
-            className="text-slate-300 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-emerald-800 transition cursor-pointer"
+            className="text-neutral-400 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-neutral-800 transition cursor-pointer"
           >
             Cerrar
           </button>
         </div>
       )}
 
-      {/* Database Warning / Status Notice */}
-      {error && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
-          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <span className="font-bold">Aviso de sincronización:</span> {error}
-            <p className="text-amber-700 text-[11px] mt-0.5">
-              Se están mostrando los registros de respaldo de la Biblioteca Miguel Otero Silva.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Loading Skeletons */}
+      {/* Skeletons de Carga */}
       {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4 animate-pulse">
-              <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+            <div key={i} className="bg-white rounded-xl border border-[#D3D2D3] p-4 space-y-4 animate-pulse">
+              <div className="h-4 bg-neutral-200 rounded w-1/3"></div>
               <div className="flex gap-3">
-                <div className="w-20 h-28 bg-slate-200 rounded-lg shrink-0"></div>
+                <div className="w-24 h-36 bg-neutral-200 rounded shrink-0"></div>
                 <div className="space-y-2 flex-1">
-                  <div className="h-4 bg-slate-200 rounded w-full"></div>
-                  <div className="h-3 bg-slate-200 rounded w-2/3"></div>
-                  <div className="h-3 bg-slate-100 rounded w-4/5"></div>
+                  <div className="h-4 bg-neutral-200 rounded w-full"></div>
+                  <div className="h-3 bg-neutral-200 rounded w-2/3"></div>
+                  <div className="h-3 bg-neutral-100 rounded w-4/5"></div>
                 </div>
               </div>
-              <div className="h-14 bg-slate-100 rounded-xl"></div>
-              <div className="h-8 bg-slate-200 rounded-xl"></div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty State con botón para restaurar la colección curada */}
       {!loading && works.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-lg mx-auto space-y-4 shadow-sm">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-700 mx-auto flex items-center justify-center border border-emerald-100">
-            <BookOpen className="w-8 h-8" />
+        <div className="bg-white rounded-xl border border-[#D3D2D3] p-12 text-center max-w-lg mx-auto space-y-4 shadow-2xs">
+          <div className="w-14 h-14 rounded-2xl bg-[#f2f7ec] text-[#83B141] mx-auto flex items-center justify-center border border-[#83B141]/30">
+            <BookOpen className="w-7 h-7" strokeWidth={1.5} />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Inventario y Catálogo Limpio</h3>
-            <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto">
-              No hay obras ni ejemplares en la plataforma actualmente. Puedes iniciar catalogando obras maestras o títulos escolares con clasificación Dewey y formato Dublin Core.
+            <h3 className="text-lg font-bold text-neutral-900">Catálogo Listo para Cargar</h3>
+            <p className="text-xs text-neutral-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
+              El fondo bibliográfico está disponible. Puedes iniciar catalogando un libro por ISBN o cargar de inmediato la Colección Fundamental Miguel Otero Silva y Clásicos.
             </p>
           </div>
-          <div className="pt-3">
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={handleRestoreCurated}
+              className="px-4 py-2 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" strokeWidth={1.75} />
+              <span>Cargar Colección Fundamental MOS</span>
+            </button>
             <button
               onClick={() => setIsRegisterWorkModalOpen(true)}
-              className="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs sm:text-sm font-bold transition inline-flex items-center gap-2 shadow-md shadow-emerald-950/15 cursor-pointer"
+              className="px-4 py-2 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >
-              <BookPlus className="w-4 h-4 text-emerald-300" />
-              <span>+ Catalogar Primera Obra</span>
+              <BookPlus className="w-4 h-4" strokeWidth={1.75} />
+              <span>+ Catalogar Manualmente</span>
             </button>
           </div>
         </div>
       )}
 
+      {/* No Results Filter State */}
       {!loading && works.length > 0 && filteredWorks.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-md mx-auto space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-700 mx-auto flex items-center justify-center border border-emerald-100">
-            <BookOpen className="w-7 h-7" />
+        <div className="bg-white rounded-xl border border-[#D3D2D3] p-10 text-center max-w-md mx-auto space-y-3">
+          <div className="w-12 h-12 rounded-xl bg-neutral-100 text-neutral-500 mx-auto flex items-center justify-center">
+            <Search className="w-6 h-6" strokeWidth={1.5} />
           </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-800">No se encontraron obras coincidentes</h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Intenta ajustar los filtros de búsqueda o cataloga una nueva obra en el sistema universal.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedDewey('all');
-                setSelectedBranchFilter('all');
-              }}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer"
-            >
-              Restablecer Filtros
-            </button>
-            <button
-              onClick={() => setIsRegisterWorkModalOpen(true)}
-              className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-            >
-              <BookPlus className="w-3.5 h-3.5" />
-              + Catalogar Obra
-            </button>
-          </div>
+          <h3 className="text-base font-bold text-neutral-900">No se encontraron obras coincidentes</h3>
+          <p className="text-xs text-neutral-500">
+            Intenta ajustar los términos de búsqueda o los filtros de clases Dewey seleccionados.
+          </p>
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedDewey('all');
+              setSelectedBranchFilter('all');
+            }}
+            className="px-4 py-2 bg-white hover:bg-neutral-50 text-neutral-700 border border-[#D3D2D3] rounded-xl text-xs font-semibold transition cursor-pointer"
+          >
+            Limpiar Filtros
+          </button>
         </div>
       )}
 
-      {/* Grid of Books */}
-      {!loading && filteredWorks.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      {/* 3. VISTA A: Galería Visual de Portadas */}
+      {!loading && filteredWorks.length > 0 && viewMode === 'gallery' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filteredWorks.map((work) => (
             <BookCard
               key={work.id}
               work={work}
-              onOpenDetails={(selected) => setActiveModalWork(selected)}
-              onOpenMarc21={(selected) => setActiveMarcWork(selected)}
-              onQuickRegisterCopy={(selected) => onSelectWorkForCopy && onSelectWorkForCopy(selected)}
-              onAddCopy={(selected) => setQuickAddCopyWork(selected)}
-              onPrintSpineLabels={(selected) => {
-                const allCopies = getStoredCopies();
-                const workCopies = allCopies.filter(c => c.work_id === selected.id);
-                setPrintModalWork(selected);
-                setPrintModalCopies(workCopies);
-                setPrintModalTitle(selected.title);
+              onOpenDetails={(w) => setActiveModalWork(w)}
+              onOpenMarc21={(w) => setActiveMarcWork(w)}
+              onQuickRegisterCopy={(w) => setQuickAddCopyWork(w)}
+              onAddCopy={onSelectWorkForCopy}
+              onPrintSpineLabels={(w) => {
+                setPrintModalWork(w);
+                setPrintModalCopies(undefined);
+                setPrintModalTitle(w.title);
                 setIsPrintSpineModalOpen(true);
               }}
             />
@@ -589,13 +555,146 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         </div>
       )}
 
-      {/* Dublin Core Metadata Inspector Modal */}
-      <DublinCoreModal
-        work={activeModalWork}
-        onClose={() => setActiveModalWork(null)}
-      />
+      {/* 4. VISTA B: Fichero de Archivo (Tabla Tabular de Alta Densidad para Bibliotecarios) */}
+      {!loading && filteredWorks.length > 0 && viewMode === 'table' && (
+        <div className="bg-white rounded-xl border border-[#D3D2D3] overflow-hidden shadow-2xs">
+          <div className="custom-scrollbar-x overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F8F9F8] border-b border-[#D3D2D3] text-neutral-600 font-bold uppercase tracking-wider text-[10.5px]">
+                <tr>
+                  <th className="py-3 px-4">Portada</th>
+                  <th className="py-3 px-4">Título & Autor</th>
+                  <th className="py-3 px-4">Clasificación CDD</th>
+                  <th className="py-3 px-4">ISBN</th>
+                  <th className="py-3 px-4 text-center">Campus Central</th>
+                  <th className="py-3 px-4 text-center">Dotación Rural</th>
+                  <th className="py-3 px-4 text-center">Total</th>
+                  <th className="py-3 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#D3D2D3]/60">
+                {filteredWorks.map((work) => {
+                  const deweyInfo = getDeweyInfo(work.dewey_code);
+                  const central = (work.copies_by_branch || [])
+                    .filter((b) => b.branch_type === 'internal')
+                    .reduce((acc, curr) => acc + curr.count, 0);
+                  const rural = (work.copies_by_branch || [])
+                    .filter((b) => b.branch_type === 'external_donation')
+                    .reduce((acc, curr) => acc + curr.count, 0);
+                  const total = work.total_copies;
 
-      {/* Koha MARC21 Standard Inspector Modal */}
+                  return (
+                    <tr key={work.id} className="hover:bg-[#F8F9F8] transition-colors">
+                      {/* Portada */}
+                      <td className="py-2.5 px-4">
+                        <div className="w-10 h-14 rounded bg-neutral-100 overflow-hidden border border-neutral-200 shrink-0">
+                          <img
+                            src={work.cover_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=300'}
+                            alt={work.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </td>
+
+                      {/* Título & Autor */}
+                      <td className="py-2.5 px-4 max-w-xs">
+                        <div className="font-bold text-neutral-900 truncate" title={work.title}>
+                          {work.title}
+                        </div>
+                        <div className="text-neutral-500 font-medium truncate">
+                          {work.author} ({work.publication_year || 'S/F'})
+                        </div>
+                      </td>
+
+                      {/* CDD */}
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 font-mono font-bold px-2 py-0.5 rounded bg-neutral-100 border border-[#D3D2D3] text-neutral-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#83B141]"></span>
+                          {work.dewey_code}
+                        </span>
+                        <div className="text-[10px] text-neutral-400 truncate max-w-[120px] mt-0.5">
+                          {deweyInfo.name.replace(/^[0-9]+\s*/, '')}
+                        </div>
+                      </td>
+
+                      {/* ISBN */}
+                      <td className="py-2.5 px-4 font-mono text-[11px] text-neutral-500 whitespace-nowrap">
+                        {work.isbn || '—'}
+                      </td>
+
+                      {/* Campus Central */}
+                      <td className="py-2.5 px-4 text-center font-bold text-neutral-800">
+                        {central}
+                      </td>
+
+                      {/* Dotación Rural */}
+                      <td className="py-2.5 px-4 text-center font-bold text-[#83B141]">
+                        {rural}
+                      </td>
+
+                      {/* Total */}
+                      <td className="py-2.5 px-4 text-center font-black text-neutral-900">
+                        {total}
+                      </td>
+
+                      {/* Acciones */}
+                      <td className="py-2.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setActiveModalWork(work)}
+                            title="Ficha Dublin Core"
+                            className="p-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition cursor-pointer"
+                          >
+                            <Info className="w-3.5 h-3.5" strokeWidth={1.5} />
+                          </button>
+
+                          <button
+                            onClick={() => setActiveMarcWork(work)}
+                            title="Ver MARC21"
+                            className="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-[#83B141] transition cursor-pointer"
+                          >
+                            <FileCode className="w-3.5 h-3.5" strokeWidth={1.75} />
+                          </button>
+
+                          <button
+                            onClick={() => setQuickAddCopyWork(work)}
+                            title="Añadir Ejemplar"
+                            className="p-1.5 rounded-lg bg-[#f2f7ec] hover:bg-[#83B141]/20 text-[#2c4210] border border-[#83B141]/30 transition cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" strokeWidth={2} />
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setPrintModalWork(work);
+                              setPrintModalCopies(undefined);
+                              setPrintModalTitle(work.title);
+                              setIsPrintSpineModalOpen(true);
+                            }}
+                            title="Imprimir Tejuelo"
+                            className="p-1.5 rounded-lg bg-white hover:bg-neutral-100 border border-[#D3D2D3] text-neutral-700 transition cursor-pointer"
+                          >
+                            <Printer className="w-3.5 h-3.5" strokeWidth={1.5} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modales */}
+      {activeModalWork && (
+        <DublinCoreModal
+          work={activeModalWork}
+          onClose={() => setActiveModalWork(null)}
+        />
+      )}
+
       {activeMarcWork && (
         <Marc21Modal
           work={activeMarcWork}
@@ -603,42 +702,38 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         />
       )}
 
-      {/* Bulk / Single Spine Labels Modal */}
-      <PrintSpineLabelsModal
-        isOpen={isPrintSpineModalOpen}
-        onClose={() => {
-          setIsPrintSpineModalOpen(false);
-          setPrintModalWork(null);
-          setPrintModalCopies(undefined);
-          setPrintModalTitle(undefined);
-        }}
-        selectedWork={printModalWork}
-        initialCopies={printModalCopies}
-        singleWorkTitle={printModalTitle}
-      />
+      {isRegisterWorkModalOpen && (
+        <RegisterWorkModal
+          isOpen={isRegisterWorkModalOpen}
+          onClose={() => setIsRegisterWorkModalOpen(false)}
+          onWorkCreated={(_newWork) => {
+            fetchWorksCatalog();
+            showToast('Nueva obra catalogada exitosamente en el acervo universal.', 'success');
+          }}
+        />
+      )}
 
-      {/* Register Work in Universal Catalog Modal */}
-      <RegisterWorkModal
-        isOpen={isRegisterWorkModalOpen}
-        onClose={() => setIsRegisterWorkModalOpen(false)}
-        onWorkCreated={(newWork, copiesCount) => {
-          fetchWorksCatalog();
-          showToast(
-            `Obra "${newWork.title}" catalogada exitosamente con ${copiesCount} ${copiesCount === 1 ? 'ejemplar inicial' : 'ejemplares iniciales'}.`
-          );
-        }}
-      />
+      {quickAddCopyWork && (
+        <QuickAddCopyModal
+          isOpen={Boolean(quickAddCopyWork)}
+          work={quickAddCopyWork}
+          onClose={() => setQuickAddCopyWork(null)}
+          onCopyAdded={(_newCopy) => {
+            fetchWorksCatalog();
+            showToast('Ejemplar físico registrado exitosamente con marbete.', 'success');
+          }}
+        />
+      )}
 
-      {/* Quick Add Copy Modal */}
-      <QuickAddCopyModal
-        work={quickAddCopyWork}
-        isOpen={Boolean(quickAddCopyWork)}
-        onClose={() => setQuickAddCopyWork(null)}
-        onCopyAdded={(newCopy) => {
-          fetchWorksCatalog();
-          showToast(`Nuevo ejemplar ${newCopy.internal_code} agregado al inventario con éxito.`);
-        }}
-      />
+      {isPrintSpineModalOpen && (
+        <PrintSpineLabelsModal
+          isOpen={isPrintSpineModalOpen}
+          onClose={() => setIsPrintSpineModalOpen(false)}
+          selectedWork={printModalWork || undefined}
+          initialCopies={printModalCopies}
+          singleWorkTitle={printModalTitle}
+        />
+      )}
     </div>
   );
 };

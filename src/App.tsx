@@ -116,8 +116,8 @@ export default function App() {
         />
 
         {/* Independent Scrollable Content Area */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto space-y-6 pb-12">
+        <main className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6 lg:px-8 bg-[#F9FAF9]">
+          <div className="w-full space-y-6 pb-12">
             {activeTab === 'catalog' && (
               <BookCatalog
                 onSelectWorkForCopy={handleSelectWorkForCopy}

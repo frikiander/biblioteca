@@ -308,13 +308,269 @@ export function generateMarbeteCode(
   return `${prefix}-${deweyPrefix}-${cutter}-${seq}`;
 }
 
-// Clean any legacy mock data on startup so inventory starts completely empty
-if (typeof window !== 'undefined') {
-  if (!localStorage.getItem('manglar_inventory_cleared_v5')) {
-    localStorage.setItem('manglar_works', JSON.stringify([]));
-    localStorage.setItem('manglar_copies', JSON.stringify([]));
+// Curated Master Collection for Biblioteca Miguel Otero Silva - Colegio Integral El Manglar
+export const CURATED_MOS_WORKS: Work[] = [
+  {
+    id: '10000000-0000-4000-a000-000000000001',
+    title: 'Casas Muertas',
+    author: 'Miguel Otero Silva',
+    isbn: '978-980-01-0001-1',
+    dewey_code: '863.64',
+    description: 'Novela cumbre de la narrativa venezolana que retrata la dolorosa agonía de Ortiz, pueblo llanero devastado por las fiebres palúdicas y la diáspora hacia los campos petroleros.',
+    cover_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600',
+    subjects: ['Literatura Venezolana', 'Realismo Social', 'Ortiz', 'Colección Fundamental MOS'],
+    publication_year: 1955,
+    publisher: 'Editorial Losada / Biblioteca Ayacucho',
+  },
+  {
+    id: '10000000-0000-4000-a000-000000000002',
+    title: 'Oficina N° 1',
+    author: 'Miguel Otero Silva',
+    isbn: '978-980-01-0002-8',
+    dewey_code: '863.64',
+    description: 'Continuación magistral de Casas Muertas que narra el nacimiento vertiginoso de El Tigre al brotar el primer pozo petrolero y la transformación de la Venezuela rural en petrolera.',
+    cover_url: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=600',
+    subjects: ['Literatura Venezolana', 'Petróleo', 'El Tigre', 'Transformación Social'],
+    publication_year: 1961,
+    publisher: 'Editorial Losada',
+  },
+  {
+    id: '10000000-0000-4000-a000-000000000003',
+    title: 'Doña Bárbara',
+    author: 'Rómulo Gallegos',
+    isbn: '978-980-01-0003-5',
+    dewey_code: '863.62',
+    description: 'Monumento de las letras hispanoamericanas. El drama entre la devoradora de hombres y Santos Luzardo en la inmensidad bravía de las sabanas del Arauca.',
+    cover_url: 'https://images.unsplash.com/photo-1476275466078-4007374efbbe?auto=format&fit=crop&q=80&w=600',
+    subjects: ['Novela Clásica Llanera', 'Civilización y Barbarie', 'Rómulo Gallegos', 'Literatura Latinoamericana'],
+    publication_year: 1929,
+    publisher: 'Editorial Araluce',
+  },
+  {
+    id: '10000000-0000-4000-a000-000000000004',
+    title: 'Cien Años de Soledad',
+    author: 'Gabriel García Márquez',
+    isbn: '978-030-74-7472-8',
+    dewey_code: '863.64',
+    description: 'Epopeya de siete generaciones de los Buendía en el mítico pueblo de Macondo. Obra insigne del Realismo Mágico y Premio Nobel de Literatura.',
+    cover_url: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=600',
+    subjects: ['Realismo Mágico', 'Premio Nobel', 'Macondo', 'Literatura Universal'],
+    publication_year: 1967,
+    publisher: 'Editorial Sudamericana',
+  },
+  {
+    id: '10000000-0000-4000-a000-000000000005',
+    title: 'El Principito',
+    author: 'Antoine de Saint-Exupéry',
+    isbn: '978-015-60-1219-5',
+    dewey_code: '843.912',
+    description: 'Relato poético universal que reflexiona sobre la pureza de la infancia, la amistad, el amor y los lazos humanos esenciales que escapan a los ojos.',
+    cover_url: 'https://images.unsplash.com/photo-1532012164546-f432f2e37b29?auto=format&fit=crop&q=80&w=600',
+    subjects: ['Literatura Juvenil e Infantil', 'Filosofía Humanista', 'Fábula Universal'],
+    publication_year: 1943,
+    publisher: 'Reynal & Hitchcock',
+  },
+  {
+    id: '10000000-0000-4000-a000-000000000006',
+    title: 'Don Quijote de la Mancha',
+    author: 'Miguel de Cervantes',
+    isbn: '978-842-04-1214-6',
+    dewey_code: '863.3',
+    description: 'La cumbre de la narrativa moderna en lengua española. El ingenioso hidalgo y Sancho Panza en una travesía inmortal de ideales y humanidad.',
+    cover_url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=600',
+    subjects: ['Siglo de Oro', 'Novela Clásica', 'Literatura Española', 'Caballería'],
+    publication_year: 1605,
+    publisher: 'Real Academia Española (RAE)',
+  },
+  {
+    id: '10000000-0000-4000-a000-000000000007',
+    title: 'Cosmos: Un Viaje Personal',
+    author: 'Carl Sagan',
+    isbn: '978-034-55-3943-4',
+    dewey_code: '520',
+    description: 'Fascinante travesía por quince mil millones de años de historia cósmica, el nacimiento de las ciencias astronómicas y la aventura humana del conocimiento.',
+    cover_url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=600',
+    subjects: ['Astronomía', 'Astrofísica', 'Divulgación Científica', 'Ciencias Puras'],
+    publication_year: 1980,
+    publisher: 'Random House',
+  },
+  {
+    id: '10000000-0000-4000-a000-000000000008',
+    title: 'Geografía General de Venezuela',
+    author: 'Marco-Aurelio Vila',
+    isbn: '978-980-01-0008-0',
+    dewey_code: '918.7',
+    description: 'Estudio fundamental sobre el relieve físico, clima, cuencas hidrográficas y regiones biogeográficas de Venezuela, texto escolar de referencia.',
+    cover_url: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&q=80&w=600',
+    subjects: ['Geografía de Venezuela', 'Biogeografía', 'Atlas Escolar', 'Historia y Geografía'],
+    publication_year: 1965,
+    publisher: 'Ministerio de Educación de Venezuela',
+  },
+];
+
+export const CURATED_MOS_COPIES: Copy[] = [
+  // Casas Muertas
+  {
+    id: '20000000-0000-4000-a000-000000000001',
+    work_id: '10000000-0000-4000-a000-000000000001',
+    branch_id: '00000000-0000-4000-a000-000000000002', // Bachillerato
+    internal_code: 'MOS-BAC-863-OTEc-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000002',
+    work_id: '10000000-0000-4000-a000-000000000001',
+    branch_id: '00000000-0000-4000-a000-000000000002',
+    internal_code: 'MOS-BAC-863-OTEc-002',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000003',
+    work_id: '10000000-0000-4000-a000-000000000001',
+    branch_id: '00000000-0000-4000-a000-000000000003', // Semilla Guárico
+    internal_code: 'SM-GUA-863-OTEc-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  // Oficina N° 1
+  {
+    id: '20000000-0000-4000-a000-000000000004',
+    work_id: '10000000-0000-4000-a000-000000000002',
+    branch_id: '00000000-0000-4000-a000-000000000002',
+    internal_code: 'MOS-BAC-863-OTEo-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000005',
+    work_id: '10000000-0000-4000-a000-000000000002',
+    branch_id: '00000000-0000-4000-a000-000000000004', // Semilla Caripe
+    internal_code: 'SM-CAR-863-OTEo-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  // Doña Bárbara
+  {
+    id: '20000000-0000-4000-a000-000000000006',
+    work_id: '10000000-0000-4000-a000-000000000003',
+    branch_id: '00000000-0000-4000-a000-000000000002',
+    internal_code: 'MOS-BAC-863-GALd-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000007',
+    work_id: '10000000-0000-4000-a000-000000000003',
+    branch_id: '00000000-0000-4000-a000-000000000003',
+    internal_code: 'SM-GUA-863-GALd-001',
+    condition: 'regular',
+    status: 'disponible',
+  },
+  // Cien Años de Soledad
+  {
+    id: '20000000-0000-4000-a000-000000000008',
+    work_id: '10000000-0000-4000-a000-000000000004',
+    branch_id: '00000000-0000-4000-a000-000000000002',
+    internal_code: 'MOS-BAC-863-GARc-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000009',
+    work_id: '10000000-0000-4000-a000-000000000004',
+    branch_id: '00000000-0000-4000-a000-000000000005', // Semilla Mérida
+    internal_code: 'SM-MER-863-GARc-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  // El Principito
+  {
+    id: '20000000-0000-4000-a000-000000000010',
+    work_id: '10000000-0000-4000-a000-000000000005',
+    branch_id: '00000000-0000-4000-a000-000000000001', // Primaria
+    internal_code: 'MOS-PRI-843-SAIp-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000011',
+    work_id: '10000000-0000-4000-a000-000000000005',
+    branch_id: '00000000-0000-4000-a000-000000000001',
+    internal_code: 'MOS-PRI-843-SAIp-002',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000012',
+    work_id: '10000000-0000-4000-a000-000000000005',
+    branch_id: '00000000-0000-4000-a000-000000000006', // Semilla Delta
+    internal_code: 'SM-DEL-843-SAIp-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  // Don Quijote
+  {
+    id: '20000000-0000-4000-a000-000000000013',
+    work_id: '10000000-0000-4000-a000-000000000006',
+    branch_id: '00000000-0000-4000-a000-000000000002',
+    internal_code: 'MOS-BAC-863-CERd-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  // Cosmos
+  {
+    id: '20000000-0000-4000-a000-000000000014',
+    work_id: '10000000-0000-4000-a000-000000000007',
+    branch_id: '00000000-0000-4000-a000-000000000002',
+    internal_code: 'MOS-BAC-520-SAGc-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000015',
+    work_id: '10000000-0000-4000-a000-000000000007',
+    branch_id: '00000000-0000-4000-a000-000000000001',
+    internal_code: 'MOS-PRI-520-SAGc-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  // Geografía General
+  {
+    id: '20000000-0000-4000-a000-000000000016',
+    work_id: '10000000-0000-4000-a000-000000000008',
+    branch_id: '00000000-0000-4000-a000-000000000002',
+    internal_code: 'MOS-BAC-918-VILg-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000017',
+    work_id: '10000000-0000-4000-a000-000000000008',
+    branch_id: '00000000-0000-4000-a000-000000000006',
+    internal_code: 'SM-DEL-918-VILg-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+  {
+    id: '20000000-0000-4000-a000-000000000018',
+    work_id: '10000000-0000-4000-a000-000000000008',
+    branch_id: '00000000-0000-4000-a000-000000000005',
+    internal_code: 'SM-MER-918-VILg-001',
+    condition: 'bueno',
+    status: 'disponible',
+  },
+];
+
+export const INITIAL_WORKS: Work[] = CURATED_MOS_WORKS;
+export const INITIAL_COPIES: Copy[] = CURATED_MOS_COPIES;
+
+export function loadCuratedCollection(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('manglar_works', JSON.stringify(CURATED_MOS_WORKS));
+    localStorage.setItem('manglar_copies', JSON.stringify(CURATED_MOS_COPIES));
     localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
-    localStorage.setItem('manglar_inventory_cleared_v5', 'true');
   }
 }
 
@@ -323,21 +579,26 @@ export function clearAllPlatformData(): void {
     localStorage.setItem('manglar_works', JSON.stringify([]));
     localStorage.setItem('manglar_copies', JSON.stringify([]));
     localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
-    localStorage.setItem('manglar_inventory_cleared_v5', 'true');
   }
 }
 
 export function getStoredWorks(): Work[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') return CURATED_MOS_WORKS;
   const saved = localStorage.getItem('manglar_works');
   if (!saved) {
-    localStorage.setItem('manglar_works', JSON.stringify([]));
-    return [];
+    loadCuratedCollection();
+    return CURATED_MOS_WORKS;
   }
   try {
-    return JSON.parse(saved);
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      loadCuratedCollection();
+      return CURATED_MOS_WORKS;
+    }
+    return parsed;
   } catch {
-    return [];
+    loadCuratedCollection();
+    return CURATED_MOS_WORKS;
   }
 }
 
@@ -354,7 +615,6 @@ export function getStoredBranches(): Branch[] {
       localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
       return INITIAL_BRANCHES;
     }
-    // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const hasValidIds = parsed.every((b) => uuidRegex.test(b.id));
     if (!hasValidIds) {
@@ -368,15 +628,18 @@ export function getStoredBranches(): Branch[] {
 }
 
 export function getStoredCopies(): Copy[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') return CURATED_MOS_COPIES;
   const saved = localStorage.getItem('manglar_copies');
   if (!saved) {
-    localStorage.setItem('manglar_copies', JSON.stringify([]));
-    return [];
+    loadCuratedCollection();
+    return CURATED_MOS_COPIES;
   }
   try {
     const list: Copy[] = JSON.parse(saved);
-    if (!Array.isArray(list)) return [];
+    if (!Array.isArray(list) || list.length === 0) {
+      loadCuratedCollection();
+      return CURATED_MOS_COPIES;
+    }
 
     let modified = false;
     const cleaned = list.map((c) => {
@@ -392,7 +655,6 @@ export function getStoredCopies(): Copy[] {
           .replace(/^CIM/i, 'MOS-PRI');
       }
 
-      // Upgrade 3-letter Cutter (e.g. MOS-BAC-860-OTE-001 -> MOS-BAC-860-OTEc-001) if work title is present
       if (code && c.work?.title) {
         const match3 = code.match(/^([A-Z]{2,4}-[A-Z0-9]{3,4}-\d{3})-([A-Z]{3})-(\d{3})$/);
         if (match3) {
@@ -416,12 +678,10 @@ export function getStoredCopies(): Copy[] {
 
     return cleaned;
   } catch {
-    return [];
+    loadCuratedCollection();
+    return CURATED_MOS_COPIES;
   }
 }
-
-export const INITIAL_WORKS: Work[] = [];
-export const INITIAL_COPIES: Copy[] = [];
 
 // Helper to fetch live branches from Supabase with fallback
 export async function fetchLiveBranches(): Promise<Branch[]> {

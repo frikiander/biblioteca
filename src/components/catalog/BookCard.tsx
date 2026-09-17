@@ -1,5 +1,12 @@
 import React from 'react';
-import { BookOpen, MapPin, Tag, PlusCircle, CheckCircle, Info, Printer, FileCode } from 'lucide-react';
+import { 
+  BookOpen, 
+  Plus, 
+  Info, 
+  Printer, 
+  FileCode,
+  Sparkles
+} from 'lucide-react';
 import type { WorkWithCopiesCount } from '../../types/database';
 import { getDeweyInfo } from '../../lib/dewey';
 
@@ -30,169 +37,160 @@ export const BookCard: React.FC<BookCardProps> = ({
     .filter((b) => b.branch_type === 'external_donation')
     .reduce((acc, curr) => acc + curr.count, 0);
 
-  // Si existen copias totales pero la suma por sede dio cero, asignar a central por seguridad
   const centralCopies = (internalSum + ruralSum === 0 && totalCount > 0) ? totalCount : internalSum;
   const ruralCopies = ruralSum;
 
   return (
     <div 
       id={`book-card-${work.id}`}
-      className="group bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-emerald-300 transition-all duration-300 flex flex-col overflow-hidden"
+      className="group bg-white rounded-xl border border-[#D3D2D3] hover:border-[#83B141] shadow-2xs hover:shadow-sm transition-all duration-250 flex flex-col justify-between overflow-hidden"
     >
-      {/* Top Banner with Dewey Classification */}
-      <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2">
-        <span 
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${deweyInfo.badgeBg} ${deweyInfo.badgeText} tracking-tight`}
-          title={`Clasificación Dewey: ${deweyInfo.name}`}
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-          CDD {work.dewey_code}
-        </span>
-        <span className="text-[11px] font-mono text-slate-400 truncate max-w-[120px]" title={`ISBN: ${work.isbn || 'N/A'}`}>
+      {/* Top Metadata Header */}
+      <div className="px-4 py-2 bg-[#F8F9F8] border-b border-[#D3D2D3]/60 flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-1.5">
+          <span 
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold tracking-tight bg-white border border-[#D3D2D3] text-neutral-800"
+            title={`Clasificación Dewey: ${deweyInfo.name}`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#83B141]"></span>
+            CDD {work.dewey_code}
+          </span>
+          <span className="text-[10px] text-neutral-400 font-medium truncate max-w-[100px]" title={deweyInfo.name}>
+            {deweyInfo.name.replace(/^[0-9]+\s*/, '')}
+          </span>
+        </div>
+
+        <span className="text-[10px] font-mono text-neutral-400 truncate" title={`ISBN: ${work.isbn || 'N/A'}`}>
           {work.isbn || 'Sin ISBN'}
         </span>
       </div>
 
-      {/* Book Cover and Title Info */}
+      {/* Main Body: Realistic Book Cover & Curated Details */}
       <div className="p-4 flex gap-4 flex-1">
-        <div className="relative shrink-0">
-          <img
-            src={work.cover_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=300'}
-            alt={work.title}
-            className="w-20 h-28 sm:w-24 sm:h-32 object-cover rounded-xl shadow-md border border-slate-200 group-hover:scale-[1.02] transition-transform duration-300 bg-slate-100"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=300';
-            }}
-          />
-          {work.total_copies === 0 && (
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs rounded-xl flex items-center justify-center p-1 text-center">
-              <span className="text-[10px] font-bold text-white uppercase tracking-wider">Agotado</span>
-            </div>
-          )}
+        {/* Realistic Museum Book Volume with Spine Relief */}
+        <div className="relative shrink-0 select-none">
+          <div className="relative w-24 sm:w-28 h-36 sm:h-40 rounded-sm shadow-md overflow-hidden bg-neutral-100 border border-neutral-200 group-hover:scale-[1.02] transition-transform duration-300">
+            {/* Spine Depth Shadow on the Left Edge */}
+            <div className="absolute inset-y-0 left-0 w-2.5 bg-gradient-to-r from-black/40 via-black/15 to-transparent z-10 pointer-events-none" />
+            <div className="absolute inset-y-0 left-2.5 w-[0.5px] bg-white/20 z-10 pointer-events-none" />
+            {/* Paper Edge on the Right */}
+            <div className="absolute inset-y-0 right-0 w-[1.5px] bg-[#e0dcd3] z-10 pointer-events-none" />
+
+            <img
+              src={work.cover_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=300'}
+              alt={work.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=300';
+              }}
+            />
+
+            {totalCount === 0 && (
+              <div className="absolute inset-0 bg-neutral-950/70 backdrop-blur-xs flex items-center justify-center p-1 text-center z-20">
+                <span className="text-[10px] font-black text-white uppercase tracking-widest">Sin Copias</span>
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Metadata & Synopsis */}
         <div className="flex flex-col justify-between flex-1 min-w-0">
-          <div>
+          <div className="space-y-1">
             <h3 
-              className="text-base font-bold text-slate-900 leading-snug group-hover:text-emerald-900 transition-colors line-clamp-2"
+              className="text-sm sm:text-base font-bold text-neutral-900 leading-snug group-hover:text-[#83B141] transition-colors line-clamp-2"
               title={work.title}
             >
               {work.title}
             </h3>
-            <p className="text-xs font-semibold text-emerald-800 mt-0.5 truncate">
+
+            <p className="text-xs font-semibold text-neutral-700 truncate">
               {work.author}
             </p>
-            <p className="text-[11px] text-slate-500 line-clamp-2 mt-1.5 leading-relaxed">
-              {work.description || 'Sin descripción bibliográfica registrada.'}
+
+            <p className="text-[11px] text-neutral-500 line-clamp-2 leading-relaxed pt-0.5">
+              {work.description || 'Ficha catalogada bajo estándares internacionales Dublin Core y Dewey.'}
             </p>
           </div>
 
+          {/* Subject Tags */}
           {work.subjects && work.subjects.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {work.subjects.slice(0, 2).map((sub, i) => (
-                <span key={i} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md truncate max-w-[130px]">
+                <span key={i} className="text-[10px] bg-[#F8F9F8] text-neutral-600 border border-[#D3D2D3]/70 px-1.5 py-0.5 rounded truncate max-w-[120px]">
                   {sub}
                 </span>
               ))}
               {work.subjects.length > 2 && (
-                <span className="text-[10px] text-slate-400">+{work.subjects.length - 2}</span>
+                <span className="text-[10px] text-neutral-400 font-mono">+{work.subjects.length - 2}</span>
               )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Multi-branch Stock Distribution */}
-      <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 space-y-2">
-        <div className="flex items-center justify-between text-xs text-slate-600">
-          <span className="font-semibold text-slate-700 flex items-center gap-1">
-            <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
-            Total: {work.total_copies} {work.total_copies === 1 ? 'ejemplar' : 'ejemplares'}
-          </span>
-          <span className="text-[11px] text-slate-400">
-            {deweyInfo.name}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="p-2 rounded-lg bg-white border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-            <span className="text-[10px] font-medium text-slate-500 truncate flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              Sede Central
-            </span>
-            <span className="text-sm font-bold text-slate-800 mt-0.5">
-              {centralCopies} {centralCopies === 1 ? 'ud.' : 'uds.'}
-            </span>
+      {/* Museum Collection Inventory Allocation */}
+      <div className="px-4 py-2.5 bg-[#F8F9F8] border-t border-[#D3D2D3]/60 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 text-neutral-700">
+            <span className="w-2 h-2 rounded-full bg-[#83B141]" />
+            <span className="text-[11px] font-medium">Campus: <strong>{centralCopies}</strong></span>
           </div>
-
-          <div className="p-2 rounded-lg bg-white border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-            <span className="text-[10px] font-medium text-emerald-700 truncate flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              Dotación Rural
-            </span>
-            <span className="text-sm font-bold text-emerald-950 mt-0.5">
-              {ruralCopies} {ruralCopies === 1 ? 'ud.' : 'uds.'}
-            </span>
+          <span className="text-neutral-300">•</span>
+          <div className="flex items-center gap-1 text-neutral-700">
+            <span className="w-2 h-2 rounded-full bg-[#EFDA18]" />
+            <span className="text-[11px] font-medium">Rural: <strong>{ruralCopies}</strong></span>
           </div>
         </div>
+
+        <span className="text-[11px] font-bold text-neutral-900">
+          {totalCount} {totalCount === 1 ? 'ejemplar' : 'ejemplares'}
+        </span>
       </div>
 
-      {/* Card Action Buttons */}
-      <div className="p-2.5 bg-white border-t border-slate-100 flex items-center gap-1.5 flex-wrap">
+      {/* Action Footer for Librarians and Readers */}
+      <div className="p-2 bg-white border-t border-[#D3D2D3]/60 flex items-center gap-1.5">
         <button
           id={`view-details-${work.id}`}
           onClick={() => onOpenDetails(work)}
           title="Ver ficha Dublin Core"
-          className="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer min-w-[55px]"
+          className="flex-1 py-1.5 px-2 bg-[#F8F9F8] hover:bg-neutral-100 text-neutral-700 border border-[#D3D2D3] rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer"
         >
-          <Info className="w-3.5 h-3.5" />
+          <Info className="w-3.5 h-3.5 text-neutral-500" strokeWidth={1.5} />
           <span>Ficha</span>
         </button>
 
         {onOpenMarc21 && (
           <button
             onClick={() => onOpenMarc21(work)}
-            title="Inspeccionar etiquetas MARC21 y descargar MARCXML (Koha Standard)"
-            className="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 text-emerald-400 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+            title="Inspeccionar etiquetas MARC21 (Estándar Internacional)"
+            className="py-1.5 px-2.5 bg-neutral-900 hover:bg-neutral-800 text-[#83B141] rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
           >
-            <FileCode className="w-3.5 h-3.5" />
+            <FileCode className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={1.75} />
             <span>MARC21</span>
+          </button>
+        )}
+
+        {(onQuickRegisterCopy || onAddCopy) && (
+          <button
+            onClick={() => {
+              if (onQuickRegisterCopy) onQuickRegisterCopy(work);
+              else if (onAddCopy) onAddCopy(work);
+            }}
+            title="Generar e imprimir nuevo ejemplar físico con marbete"
+            className="py-1.5 px-2 bg-[#f2f7ec] hover:bg-[#83B141]/20 text-[#2c4210] border border-[#83B141]/40 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={2} />
+            <span>Ejemplar</span>
           </button>
         )}
 
         {onPrintSpineLabels && (
           <button
-            id={`print-spine-btn-${work.id}`}
             onClick={() => onPrintSpineLabels(work)}
-            title="Imprimir o descargar tejuelo de lomo (25x38 mm)"
-            className="py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+            title="Imprimir tejuelo catalográfico con código Cutter y Dewey"
+            className="p-1.5 bg-[#F8F9F8] hover:bg-neutral-100 text-neutral-700 border border-[#D3D2D3] rounded-lg transition cursor-pointer"
           >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Tejuelo</span>
-          </button>
-        )}
-
-        {onAddCopy && (
-          <button
-            id={`add-copy-btn-${work.id}`}
-            onClick={() => onAddCopy(work)}
-            title="Registrar nuevo ejemplar físico en cualquier sede"
-            className="py-1.5 px-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
-          >
-            <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
-            <span>+ Ejemplar</span>
-          </button>
-        )}
-
-        {onQuickRegisterCopy && (
-          <button
-            id={`quick-add-copy-${work.id}`}
-            onClick={() => onQuickRegisterCopy(work)}
-            title="Dotar ejemplar a Semilla Manglareña"
-            className="py-1.5 px-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>+ Semilla</span>
+            <Printer className="w-3.5 h-3.5 text-neutral-600" strokeWidth={1.5} />
           </button>
         )}
       </div>
