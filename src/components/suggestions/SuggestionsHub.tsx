@@ -11,14 +11,16 @@ import {
   Search, 
   Filter, 
   Sparkles, 
-  MessageSquare 
+  MessageSquare,
+  Trash2
 } from 'lucide-react';
 import type { BookSuggestion, SuggestionStatus, PatronRole } from '../../types/database';
 import { 
   getStoredSuggestions, 
   submitSuggestion, 
   voteSuggestion, 
-  updateSuggestionStatus 
+  updateSuggestionStatus,
+  deleteSuggestion
 } from '../../lib/suggestions';
 
 export function SuggestionsHub() {
@@ -62,6 +64,17 @@ export function SuggestionsHub() {
     updateSuggestionStatus(selectedSuggestionForReview.id, status, reviewerNotes);
     setSelectedSuggestionForReview(null);
     refreshSuggestions();
+  };
+
+  const handleDeleteSuggestion = async (id: string, title: string) => {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar la sugerencia "${title}"?`)) return;
+    try {
+      await deleteSuggestion(id);
+      setSuggestions((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      console.error('Error deleting suggestion:', err);
+      setSuggestions((prev) => prev.filter((s) => s.id !== id));
+    }
   };
 
   const handleSubmitNew = (e: React.FormEvent) => {
@@ -201,74 +214,95 @@ export function SuggestionsHub() {
       </div>
 
       {/* Suggestions List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredSuggestions.map((sug) => (
-          <div
-            key={sug.id}
-            className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 leading-tight">
-                    {sug.title}
-                  </h3>
-                  <div className="text-xs text-slate-600 font-medium mt-0.5">
-                    por {sug.author} {sug.publisher && `• Editorial ${sug.publisher}`} {sug.publication_year && `(${sug.publication_year})`}
+      {filteredSuggestions.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center flex flex-col items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+            <Lightbulb className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-slate-800">No hay sugerencias registradas</h3>
+          <p className="text-xs text-slate-500 max-w-sm mt-1">
+            Los profesores, alumnos y comunidad pueden proponer libros utilizando el botón "+ Proponer un Libro".
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredSuggestions.map((sug) => (
+            <div
+              key={sug.id}
+              className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 leading-tight">
+                      {sug.title}
+                    </h3>
+                    <div className="text-xs text-slate-600 font-medium mt-0.5">
+                      por {sug.author} {sug.publisher && `• Editorial ${sug.publisher}`} {sug.publication_year && `(${sug.publication_year})`}
+                    </div>
+                  </div>
+
+                  {getStatusBadge(sug.status)}
+                </div>
+
+                {sug.reason && (
+                  <div className="mt-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-700 leading-relaxed">
+                    <span className="font-bold text-slate-800 block mb-0.5">Motivo pedagógico:</span>
+                    "{sug.reason}"
+                  </div>
+                )}
+
+                {sug.reviewer_notes && (
+                  <div className="mt-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-900 leading-relaxed">
+                    <span className="font-bold block mb-0.5 flex items-center gap-1">
+                      <MessageSquare className="w-3.5 h-3.5 text-amber-700" />
+                      Respuesta de la Biblioteca:
+                    </span>
+                    {sug.reviewer_notes}
+                  </div>
+                )}
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <div>
+                    Propuesto por <strong>{sug.suggested_by_name}</strong> ({sug.suggested_by_grade || sug.suggested_by_role})
+                  </div>
+                  <div>
+                    {new Date(sug.created_at).toLocaleDateString('es-VE')}
                   </div>
                 </div>
-
-                {getStatusBadge(sug.status)}
               </div>
 
-              {sug.reason && (
-                <div className="mt-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-700 leading-relaxed">
-                  <span className="font-bold text-slate-800 block mb-0.5">Motivo pedagógico:</span>
-                  "{sug.reason}"
-                </div>
-              )}
+              {/* Actions */}
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button
+                  onClick={() => handleVote(sug.id)}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                  title="Apoyar esta propuesta"
+                >
+                  <ThumbsUp className="w-3.5 h-3.5" />
+                  {sug.votes} {sug.votes === 1 ? 'Voto' : 'Votos'}
+                </button>
 
-              {sug.reviewer_notes && (
-                <div className="mt-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-900 leading-relaxed">
-                  <span className="font-bold block mb-0.5 flex items-center gap-1">
-                    <MessageSquare className="w-3.5 h-3.5 text-amber-700" />
-                    Respuesta de la Biblioteca:
-                  </span>
-                  {sug.reviewer_notes}
-                </div>
-              )}
-
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <div>
-                  Propuesto por <strong>{sug.suggested_by_name}</strong> ({sug.suggested_by_grade || sug.suggested_by_role})
-                </div>
-                <div>
-                  {new Date(sug.created_at).toLocaleDateString('es-VE')}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleOpenReviewModal(sug)}
+                    className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Gestionar Estado
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSuggestion(sug.id, sug.title)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+                    title="Eliminar sugerencia"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
-
-            {/* Actions */}
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-              <button
-                onClick={() => handleVote(sug.id)}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-amber-50 hover:text-amber-800 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-                title="Apoyar esta propuesta"
-              >
-                <ThumbsUp className="w-3.5 h-3.5" />
-                {sug.votes} {sug.votes === 1 ? 'Voto' : 'Votos'}
-              </button>
-
-              <button
-                onClick={() => handleOpenReviewModal(sug)}
-                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
-              >
-                Gestionar Estado
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Modal: New Suggestion */}
       {isSubmitModalOpen && (

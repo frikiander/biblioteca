@@ -154,40 +154,14 @@ export function finishAuditSession(sessionId: string): StockAuditSession | null 
 // PRESERVATION & BINDERY WORKFLOW (Colegio Integral El Manglar)
 // ---------------------------------------------------------------------------
 
-export const INITIAL_PRESERVATION_ITEMS: PreservationItem[] = [
-  {
-    id: 'pres_01',
-    copy_id: '20000000-0000-4000-a000-000000000002',
-    copy_code: 'MOS-PRI-863-OTEc-002',
-    work_title: 'Casas Muertas',
-    work_author: 'Miguel Otero Silva',
-    damage_type: 'lomo_danado',
-    status: 'en_tratamiento',
-    diagnosis: 'Desprendimiento parcial del lomo por uso continuo en aula de 5to grado. Papel interior en excelente estado.',
-    treatment_applied: 'Encolado flexible con acetato de polivinilo (PVA) neutro y refuerzo con tela de algodón.',
-    technician_name: 'Prof. Carlos Eduardo Benítez',
-    entered_at: '2026-02-14T10:00:00Z',
-  },
-  {
-    id: 'pres_02',
-    copy_id: '20000000-0000-4000-a000-000000000008',
-    copy_code: 'MOS-PRI-843-EXUp-002',
-    work_title: 'El Principito',
-    work_author: 'Antoine de Saint-Exupéry',
-    damage_type: 'hojas_sueltas',
-    status: 'en_espera',
-    diagnosis: 'Páginas 23 a 34 descosidas por manipulación escolar en rincón de lectura.',
-    technician_name: 'Comité de Biblioteca Escolar',
-    entered_at: '2026-02-20T14:00:00Z',
-  },
-];
+export const INITIAL_PRESERVATION_ITEMS: PreservationItem[] = [];
 
 export function getStoredPreservationItems(): PreservationItem[] {
-  if (typeof window === 'undefined') return INITIAL_PRESERVATION_ITEMS;
+  if (typeof window === 'undefined') return [];
   const saved = localStorage.getItem('manglar_preservation_items');
   if (!saved) {
-    localStorage.setItem('manglar_preservation_items', JSON.stringify(INITIAL_PRESERVATION_ITEMS));
-    return INITIAL_PRESERVATION_ITEMS;
+    localStorage.setItem('manglar_preservation_items', JSON.stringify([]));
+    return [];
   }
   try {
     const parsed: PreservationItem[] = JSON.parse(saved);
@@ -288,7 +262,12 @@ export function updatePreservationStatus(
 }
 
 export async function deletePreservationItem(itemId: string): Promise<boolean> {
-  if (isSupabaseConfigured && supabase) {
+  const items = getStoredPreservationItems();
+  const updated = items.filter((i) => i.id !== itemId);
+  savePreservationItems(updated);
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(itemId);
+  if (isUuid && isSupabaseConfigured && supabase) {
     try {
       await (supabase as any).from('preservation_items').delete().eq('id', itemId);
     } catch (err) {
@@ -296,8 +275,5 @@ export async function deletePreservationItem(itemId: string): Promise<boolean> {
     }
   }
 
-  const items = getStoredPreservationItems();
-  const updated = items.filter((i) => i.id !== itemId);
-  savePreservationItems(updated);
   return true;
 }

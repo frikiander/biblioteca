@@ -165,10 +165,14 @@ export function PatronManager({ onOpenLoanForPatron }: PatronManagerProps) {
     refreshPatrons();
   };
 
-  const handleDeletePatron = (id: string, name: string) => {
-    if (confirm(`¿Estás seguro de eliminar a ${name} del directorio de la comunidad?`)) {
-      deletePatron(id);
-      refreshPatrons();
+  const handleDeletePatron = async (id: string, name: string) => {
+    if (window.confirm(`¿Estás seguro de eliminar a ${name} del directorio de la comunidad?`)) {
+      try {
+        await deletePatron(id);
+      } catch (err) {
+        console.error('Error al eliminar lector:', err);
+      }
+      setPatrons((prev) => prev.filter((p) => p.id !== id));
     }
   };
 

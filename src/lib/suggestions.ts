@@ -1,60 +1,14 @@
 import type { BookSuggestion, SuggestionStatus, PatronRole } from '../types/database';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
-export const INITIAL_SUGGESTIONS: BookSuggestion[] = [
-  {
-    id: 'sug_01',
-    title: 'Fiebre',
-    author: 'Miguel Otero Silva',
-    publisher: 'Seix Barral',
-    publication_year: 1939,
-    reason: 'Completar la trilogía novelística de Miguel Otero Silva para el curso de 5to año de Bachillerato.',
-    suggested_by_name: 'Prof. María Elena Morales',
-    suggested_by_role: 'teacher',
-    suggested_by_grade: 'Docente de Castellano',
-    suggested_by_email: 'maria.morales@manglar.edu.ve',
-    status: 'approved',
-    reviewer_notes: 'Aprobado para la compra institucional en la próxima feria del libro.',
-    votes: 8,
-    voted_by: ['Prof. María Elena Morales', 'Camila Sofía Hernández', 'Mateo Alejandro Gómez'],
-    created_at: '2026-02-01T14:30:00Z',
-  },
-  {
-    id: 'sug_02',
-    title: 'Cosmos',
-    author: 'Carl Sagan',
-    publisher: 'Planeta',
-    publication_year: 1980,
-    reason: 'Material de consulta fundamental para el Club de Astronomía y el laboratorio de Ciencias.',
-    suggested_by_name: 'Diego Andrés Carvallo',
-    suggested_by_role: 'student',
-    suggested_by_grade: '4to Año "Ciencias"',
-    status: 'under_review',
-    reviewer_notes: 'En revisión de presupuesto para fondo de ciencias.',
-    votes: 5,
-    voted_by: ['Diego Andrés Carvallo', 'Santiago Rivas Castillo'],
-    created_at: '2026-02-10T11:15:00Z',
-  },
-  {
-    id: 'sug_03',
-    title: 'El Principito (Edición Bilingüe)',
-    author: 'Antoine de Saint-Exupéry',
-    reason: 'Apoyo para las clases de idiomas y comprensión lectora en 6to grado de Primaria.',
-    suggested_by_name: 'Mariana Victoria Ramos',
-    suggested_by_role: 'student',
-    suggested_by_grade: '6to Grado "A"',
-    status: 'pending',
-    votes: 3,
-    created_at: '2026-02-18T09:40:00Z',
-  },
-];
+export const INITIAL_SUGGESTIONS: BookSuggestion[] = [];
 
 export function getStoredSuggestions(): BookSuggestion[] {
-  if (typeof window === 'undefined') return INITIAL_SUGGESTIONS;
+  if (typeof window === 'undefined') return [];
   const saved = localStorage.getItem('manglar_suggestions');
   if (!saved) {
-    localStorage.setItem('manglar_suggestions', JSON.stringify(INITIAL_SUGGESTIONS));
-    return INITIAL_SUGGESTIONS;
+    localStorage.setItem('manglar_suggestions', JSON.stringify([]));
+    return [];
   }
   try {
     const parsed: BookSuggestion[] = JSON.parse(saved);
@@ -147,16 +101,22 @@ export function updateSuggestionStatus(
 }
 
 export async function deleteSuggestion(suggestionId: string): Promise<boolean> {
+  if (typeof window !== 'undefined') {
+    const suggestions = getStoredSuggestions();
+    const updated = suggestions.filter((s) => s.id !== suggestionId);
+    saveSuggestions(updated);
+  }
+
   if (isSupabaseConfigured && supabase) {
     try {
-      await (supabase as any).from('suggestions').delete().eq('id', suggestionId);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(suggestionId);
+      if (isUuid) {
+        await (supabase as any).from('suggestions').delete().eq('id', suggestionId);
+      }
     } catch (err) {
       console.warn('Error al eliminar sugerencia en Supabase:', err);
     }
   }
 
-  const suggestions = getStoredSuggestions();
-  const updated = suggestions.filter((s) => s.id !== suggestionId);
-  saveSuggestions(updated);
   return true;
 }

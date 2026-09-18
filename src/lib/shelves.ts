@@ -1,59 +1,14 @@
 import type { VirtualShelf, VirtualShelfItem, Work } from '../types/database';
 import { getStoredWorks, supabase, isSupabaseConfigured } from './supabaseClient';
 
-export const INITIAL_SHELVES: VirtualShelf[] = [
-  {
-    id: 'shelf_01',
-    name: 'Plan Lector 2026 — Colegio El Manglar',
-    description: 'Lecturas curriculares obligatorias y sugeridas para estudiantes de Primaria y Bachillerato.',
-    category: 'plan_lector',
-    is_public: true,
-    color: 'emerald',
-    icon: 'BookOpen',
-    created_at: '2026-01-10T08:00:00Z',
-    items: [],
-  },
-  {
-    id: 'shelf_02',
-    name: 'Fondo Especial: Miguel Otero Silva y Literatura Venezolana',
-    description: 'Obras cumbre del insigne escritor venezolano epónimo de nuestra biblioteca y autores contemporáneos.',
-    category: 'tematica',
-    is_public: true,
-    color: 'amber',
-    icon: 'Feather',
-    created_at: '2026-01-10T08:00:00Z',
-    items: [],
-  },
-  {
-    id: 'shelf_03',
-    name: 'Ecología, Manglares y Biodiversidad del Oriente',
-    description: 'Libros de referencia sobre medio ambiente, ecosistemas de manglar y conservación natural.',
-    category: 'tematica',
-    is_public: true,
-    color: 'teal',
-    icon: 'Trees',
-    created_at: '2026-01-15T08:00:00Z',
-    items: [],
-  },
-  {
-    id: 'shelf_04',
-    name: 'Primeros Lectores & Álbum Ilustrado',
-    description: 'Cuentos y novelas gráficas para fomentar el amor por los libros en preescolar y 1er-3er grado.',
-    category: 'recomendados',
-    is_public: true,
-    color: 'purple',
-    icon: 'Sparkles',
-    created_at: '2026-01-20T08:00:00Z',
-    items: [],
-  },
-];
+export const INITIAL_SHELVES: VirtualShelf[] = [];
 
 export function getStoredShelves(): VirtualShelf[] {
-  if (typeof window === 'undefined') return INITIAL_SHELVES;
+  if (typeof window === 'undefined') return [];
   const saved = localStorage.getItem('manglar_virtual_shelves');
   if (!saved) {
-    localStorage.setItem('manglar_virtual_shelves', JSON.stringify(INITIAL_SHELVES));
-    return INITIAL_SHELVES;
+    localStorage.setItem('manglar_virtual_shelves', JSON.stringify([]));
+    return [];
   }
   try {
     const parsed: VirtualShelf[] = JSON.parse(saved);
@@ -96,7 +51,12 @@ export function createShelf(params: {
 }
 
 export async function deleteShelf(shelfId: string): Promise<boolean> {
-  if (isSupabaseConfigured && supabase) {
+  const shelves = getStoredShelves();
+  const updated = shelves.filter((s) => s.id !== shelfId);
+  saveShelves(updated);
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(shelfId);
+  if (isUuid && isSupabaseConfigured && supabase) {
     try {
       await (supabase as any).from('virtual_shelf_items').delete().eq('shelf_id', shelfId);
       await (supabase as any).from('virtual_shelves').delete().eq('id', shelfId);
@@ -105,9 +65,6 @@ export async function deleteShelf(shelfId: string): Promise<boolean> {
     }
   }
 
-  const shelves = getStoredShelves();
-  const updated = shelves.filter((s) => s.id !== shelfId);
-  saveShelves(updated);
   return true;
 }
 

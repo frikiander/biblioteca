@@ -67,137 +67,17 @@ export const PATRON_CATEGORIES: PatronCategory[] = [
   },
 ];
 
-export const INITIAL_PATRONS: Patron[] = [
-  // Alumnos
-  {
-    id: 'est_01',
-    name: 'Valentina Mendoza',
-    first_name: 'Valentina',
-    last_name: 'Mendoza',
-    grade_section: '4to Grado "A" — Primaria',
-    identifier: 'MOS-ALU-2024-012',
-    role: 'student',
-    email: 'valentina.mendoza@manglar.edu.ve',
-    phone: '+58 414 1234567',
-    is_active: true,
-    created_at: '2024-09-15T10:00:00Z',
-  },
-  {
-    id: 'est_02',
-    name: 'Santiago Rivas Castillo',
-    first_name: 'Santiago',
-    last_name: 'Rivas Castillo',
-    grade_section: '5to Grado "B" — Primaria',
-    identifier: 'MOS-ALU-2024-034',
-    role: 'student',
-    email: 'santiago.rivas@manglar.edu.ve',
-    is_active: true,
-    created_at: '2024-09-15T10:00:00Z',
-  },
-  {
-    id: 'est_03',
-    name: 'Camila Sofía Hernández',
-    first_name: 'Camila Sofía',
-    last_name: 'Hernández',
-    grade_section: '1er Año "A" — Bachillerato',
-    identifier: 'MOS-ALU-2023-008',
-    role: 'student',
-    email: 'camila.hernandez@manglar.edu.ve',
-    is_active: true,
-    created_at: '2023-10-01T10:00:00Z',
-  },
-  // Docentes
-  {
-    id: 'doc_01',
-    name: 'Prof. María Elena Morales',
-    first_name: 'María Elena',
-    last_name: 'Morales',
-    grade_section: 'Docente de Castellano y Literatura',
-    identifier: 'MOS-DOC-004',
-    role: 'teacher',
-    email: 'maria.morales@manglar.edu.ve',
-    phone: '+58 412 9876543',
-    is_active: true,
-    created_at: '2020-01-15T10:00:00Z',
-  },
-  {
-    id: 'doc_02',
-    name: 'Prof. Carlos Eduardo Benítez',
-    first_name: 'Carlos Eduardo',
-    last_name: 'Benítez',
-    grade_section: 'Docente de Ciencias y Biología',
-    identifier: 'MOS-DOC-009',
-    role: 'teacher',
-    email: 'carlos.benitez@manglar.edu.ve',
-    is_active: true,
-    created_at: '2020-01-15T10:00:00Z',
-  },
-  // Administrativos
-  {
-    id: 'adm_01',
-    name: 'Lic. Andrés Bello Silva',
-    first_name: 'Andrés',
-    last_name: 'Bello Silva',
-    grade_section: 'Coordinación de Control de Estudios',
-    identifier: 'MOS-ADM-001',
-    role: 'administrative',
-    email: 'andres.bello@manglar.edu.ve',
-    phone: '+58 414 5551234',
-    is_active: true,
-    created_at: '2021-02-10T10:00:00Z',
-  },
-  // Mantenimiento
-  {
-    id: 'man_01',
-    name: 'José Manuel Pérez',
-    first_name: 'José Manuel',
-    last_name: 'Pérez',
-    grade_section: 'Mantenimiento General e Instalaciones',
-    identifier: 'MOS-MAN-001',
-    role: 'maintenance',
-    phone: '+58 416 3334455',
-    is_active: true,
-    created_at: '2021-05-18T10:00:00Z',
-  },
-  // Padre / Representante
-  {
-    id: 'rep_01',
-    name: 'Roberto Mendoza',
-    first_name: 'Roberto',
-    last_name: 'Mendoza',
-    grade_section: 'Representante de Valentina Mendoza (4to Grado A)',
-    identifier: 'MOS-PAD-001',
-    role: 'parent',
-    phone: '+58 412 1112233',
-    email: 'roberto.mendoza@gmail.com',
-    is_active: true,
-    created_at: '2024-09-18T10:00:00Z',
-  },
-  // Otro (Comunidad)
-  {
-    id: 'otr_01',
-    name: 'Elena Carrasquel',
-    first_name: 'Elena',
-    last_name: 'Carrasquel',
-    grade_section: 'Comunidad Externa',
-    custom_role: 'Pasante de Bibliotecología UCV',
-    identifier: 'MOS-OTR-001',
-    role: 'other',
-    phone: '+58 424 9998877',
-    is_active: true,
-    created_at: '2025-02-01T10:00:00Z',
-  },
-];
+export const INITIAL_PATRONS: Patron[] = [];
 
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 export function getStoredPatrons(): Patron[] {
-  if (typeof window === 'undefined') return INITIAL_PATRONS;
+  if (typeof window === 'undefined') return [];
   const saved = localStorage.getItem('manglar_patrons_v2');
-  if (saved === null) {
-    localStorage.setItem('manglar_patrons_v2', JSON.stringify(INITIAL_PATRONS));
-    localStorage.setItem('manglar_students', JSON.stringify(INITIAL_PATRONS));
-    return INITIAL_PATRONS;
+  if (!saved) {
+    localStorage.setItem('manglar_patrons_v2', JSON.stringify([]));
+    localStorage.setItem('manglar_students', JSON.stringify([]));
+    return [];
   }
   try {
     const parsed = JSON.parse(saved);
@@ -281,30 +161,32 @@ export function savePatron(patron: Omit<Patron, 'id'> & { id?: string }): Patron
 }
 
 export async function deletePatron(id: string): Promise<boolean> {
-  if (isSupabaseConfigured && supabase) {
-    try {
-      await (supabase as any).from('loans').delete().eq('student_id', id);
-      await (supabase as any).from('holds').delete().eq('patron_id', id);
-      const { error } = await (supabase as any).from('students').delete().eq('id', id);
-      if (error) {
-        console.error('Error eliminando lector de Supabase:', error);
-        throw new Error(`Error en Supabase al eliminar lector: ${error.message}`);
-      }
-    } catch (err: any) {
-      console.error('Error en deletePatron Supabase:', err);
-      throw err;
-    }
-  }
-
-  const patrons = getStoredPatrons();
-  const updated = patrons.filter((p) => String(p.id).trim() !== String(id).trim());
+  // 1. Eliminar inmediatamente de localStorage para asegurar respuesta instantánea en UI
   if (typeof window !== 'undefined') {
+    const patrons = getStoredPatrons();
+    const updated = patrons.filter((p) => String(p.id).trim() !== String(id).trim());
     localStorage.setItem('manglar_patrons_v2', JSON.stringify(updated));
     localStorage.setItem('manglar_students', JSON.stringify(updated));
   }
+
+  // 2. Si Supabase está conectado, eliminar de forma segura
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      if (isUuid) {
+        await (supabase as any).from('loans').delete().eq('student_id', id);
+        await (supabase as any).from('holds').delete().eq('patron_id', id);
+        await (supabase as any).from('students').delete().eq('id', id);
+      } else {
+        await (supabase as any).from('students').delete().eq('identifier', id);
+      }
+    } catch (err: any) {
+      console.warn('Advertencia al eliminar lector en Supabase:', err);
+    }
+  }
+
   return true;
 }
-
 
 export function getRoleDisplay(role?: PatronRole | string, customRole?: string): {
   label: string;

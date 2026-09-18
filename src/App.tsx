@@ -20,6 +20,24 @@ import { getStoredSuggestions } from './lib/suggestions';
 import { getOfflineQueue } from './lib/offlineCirc';
 import type { Work, Copy } from './types/database';
 
+// Reset previo de datos demo/precargados para dejar la plataforma totalmente en blanco y lista desde cero
+if (typeof window !== 'undefined') {
+  const CLEAN_SLATE_KEY = 'manglar_clean_slate_zero_v1';
+  if (!localStorage.getItem(CLEAN_SLATE_KEY)) {
+    localStorage.setItem('manglar_patrons_v2', JSON.stringify([]));
+    localStorage.setItem('manglar_students', JSON.stringify([]));
+    localStorage.setItem('manglar_suggestions', JSON.stringify([]));
+    localStorage.setItem('manglar_loans', JSON.stringify([]));
+    localStorage.setItem('manglar_holds', JSON.stringify([]));
+    localStorage.setItem('manglar_virtual_shelves', JSON.stringify([]));
+    localStorage.setItem('manglar_preservation_items', JSON.stringify([]));
+    localStorage.setItem('manglar_audit_sessions', JSON.stringify([]));
+    localStorage.setItem('manglar_works', JSON.stringify([]));
+    localStorage.setItem('manglar_copies', JSON.stringify([]));
+    localStorage.setItem(CLEAN_SLATE_KEY, 'true');
+  }
+}
+
 export default function App() {
   // Check if URL has ?mode=public or ?view=public
   const [isPublicMode, setIsPublicMode] = useState<boolean>(() => {

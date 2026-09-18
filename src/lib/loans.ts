@@ -12,19 +12,7 @@ function generateUUID(): string {
   });
 }
 
-export const INITIAL_STUDENTS: Student[] = [
-  { id: 'est_01', name: 'Valentina Mendoza', grade_section: '4to Grado "A" — Primaria', identifier: 'MOS-PRI-2024-012', role: 'student' },
-  { id: 'est_02', name: 'Santiago Rivas Castillo', grade_section: '5to Grado "B" — Primaria', identifier: 'MOS-PRI-2024-034', role: 'student' },
-  { id: 'est_03', name: 'Camila Sofía Hernández', grade_section: '1er Año "A" — Bachillerato', identifier: 'MOS-BAC-2023-008', role: 'student' },
-  { id: 'est_04', name: 'Mateo Alejandro Gómez', grade_section: '3er Año "B" — Bachillerato', identifier: 'MOS-BAC-2022-045', role: 'student' },
-  { id: 'est_05', name: 'Lucía Isabella Farías', grade_section: '2do Grado "A" — Primaria', identifier: 'MOS-PRI-2025-003', role: 'student' },
-  { id: 'est_06', name: 'Diego Andrés Carvallo', grade_section: '4to Año "Ciencias" — Bachillerato', identifier: 'MOS-BAC-2021-019', role: 'student' },
-  { id: 'est_07', name: 'Mariana Victoria Ramos', grade_section: '6to Grado "A" — Primaria', identifier: 'MOS-PRI-2024-055', role: 'student' },
-  { id: 'est_08', name: 'Gabriel Ignacio Silva', grade_section: '5to Año "Promoción" — Bachillerato', identifier: 'MOS-BAC-2020-002', role: 'student' },
-  { id: 'doc_01', name: 'Prof. María Elena Morales', grade_section: 'Docente de Castellano y Literatura', identifier: 'MOS-DOC-004', role: 'teacher' },
-  { id: 'doc_02', name: 'Prof. Carlos Eduardo Benítez', grade_section: 'Docente de Ciencias y Biología', identifier: 'MOS-DOC-009', role: 'teacher' },
-  { id: 'doc_03', name: 'Prof. Ana Teresa Valera', grade_section: 'Maestra de 3er Grado — Primaria', identifier: 'MOS-DOC-015', role: 'teacher' },
-];
+export const INITIAL_STUDENTS: Student[] = [];
 
 import { getStoredPatrons, savePatron } from './patrons';
 
