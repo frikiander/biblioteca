@@ -133,14 +133,14 @@ export const CheckinTab: React.FC<CheckinTabProps> = ({
     }
   };
 
-  const handleConfirmReturn = (e?: React.FormEvent) => {
+  const handleConfirmReturn = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!activeLoan) return;
 
     setIsSubmitting(true);
     setErrorBanner(null);
 
-    const result = returnLoan({
+    const result = await returnLoan({
       copyCode: activeLoan.copy_internal_code,
       returnNotes: returnNotes.trim() || 'Devuelto sin observaciones',
       returnCondition,

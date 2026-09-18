@@ -1,5 +1,16 @@
 import type { Loan, Student, Copy, CopyCondition, LoanStatus, CopyStatus } from '../types/database';
-import { getStoredCopies, getStoredWorks, getStoredBranches } from './supabaseClient';
+import { getStoredCopies, getStoredWorks, getStoredBranches, supabase, isSupabaseConfigured } from './supabaseClient';
+
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 export const INITIAL_STUDENTS: Student[] = [
   { id: 'est_01', name: 'Valentina Mendoza', grade_section: '4to Grado "A" — Primaria', identifier: 'MOS-PRI-2024-012', role: 'student' },
@@ -15,32 +26,14 @@ export const INITIAL_STUDENTS: Student[] = [
   { id: 'doc_03', name: 'Prof. Ana Teresa Valera', grade_section: 'Maestra de 3er Grado — Primaria', identifier: 'MOS-DOC-015', role: 'teacher' },
 ];
 
+import { getStoredPatrons, savePatron } from './patrons';
+
 export function getStoredStudents(): Student[] {
-  if (typeof window === 'undefined') return INITIAL_STUDENTS;
-  const saved = localStorage.getItem('manglar_students');
-  if (!saved) {
-    localStorage.setItem('manglar_students', JSON.stringify(INITIAL_STUDENTS));
-    return INITIAL_STUDENTS;
-  }
-  try {
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_STUDENTS;
-  } catch {
-    return INITIAL_STUDENTS;
-  }
+  return getStoredPatrons();
 }
 
 export function saveStudent(student: Omit<Student, 'id'> & { id?: string }): Student {
-  const students = getStoredStudents();
-  const newStudent: Student = {
-    ...student,
-    id: student.id || `est_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-  };
-  const updated = [newStudent, ...students.filter((s) => s.id !== newStudent.id)];
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('manglar_students', JSON.stringify(updated));
-  }
-  return newStudent;
+  return savePatron(student);
 }
 
 export function getStoredLoans(): Loan[] {
@@ -68,6 +61,36 @@ export function saveLoans(loans: Loan[]): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem('manglar_loans', JSON.stringify(loans));
   }
+}
+
+/**
+ * Consulta en tiempo real los préstamos de Supabase si está configurado
+ */
+export async function fetchLiveLoans(): Promise<Loan[]> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('loans')
+        .select('*')
+        .order('loan_date', { ascending: false });
+
+      if (!error && data) {
+        const mapped = (data as Loan[]).map((l) => {
+          if (l.status === 'active' && !l.is_indefinite && l.due_date && new Date(l.due_date).getTime() < Date.now()) {
+            return { ...l, status: 'overdue' as LoanStatus };
+          }
+          return l;
+        });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('manglar_loans', JSON.stringify(mapped));
+        }
+        return mapped;
+      }
+    } catch (err) {
+      console.warn('Error al consultar préstamos de Supabase:', err);
+    }
+  }
+  return getStoredLoans();
 }
 
 /**
@@ -143,24 +166,25 @@ export function findActiveLoanByCopyCode(code: string): Loan | null {
 }
 
 /**
- * Registers a new checkout loan
+ * Registers a new checkout loan (persisted to Supabase and mirrored locally)
  */
-export function registerLoan(params: {
+export async function registerLoan(params: {
   copy: Copy;
-  student: Student | { name: string; grade_section?: string; identifier?: string };
+  student: Student | { name: string; first_name?: string; last_name?: string; grade_section?: string; identifier?: string; role?: any; custom_role?: string };
   dueDays?: number | null;
   isIndefinite?: boolean;
   customDueDate?: string | null;
+  loanReason?: string;
   checkoutNotes?: string;
-}): { success: boolean; loan?: Loan; error?: string } {
-  const { copy, student, dueDays = 7, isIndefinite = false, customDueDate, checkoutNotes = '' } = params;
+}): Promise<{ success: boolean; loan?: Loan; error?: string }> {
+  const { copy, student, dueDays = 7, isIndefinite = false, customDueDate, loanReason, checkoutNotes = '' } = params;
 
   // 1. Verify availability
   const existingActive = findActiveLoanByCopyCode(copy.internal_code);
   if (existingActive) {
     return {
       success: false,
-      error: `El ejemplar "${copy.internal_code}" ya se encuentra en préstamo activo con el alumno ${existingActive.student_name} desde el ${new Date(existingActive.loan_date).toLocaleDateString('es-VE')}.`,
+      error: `El ejemplar "${copy.internal_code}" ya se encuentra en préstamo activo con ${existingActive.student_name} desde el ${new Date(existingActive.loan_date).toLocaleDateString('es-VE')}.`,
     };
   }
 
@@ -182,8 +206,9 @@ export function registerLoan(params: {
     }
   }
 
+  const newLoanId = generateUUID();
   const newLoan: Loan = {
-    id: `loan_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: newLoanId,
     copy_id: copy.id,
     copy_internal_code: copy.internal_code,
     work_id: work?.id || copy.work_id,
@@ -193,24 +218,66 @@ export function registerLoan(params: {
     work_dewey_code: work?.dewey_code,
     branch_id: branch?.id || copy.branch_id,
     branch_name: branch?.name || 'Biblioteca Central',
-    student_id: 'id' in student ? student.id : undefined,
+    student_id: 'id' in student && student.id ? student.id : undefined,
     student_name: student.name.trim(),
     student_grade: student.grade_section?.trim(),
     student_identifier: student.identifier?.trim(),
+    student_role: 'role' in student ? student.role : undefined,
+    student_custom_role: 'custom_role' in student ? student.custom_role : undefined,
     loan_date: now.toISOString(),
     due_date: dueDateString,
     is_indefinite: isIndefinite,
     return_date: null,
     status: 'active',
+    loan_reason: loanReason?.trim() || undefined,
     checkout_notes: checkoutNotes.trim() || undefined,
     created_at: now.toISOString(),
   };
 
-  // Update loan storage
+  // 1. Sincronizar en Supabase si está disponible
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error: loanErr } = await (supabase as any).from('loans').insert({
+        id: newLoanId,
+        copy_id: copy.id,
+        copy_internal_code: copy.internal_code,
+        work_id: work?.id || copy.work_id,
+        work_title: work?.title || 'Obra Bibliográfica',
+        work_author: work?.author || 'Autor General',
+        work_cover_url: work?.cover_url || null,
+        work_dewey_code: work?.dewey_code || null,
+        branch_id: branch?.id || copy.branch_id,
+        branch_name: branch?.name || 'Biblioteca Central',
+        student_id: 'id' in student && student.id && student.id.includes('-') ? student.id : null,
+        student_name: student.name.trim(),
+        student_grade: student.grade_section?.trim() || null,
+        student_identifier: student.identifier?.trim() || null,
+        loan_date: now.toISOString(),
+        due_date: dueDateString,
+        is_indefinite: isIndefinite,
+        return_date: null,
+        status: 'active',
+        checkout_notes: [loanReason?.trim(), checkoutNotes.trim()].filter(Boolean).join(' | ') || null,
+      });
+
+      if (loanErr) {
+        console.error('Error insertando préstamo en Supabase:', loanErr);
+      }
+
+      await (supabase as any)
+        .from('copies')
+        .update({ status: 'prestado' })
+        .eq('id', copy.id);
+    } catch (err) {
+      console.warn('Error al guardar préstamo en Supabase:', err);
+    }
+  }
+
+  // 2. Update local storage
   const loans = getStoredLoans();
   saveLoans([newLoan, ...loans]);
 
-  // Update copy status to 'prestado'
+  // Update copy status to 'prestado' locally
   const copies = getStoredCopies();
   const updatedCopies = copies.map((c) => {
     if (c.id === copy.id || areMarbeteCodesMatching(c.internal_code, copy.internal_code)) {
@@ -225,13 +292,16 @@ export function registerLoan(params: {
     localStorage.setItem('manglar_copies', JSON.stringify(updatedCopies));
   }
 
-  // Also ensure student is saved in autocomplete history
+  // Ensure student is saved in patron directory
   if (student.name.trim()) {
     saveStudent({
       name: student.name.trim(),
-      grade_section: student.grade_section?.trim() || 'Alumno Colegio Integral El Manglar',
-      identifier: student.identifier?.trim() || `MOS-EST-${Math.floor(1000 + Math.random() * 9000)}`,
-      role: 'student',
+      first_name: 'first_name' in student ? student.first_name : undefined,
+      last_name: 'last_name' in student ? student.last_name : undefined,
+      grade_section: student.grade_section?.trim() || 'Comunidad Colegio El Manglar',
+      identifier: student.identifier?.trim() || `MOS-COM-${Math.floor(1000 + Math.random() * 9000)}`,
+      role: 'role' in student ? student.role : 'student',
+      custom_role: 'custom_role' in student ? student.custom_role : undefined,
     });
   }
 
@@ -242,13 +312,13 @@ export function registerLoan(params: {
 }
 
 /**
- * Returns a borrowed book (Check-in)
+ * Returns a borrowed book (Check-in) and updates Supabase + localStorage
  */
-export function returnLoan(params: {
+export async function returnLoan(params: {
   copyCode: string;
   returnNotes?: string;
   returnCondition?: CopyCondition;
-}): { success: boolean; loan?: Loan; error?: string } {
+}): Promise<{ success: boolean; loan?: Loan; error?: string }> {
   const { copyCode, returnNotes = '', returnCondition } = params;
 
   const activeLoan = findActiveLoanByCopyCode(copyCode);
@@ -261,7 +331,32 @@ export function returnLoan(params: {
 
   const now = new Date();
 
-  // 1. Update loan record
+  // 1. Sincronizar en Supabase si está activo
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await (supabase as any)
+        .from('loans')
+        .update({
+          status: 'returned',
+          return_date: now.toISOString(),
+          return_notes: returnNotes.trim() || 'Devuelto sin novedades',
+          return_condition: returnCondition || null,
+        })
+        .eq('id', activeLoan.id);
+
+      await (supabase as any)
+        .from('copies')
+        .update({
+          status: 'disponible',
+          ...(returnCondition ? { condition: returnCondition } : {}),
+        })
+        .eq('id', activeLoan.copy_id);
+    } catch (err) {
+      console.warn('Error al actualizar devolución en Supabase:', err);
+    }
+  }
+
+  // 2. Update loan record locally
   const loans = getStoredLoans();
   const updatedLoans = loans.map((l) => {
     if (l.id === activeLoan.id) {
@@ -277,7 +372,7 @@ export function returnLoan(params: {
   });
   saveLoans(updatedLoans);
 
-  // 2. Set copy status back to 'disponible' (and update condition if specified)
+  // 3. Set copy status back to 'disponible' (and update condition if specified)
   const copies = getStoredCopies();
   const updatedCopies = copies.map((c) => {
     if (c.id === activeLoan.copy_id || areMarbeteCodesMatching(c.internal_code, activeLoan.copy_internal_code)) {
@@ -299,6 +394,53 @@ export function returnLoan(params: {
     success: true,
     loan: updatedLoanRecord,
   };
+}
+
+/**
+ * Elimina un registro de préstamo definitivamente (tanto en Supabase como en localStorage)
+ * y restaura el estado del ejemplar a 'disponible' si el préstamo estaba activo.
+ */
+export async function deleteLoan(loanId: string, restoreCopyStatus: boolean = true): Promise<boolean> {
+  const loans = getStoredLoans();
+  const targetLoan = loans.find((l) => l.id === loanId);
+
+  // 1. Eliminar de Supabase si está conectado
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await (supabase as any).from('loans').delete().eq('id', loanId);
+      if (error) {
+        console.error('Error eliminando préstamo de Supabase:', error);
+      }
+
+      if (restoreCopyStatus && targetLoan && (targetLoan.status === 'active' || targetLoan.status === 'overdue')) {
+        await (supabase as any)
+          .from('copies')
+          .update({ status: 'disponible' })
+          .eq('id', targetLoan.copy_id);
+      }
+    } catch (err) {
+      console.warn('Error al eliminar préstamo en Supabase:', err);
+    }
+  }
+
+  // 2. Eliminar de localStorage
+  if (typeof window !== 'undefined') {
+    const updatedLoans = loans.filter((l) => l.id !== loanId);
+    saveLoans(updatedLoans);
+
+    if (restoreCopyStatus && targetLoan && (targetLoan.status === 'active' || targetLoan.status === 'overdue')) {
+      const copies = getStoredCopies();
+      const updatedCopies = copies.map((c) => {
+        if (c.id === targetLoan.copy_id || areMarbeteCodesMatching(c.internal_code, targetLoan.copy_internal_code)) {
+          return { ...c, status: 'disponible' as const };
+        }
+        return c;
+      });
+      localStorage.setItem('manglar_copies', JSON.stringify(updatedCopies));
+    }
+  }
+
+  return true;
 }
 
 /**

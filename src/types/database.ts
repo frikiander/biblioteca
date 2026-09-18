@@ -2,7 +2,17 @@ export type BranchType = 'internal' | 'external_donation';
 export type CopyCondition = 'bueno' | 'regular' | 'malo';
 export type CopyStatus = 'disponible' | 'prestado' | 'en_donacion' | 'baja' | 'en_traslado' | 'en_reparacion';
 export type LoanStatus = 'active' | 'returned' | 'overdue';
-export type PatronRole = 'student' | 'teacher' | 'staff' | 'community';
+
+// Community Roles in Colegio El Manglar
+export type PatronRole = 
+  | 'student'        // Alumno
+  | 'teacher'        // Docente
+  | 'administrative' // Administrativo
+  | 'staff'          // Administrativo (alias compatible)
+  | 'maintenance'    // Mantenimiento
+  | 'parent'         // Padre / Representante
+  | 'community'      // Comunidad general (alias compatible)
+  | 'other';         // Otro (con custom_role especificado)
 
 export interface PatronCategory {
   id: string;
@@ -17,9 +27,12 @@ export interface PatronCategory {
 export interface Student {
   id: string;
   name: string;
-  grade_section?: string;
-  identifier?: string; // e.g. "MOS-EST-042"
+  first_name?: string;
+  last_name?: string;
+  grade_section?: string; // Para alumnos: Grado y sección
+  identifier?: string; // e.g. "MOS-ALU-042"
   role?: PatronRole;
+  custom_role?: string; // Cuando el rol es 'other', especificar qué rol tiene en la comunidad
   email?: string;
   phone?: string;
   avatar_url?: string;
@@ -43,11 +56,13 @@ export interface Loan {
   branch_id: string;
   branch_name: string;
   
-  // Student / Borrower info
+  // Student / Community Member / Borrower info
   student_id?: string;
   student_name: string;
   student_grade?: string;
   student_identifier?: string;
+  student_role?: PatronRole | string;
+  student_custom_role?: string;
 
   // Dates
   loan_date: string; // ISO string
@@ -58,6 +73,7 @@ export interface Loan {
 
   // Status & Observations
   status: LoanStatus;
+  loan_reason?: string; // Motivo del préstamo (e.g. "Lectura en el aula", "Plan Lector", etc.)
   checkout_notes?: string;
   return_notes?: string; // Observaciones al devolver
   return_condition?: CopyCondition;

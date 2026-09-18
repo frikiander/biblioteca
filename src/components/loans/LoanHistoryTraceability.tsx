@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   History, 
   Search, 
@@ -17,10 +17,12 @@ import {
   BookMarked,
   Sparkles,
   ChevronRight,
-  Eye
+  Eye,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import type { Loan } from '../../types/database';
-import { getStoredLoans, getCopyTraceability, CopyTraceability } from '../../lib/loans';
+import { getStoredLoans, getCopyTraceability, CopyTraceability, deleteLoan, fetchLiveLoans } from '../../lib/loans';
 
 interface LoanHistoryTraceabilityProps {
   onSelectCheckinCode?: (code: string) => void;
@@ -34,10 +36,31 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'returned' | 'overdue'>('all');
   const [selectedTraceabilityCopy, setSelectedTraceabilityCopy] = useState<string | null>(null);
+  const [loans, setLoans] = useState<Loan[]>(() => getStoredLoans());
+  const [deletingLoanId, setDeletingLoanId] = useState<string | null>(null);
 
-  const loans = useMemo(() => {
-    return getStoredLoans();
+  useEffect(() => {
+    fetchLiveLoans().then((data) => setLoans(data));
   }, [refreshTrigger]);
+
+  const handleDeleteLoan = async (loan: Loan) => {
+    if (
+      !window.confirm(
+        `¿Estás seguro de eliminar el registro de préstamo del libro "${loan.work_title}" para ${loan.student_name}? Si estaba activo, el ejemplar volverá a estar disponible.`
+      )
+    ) {
+      return;
+    }
+
+    setDeletingLoanId(loan.id);
+    try {
+      await deleteLoan(loan.id);
+      const updated = await fetchLiveLoans();
+      setLoans(updated);
+    } finally {
+      setDeletingLoanId(null);
+    }
+  };
 
   // Compute metrics
   const totalLoans = loans.length;
@@ -397,6 +420,20 @@ export const LoanHistoryTraceability: React.FC<LoanHistoryTraceabilityProps> = (
                           <span>Devolver</span>
                         </button>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteLoan(loan)}
+                        disabled={deletingLoanId === loan.id}
+                        className="p-1.5 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition flex items-center justify-center cursor-pointer disabled:opacity-40"
+                        title="Eliminar este registro de préstamo"
+                      >
+                        {deletingLoanId === loan.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>

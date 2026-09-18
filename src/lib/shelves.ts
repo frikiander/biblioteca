@@ -1,5 +1,5 @@
 import type { VirtualShelf, VirtualShelfItem, Work } from '../types/database';
-import { getStoredWorks } from './supabaseClient';
+import { getStoredWorks, supabase, isSupabaseConfigured } from './supabaseClient';
 
 export const INITIAL_SHELVES: VirtualShelf[] = [
   {
@@ -57,9 +57,9 @@ export function getStoredShelves(): VirtualShelf[] {
   }
   try {
     const parsed: VirtualShelf[] = JSON.parse(saved);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SHELVES;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return INITIAL_SHELVES;
+    return [];
   }
 }
 
@@ -95,7 +95,16 @@ export function createShelf(params: {
   return newShelf;
 }
 
-export function deleteShelf(shelfId: string): boolean {
+export async function deleteShelf(shelfId: string): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await (supabase as any).from('virtual_shelf_items').delete().eq('shelf_id', shelfId);
+      await (supabase as any).from('virtual_shelves').delete().eq('id', shelfId);
+    } catch (err) {
+      console.warn('Error eliminando estante en Supabase:', err);
+    }
+  }
+
   const shelves = getStoredShelves();
   const updated = shelves.filter((s) => s.id !== shelfId);
   saveShelves(updated);

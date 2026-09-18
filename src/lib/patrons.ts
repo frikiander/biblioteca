@@ -4,7 +4,7 @@ import { getStoredLoans } from './loans';
 export const PATRON_CATEGORIES: PatronCategory[] = [
   {
     id: 'cat_student_pri',
-    name: 'Estudiantes de Primaria',
+    name: 'Alumnos (Primaria)',
     role: 'student',
     maxLoans: 2,
     loanDays: 7,
@@ -13,7 +13,7 @@ export const PATRON_CATEGORIES: PatronCategory[] = [
   },
   {
     id: 'cat_student_bac',
-    name: 'Estudiantes de Bachillerato',
+    name: 'Alumnos (Bachillerato)',
     role: 'student',
     maxLoans: 3,
     loanDays: 14,
@@ -22,7 +22,7 @@ export const PATRON_CATEGORIES: PatronCategory[] = [
   },
   {
     id: 'cat_teacher',
-    name: 'Personal Docente & Coordinación',
+    name: 'Docentes & Profesores',
     role: 'teacher',
     maxLoans: 15,
     loanDays: 30,
@@ -30,31 +30,52 @@ export const PATRON_CATEGORIES: PatronCategory[] = [
     color: 'purple',
   },
   {
-    id: 'cat_staff',
-    name: 'Personal Administrativo & Obrero',
-    role: 'staff',
+    id: 'cat_administrative',
+    name: 'Personal Administrativo',
+    role: 'administrative',
     maxLoans: 5,
     loanDays: 21,
+    allowIndefinite: false,
+    color: 'blue',
+  },
+  {
+    id: 'cat_maintenance',
+    name: 'Personal de Mantenimiento',
+    role: 'maintenance',
+    maxLoans: 3,
+    loanDays: 14,
     allowIndefinite: false,
     color: 'amber',
   },
   {
-    id: 'cat_community',
-    name: 'Comunidad Rural / Semilla Manglareña',
-    role: 'community',
+    id: 'cat_parent',
+    name: 'Padres / Representantes',
+    role: 'parent',
     maxLoans: 2,
     loanDays: 14,
     allowIndefinite: false,
-    color: 'teal',
+    color: 'rose',
+  },
+  {
+    id: 'cat_other',
+    name: 'Otros Miembros de la Comunidad',
+    role: 'other',
+    maxLoans: 2,
+    loanDays: 14,
+    allowIndefinite: false,
+    color: 'neutral',
   },
 ];
 
 export const INITIAL_PATRONS: Patron[] = [
+  // Alumnos
   {
     id: 'est_01',
     name: 'Valentina Mendoza',
+    first_name: 'Valentina',
+    last_name: 'Mendoza',
     grade_section: '4to Grado "A" — Primaria',
-    identifier: 'MOS-EST-2024-012',
+    identifier: 'MOS-ALU-2024-012',
     role: 'student',
     email: 'valentina.mendoza@manglar.edu.ve',
     phone: '+58 414 1234567',
@@ -64,8 +85,10 @@ export const INITIAL_PATRONS: Patron[] = [
   {
     id: 'est_02',
     name: 'Santiago Rivas Castillo',
+    first_name: 'Santiago',
+    last_name: 'Rivas Castillo',
     grade_section: '5to Grado "B" — Primaria',
-    identifier: 'MOS-EST-2024-034',
+    identifier: 'MOS-ALU-2024-034',
     role: 'student',
     email: 'santiago.rivas@manglar.edu.ve',
     is_active: true,
@@ -74,46 +97,21 @@ export const INITIAL_PATRONS: Patron[] = [
   {
     id: 'est_03',
     name: 'Camila Sofía Hernández',
+    first_name: 'Camila Sofía',
+    last_name: 'Hernández',
     grade_section: '1er Año "A" — Bachillerato',
-    identifier: 'MOS-BAC-2023-008',
+    identifier: 'MOS-ALU-2023-008',
     role: 'student',
     email: 'camila.hernandez@manglar.edu.ve',
     is_active: true,
     created_at: '2023-10-01T10:00:00Z',
   },
-  {
-    id: 'est_04',
-    name: 'Mateo Alejandro Gómez',
-    grade_section: '3er Año "B" — Bachillerato',
-    identifier: 'MOS-BAC-2022-045',
-    role: 'student',
-    email: 'mateo.gomez@manglar.edu.ve',
-    is_active: true,
-    created_at: '2022-09-20T10:00:00Z',
-  },
-  {
-    id: 'est_05',
-    name: 'Lucía Isabella Farías',
-    grade_section: '2do Grado "A" — Primaria',
-    identifier: 'MOS-PRI-2025-003',
-    role: 'student',
-    email: 'lucia.farias@manglar.edu.ve',
-    is_active: true,
-    created_at: '2025-01-10T10:00:00Z',
-  },
-  {
-    id: 'est_06',
-    name: 'Diego Andrés Carvallo',
-    grade_section: '4to Año "Ciencias" — Bachillerato',
-    identifier: 'MOS-BAC-2021-019',
-    role: 'student',
-    email: 'diego.carvallo@manglar.edu.ve',
-    is_active: true,
-    created_at: '2021-09-15T10:00:00Z',
-  },
+  // Docentes
   {
     id: 'doc_01',
     name: 'Prof. María Elena Morales',
+    first_name: 'María Elena',
+    last_name: 'Morales',
     grade_section: 'Docente de Castellano y Literatura',
     identifier: 'MOS-DOC-004',
     role: 'teacher',
@@ -125,6 +123,8 @@ export const INITIAL_PATRONS: Patron[] = [
   {
     id: 'doc_02',
     name: 'Prof. Carlos Eduardo Benítez',
+    first_name: 'Carlos Eduardo',
+    last_name: 'Benítez',
     grade_section: 'Docente de Ciencias y Biología',
     identifier: 'MOS-DOC-009',
     role: 'teacher',
@@ -132,31 +132,100 @@ export const INITIAL_PATRONS: Patron[] = [
     is_active: true,
     created_at: '2020-01-15T10:00:00Z',
   },
+  // Administrativos
   {
-    id: 'doc_03',
-    name: 'Prof. Ana Teresa Valera',
-    grade_section: 'Maestra de 3er Grado — Primaria',
-    identifier: 'MOS-DOC-015',
-    role: 'teacher',
-    email: 'ana.valera@manglar.edu.ve',
+    id: 'adm_01',
+    name: 'Lic. Andrés Bello Silva',
+    first_name: 'Andrés',
+    last_name: 'Bello Silva',
+    grade_section: 'Coordinación de Control de Estudios',
+    identifier: 'MOS-ADM-001',
+    role: 'administrative',
+    email: 'andres.bello@manglar.edu.ve',
+    phone: '+58 414 5551234',
     is_active: true,
-    created_at: '2021-09-01T10:00:00Z',
+    created_at: '2021-02-10T10:00:00Z',
+  },
+  // Mantenimiento
+  {
+    id: 'man_01',
+    name: 'José Manuel Pérez',
+    first_name: 'José Manuel',
+    last_name: 'Pérez',
+    grade_section: 'Mantenimiento General e Instalaciones',
+    identifier: 'MOS-MAN-001',
+    role: 'maintenance',
+    phone: '+58 416 3334455',
+    is_active: true,
+    created_at: '2021-05-18T10:00:00Z',
+  },
+  // Padre / Representante
+  {
+    id: 'rep_01',
+    name: 'Roberto Mendoza',
+    first_name: 'Roberto',
+    last_name: 'Mendoza',
+    grade_section: 'Representante de Valentina Mendoza (4to Grado A)',
+    identifier: 'MOS-PAD-001',
+    role: 'parent',
+    phone: '+58 412 1112233',
+    email: 'roberto.mendoza@gmail.com',
+    is_active: true,
+    created_at: '2024-09-18T10:00:00Z',
+  },
+  // Otro (Comunidad)
+  {
+    id: 'otr_01',
+    name: 'Elena Carrasquel',
+    first_name: 'Elena',
+    last_name: 'Carrasquel',
+    grade_section: 'Comunidad Externa',
+    custom_role: 'Pasante de Bibliotecología UCV',
+    identifier: 'MOS-OTR-001',
+    role: 'other',
+    phone: '+58 424 9998877',
+    is_active: true,
+    created_at: '2025-02-01T10:00:00Z',
   },
 ];
+
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 export function getStoredPatrons(): Patron[] {
   if (typeof window === 'undefined') return INITIAL_PATRONS;
   const saved = localStorage.getItem('manglar_patrons_v2');
-  if (!saved) {
+  if (saved === null) {
     localStorage.setItem('manglar_patrons_v2', JSON.stringify(INITIAL_PATRONS));
+    localStorage.setItem('manglar_students', JSON.stringify(INITIAL_PATRONS));
     return INITIAL_PATRONS;
   }
   try {
     const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_PATRONS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return INITIAL_PATRONS;
+    return [];
   }
+}
+
+export async function fetchLivePatrons(): Promise<Patron[]> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('students')
+        .select('*')
+        .order('name', { ascending: true });
+      if (!error && Array.isArray(data)) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('manglar_patrons_v2', JSON.stringify(data));
+          localStorage.setItem('manglar_students', JSON.stringify(data));
+        }
+        return data;
+      }
+    } catch (err) {
+      console.error('Error fetching live patrons from Supabase:', err);
+    }
+  }
+  return getStoredPatrons();
 }
 
 export function savePatron(patron: Omit<Patron, 'id'> & { id?: string }): Patron {
@@ -174,12 +243,61 @@ export function savePatron(patron: Omit<Patron, 'id'> & { id?: string }): Patron
     // Also sync to legacy students key for backward compatibility
     localStorage.setItem('manglar_students', JSON.stringify(updated));
   }
+
+  // If Supabase is configured, sync in background
+  if (isSupabaseConfigured && supabase) {
+    (async () => {
+      try {
+        const payload = {
+          name: newPatron.name,
+          grade_section: newPatron.grade_section || null,
+          identifier: newPatron.identifier || null,
+          role: newPatron.role || 'student',
+          email: newPatron.email || null,
+          phone: newPatron.phone || null,
+          is_active: newPatron.is_active,
+        };
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(newPatron.id);
+        if (isUuid) {
+          await (supabase as any).from('students').upsert({ id: newPatron.id, ...payload });
+        } else {
+          const { data } = await (supabase as any).from('students').insert(payload).select('id').single();
+          if (data?.id) {
+            newPatron.id = data.id;
+            const synced = [newPatron, ...patrons.filter((p) => p.id !== patron.id && p.id !== newPatron.id)];
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('manglar_patrons_v2', JSON.stringify(synced));
+              localStorage.setItem('manglar_students', JSON.stringify(synced));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error syncing patron to Supabase:', err);
+      }
+    })();
+  }
+
   return newPatron;
 }
 
-export function deletePatron(id: string): boolean {
+export async function deletePatron(id: string): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await (supabase as any).from('loans').delete().eq('student_id', id);
+      await (supabase as any).from('holds').delete().eq('patron_id', id);
+      const { error } = await (supabase as any).from('students').delete().eq('id', id);
+      if (error) {
+        console.error('Error eliminando lector de Supabase:', error);
+        throw new Error(`Error en Supabase al eliminar lector: ${error.message}`);
+      }
+    } catch (err: any) {
+      console.error('Error en deletePatron Supabase:', err);
+      throw err;
+    }
+  }
+
   const patrons = getStoredPatrons();
-  const updated = patrons.filter((p) => p.id !== id);
+  const updated = patrons.filter((p) => String(p.id).trim() !== String(id).trim());
   if (typeof window !== 'undefined') {
     localStorage.setItem('manglar_patrons_v2', JSON.stringify(updated));
     localStorage.setItem('manglar_students', JSON.stringify(updated));
@@ -187,10 +305,90 @@ export function deletePatron(id: string): boolean {
   return true;
 }
 
+
+export function getRoleDisplay(role?: PatronRole | string, customRole?: string): {
+  label: string;
+  shortLabel: string;
+  bg: string;
+  text: string;
+  border: string;
+  badgeClass: string;
+} {
+  switch (role) {
+    case 'student':
+      return {
+        label: 'Alumno',
+        shortLabel: 'Alumno',
+        bg: 'bg-[#83B141]/10',
+        text: 'text-[#3b5e14]',
+        border: 'border-[#83B141]/30',
+        badgeClass: 'bg-[#83B141]/10 text-[#3b5e14] border-[#83B141]/30',
+      };
+    case 'teacher':
+      return {
+        label: 'Docente',
+        shortLabel: 'Docente',
+        bg: 'bg-purple-50',
+        text: 'text-purple-800',
+        border: 'border-purple-200',
+        badgeClass: 'bg-purple-50 text-purple-800 border-purple-200',
+      };
+    case 'administrative':
+    case 'staff':
+      return {
+        label: 'Administrativo',
+        shortLabel: 'Admin',
+        bg: 'bg-blue-50',
+        text: 'text-blue-800',
+        border: 'border-blue-200',
+        badgeClass: 'bg-blue-50 text-blue-800 border-blue-200',
+      };
+    case 'maintenance':
+      return {
+        label: 'Mantenimiento',
+        shortLabel: 'Mantenimiento',
+        bg: 'bg-amber-50',
+        text: 'text-amber-800',
+        border: 'border-amber-200',
+        badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
+      };
+    case 'parent':
+      return {
+        label: 'Padre / Representante',
+        shortLabel: 'Representante',
+        bg: 'bg-rose-50',
+        text: 'text-rose-800',
+        border: 'border-rose-200',
+        badgeClass: 'bg-rose-50 text-rose-800 border-rose-200',
+      };
+    case 'other':
+      return {
+        label: customRole ? `Otro: ${customRole}` : 'Otro (Comunidad)',
+        shortLabel: customRole || 'Otro',
+        bg: 'bg-neutral-100',
+        text: 'text-neutral-800',
+        border: 'border-neutral-300',
+        badgeClass: 'bg-neutral-100 text-neutral-800 border-neutral-300',
+      };
+    default:
+      return {
+        label: 'Comunidad',
+        shortLabel: 'Comunidad',
+        bg: 'bg-neutral-100',
+        text: 'text-neutral-800',
+        border: 'border-neutral-200',
+        badgeClass: 'bg-neutral-100 text-neutral-800 border-neutral-200',
+      };
+  }
+}
+
+
 export function getPatronCategory(patron: Patron): PatronCategory {
   if (patron.role === 'teacher') return PATRON_CATEGORIES[2];
-  if (patron.role === 'staff') return PATRON_CATEGORIES[3];
-  if (patron.role === 'community') return PATRON_CATEGORIES[4];
+  if (patron.role === 'administrative' || patron.role === 'staff') return PATRON_CATEGORIES[3];
+  if (patron.role === 'maintenance') return PATRON_CATEGORIES[4];
+  if (patron.role === 'parent') return PATRON_CATEGORIES[5];
+  if (patron.role === 'other' || patron.role === 'community') return PATRON_CATEGORIES[6];
   
   // Student: distinguish primary and highschool by grade
   const grade = (patron.grade_section || '').toLowerCase();

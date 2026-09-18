@@ -284,7 +284,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   </button>
                 </div>
 
-                {/* 2. Lectores & Carnetización */}
+                {/* 2. Estudiantes & Comunidad */}
                 <div className="tree-connector-item">
                   <button
                     id="sidebar-tab-patrons"
@@ -297,7 +297,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                       }
                     `}
                   >
-                    <span className="text-[12.5px] truncate">Lectores & Carnetización</span>
+                    <span className="text-[12.5px] truncate">Estudiantes & Comunidad</span>
                   </button>
                 </div>
               </div>

@@ -24,6 +24,7 @@ import { findCopyByCode, findActiveLoanByCopyCode, registerLoan, normalizeMarbet
 import { getStoredWorks, getStoredCopies, getStoredBranches, isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
 import { getDeweyInfo } from '../../lib/dewey';
 import { StudentSearchDropdown } from './StudentSearchDropdown';
+import { getRoleDisplay } from '../../lib/patrons';
 
 interface CheckoutTabProps {
   onLoanCreated?: (loan: Loan) => void;
@@ -65,6 +66,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
     return d.toISOString().split('T')[0];
   });
   const [checkoutNotes, setCheckoutNotes] = useState('');
+  const [loanReason, setLoanReason] = useState<string>('Lectura en el aula');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [successLoan, setSuccessLoan] = useState<Loan | null>(null);
@@ -242,7 +244,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
     setDueDays(Math.max(1, diffDays));
   };
 
-  const handleSubmitCheckout = (e: React.FormEvent) => {
+  const handleSubmitCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!detectedCopy) {
       setErrorBanner('Debes ingresar y validar un código de marbete válido.');
@@ -262,13 +264,14 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
     setIsSubmitting(true);
     setErrorBanner(null);
 
-    const result = registerLoan({
+    const result = await registerLoan({
       copy: detectedCopy,
       student: selectedStudent,
       dueDays: isIndefinite ? null : dueDays,
       isIndefinite,
       customDueDate: isIndefinite ? null : customDueDate,
       checkoutNotes,
+      loanReason: loanReason.trim() || 'Lectura en el aula',
     });
 
     setIsSubmitting(false);
@@ -292,6 +295,7 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
     setActiveLoanOnCopy(null);
     setHasSearched(false);
     setSelectedStudent(null);
+    setLoanReason('Lectura en el aula');
     setCheckoutNotes('');
     setErrorBanner(null);
     setSuccessLoan(null);
@@ -340,13 +344,31 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
               <span className="font-bold text-slate-500 uppercase text-[10px] tracking-wider">
                 Lector & Plazo
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <div className="w-6 h-6 rounded-full bg-[#83B141] text-white font-bold flex items-center justify-center text-[10px]">
                   {successLoan.student_name.charAt(0)}
                 </div>
                 <span className="font-bold text-slate-900 text-sm">{successLoan.student_name}</span>
+                {(() => {
+                  const rDisplay = getRoleDisplay(successLoan.student_role, successLoan.student_custom_role);
+                  return (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${rDisplay.badgeClass}`}>
+                      {rDisplay.label}
+                    </span>
+                  );
+                })()}
               </div>
-              <p className="text-slate-600">{successLoan.student_grade || 'Alumno Colegio El Manglar'}</p>
+              <p className="text-slate-600">{successLoan.student_grade || successLoan.student_custom_role || 'Comunidad El Manglar'}</p>
+              
+              {/* Motivo del Préstamo */}
+              {successLoan.loan_reason && (
+                <div className="p-2 bg-white rounded-lg border border-slate-200 text-xs text-neutral-800">
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                    Motivo del Préstamo:
+                  </span>
+                  <span className="font-semibold text-neutral-900">{successLoan.loan_reason}</span>
+                </div>
+              )}
               <div className="space-y-1.5 text-xs text-neutral-700 pt-1">
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#83B141]" />
@@ -869,11 +891,59 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                 )}
               </div>
 
-              {/* STEP 3: Loan Duration & Return Date with INDEFINIDO */}
+              {/* STEP 3: Motivo del Préstamo */}
+              <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    3. Motivo del Préstamo <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500">
+                    Indica la finalidad del retiro para el control bibliotecario
+                  </span>
+                </div>
+
+                {/* Preset Chips */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'Lectura en el aula',
+                    'Investigación / Tarea escolar',
+                    'Plan Lector',
+                    'Lectura recreativa en casa',
+                    'Planificación docente',
+                    'Apoyo familiar / comunidad',
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      disabled={!detectedCopy || Boolean(activeLoanOnCopy)}
+                      onClick={() => setLoanReason(preset)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                        loanReason === preset
+                          ? 'bg-[#83B141] text-white border-[#83B141] font-bold shadow-2xs'
+                          : 'bg-[#F8F9F8] text-neutral-700 border-[#D3D2D3] hover:bg-neutral-100'
+                      } ${(!detectedCopy || Boolean(activeLoanOnCopy)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+
+                <input
+                  type="text"
+                  required
+                  value={loanReason}
+                  disabled={!detectedCopy || Boolean(activeLoanOnCopy)}
+                  onChange={(e) => setLoanReason(e.target.value)}
+                  placeholder="Escribe el motivo del préstamo (ej. Lectura para clase de Lengua, Proyecto de Ciencias...)"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#83B141]/20 focus:border-[#83B141] transition"
+                />
+              </div>
+
+              {/* STEP 4: Loan Duration & Return Date with INDEFINIDO */}
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    3. Plazo de Devolución
+                    4. Plazo de Devolución
                   </label>
                   <span className="text-[11px] text-slate-500">
                     Selecciona un plazo o marca <strong className="text-teal-800">Indefinido</strong> para préstamos docentes o prolongados
@@ -992,17 +1062,17 @@ export const CheckoutTab: React.FC<CheckoutTabProps> = ({
                 </div>
               </div>
 
-              {/* STEP 4: Observations / Notes */}
+              {/* STEP 5: Observations / Notes */}
               <div className="space-y-1.5 pt-2 border-t border-slate-100">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  4. Observaciones de Entrega (Opcional)
+                  5. Observaciones Adicionales de Entrega (Opcional)
                 </label>
                 <input
                   type="text"
                   value={checkoutNotes}
                   disabled={!detectedCopy || Boolean(activeLoanOnCopy)}
                   onChange={(e) => setCheckoutNotes(e.target.value)}
-                  placeholder="Ej: Para exposición del viernes, material de aula de ciencias, lectura guiada..."
+                  placeholder="Ej: Ejemplar con lomo reparado, entrega de dos tomos, etc..."
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 transition"
                 />
               </div>

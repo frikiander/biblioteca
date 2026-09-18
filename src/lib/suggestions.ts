@@ -1,4 +1,5 @@
 import type { BookSuggestion, SuggestionStatus, PatronRole } from '../types/database';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export const INITIAL_SUGGESTIONS: BookSuggestion[] = [
   {
@@ -57,9 +58,9 @@ export function getStoredSuggestions(): BookSuggestion[] {
   }
   try {
     const parsed: BookSuggestion[] = JSON.parse(saved);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SUGGESTIONS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return INITIAL_SUGGESTIONS;
+    return [];
   }
 }
 
@@ -141,6 +142,21 @@ export function updateSuggestionStatus(
     }
     return s;
   });
+  saveSuggestions(updated);
+  return true;
+}
+
+export async function deleteSuggestion(suggestionId: string): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await (supabase as any).from('suggestions').delete().eq('id', suggestionId);
+    } catch (err) {
+      console.warn('Error al eliminar sugerencia en Supabase:', err);
+    }
+  }
+
+  const suggestions = getStoredSuggestions();
+  const updated = suggestions.filter((s) => s.id !== suggestionId);
   saveSuggestions(updated);
   return true;
 }

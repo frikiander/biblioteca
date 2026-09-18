@@ -1,16 +1,96 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database, Work, Branch, Copy, WorkWithCopiesCount, CopyCondition } from '../types/database';
 
-// Initialize default environment variables or fallback
+// Initialize default environment variables or localStorage credentials fallback
 const metaEnv = (import.meta as unknown as { env: Record<string, string | undefined> }).env || {};
-const SUPABASE_URL = metaEnv.VITE_SUPABASE_URL || metaEnv.NEXT_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = metaEnv.VITE_SUPABASE_ANON_KEY || metaEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+function getSupabaseConfig(): { url: string; key: string } {
+  const envUrl = metaEnv.VITE_SUPABASE_URL || metaEnv.NEXT_PUBLIC_SUPABASE_URL || '';
+  const envKey = metaEnv.VITE_SUPABASE_ANON_KEY || metaEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  
+  if (envUrl && envKey) {
+    return { url: envUrl.trim(), key: envKey.trim() };
+  }
+  
+  if (typeof window !== 'undefined') {
+    const storedUrl = localStorage.getItem('manglar_supabase_url') || '';
+    const storedKey = localStorage.getItem('manglar_supabase_key') || '';
+    if (storedUrl && storedKey) {
+      return { url: storedUrl.trim(), key: storedKey.trim() };
+    }
+  }
+  
+  return { url: envUrl.trim(), key: envKey.trim() };
+}
+
+const config = getSupabaseConfig();
+export const SUPABASE_URL = config.url;
+export const SUPABASE_ANON_KEY = config.key;
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 export const supabase = isSupabaseConfigured
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
+
+export function setSupabaseCredentials(url: string, key: string): boolean {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('manglar_supabase_url', url.trim());
+    localStorage.setItem('manglar_supabase_key', key.trim());
+    window.location.reload();
+    return true;
+  }
+  return false;
+}
+
+export function clearSupabaseCredentials(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('manglar_supabase_url');
+    localStorage.removeItem('manglar_supabase_key');
+    window.location.reload();
+  }
+}
+
+export async function testSupabaseConnection(): Promise<{ success: boolean; message: string; details?: any }> {
+  if (!isSupabaseConfigured || !supabase) {
+    return {
+      success: false,
+      message: 'Supabase no está configurado. Ingresa la URL y la Anon Key de tu proyecto.',
+    };
+  }
+
+  try {
+    const { data: works, error: worksError } = await supabase.from('works').select('id').limit(1);
+    if (worksError) {
+      return {
+        success: false,
+        message: `Error al conectar con la tabla 'works': ${worksError.message}. Asegúrate de ejecutar el script 'supabase_schema.sql'.`,
+        details: worksError,
+      };
+    }
+
+    const { error: branchesError } = await supabase.from('branches').select('id').limit(1);
+    if (branchesError) {
+      return {
+        success: false,
+        message: `Error al consultar 'branches': ${branchesError.message}`,
+        details: branchesError,
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Conexión exitosa con Supabase y las tablas de la biblioteca están listas.',
+      details: { worksCountSample: works?.length },
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: `Error de red o conexión: ${err.message || err}`,
+      details: err,
+    };
+  }
+}
 
 // Initial curated store for Colegio Integral El Manglar with standard RFC-compliant UUIDs
 export const INITIAL_BRANCHES: Branch[] = [
@@ -579,49 +659,44 @@ export function clearAllPlatformData(): void {
     localStorage.setItem('manglar_works', JSON.stringify([]));
     localStorage.setItem('manglar_copies', JSON.stringify([]));
     localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
+    localStorage.setItem('manglar_patrons_v2', JSON.stringify([]));
+    localStorage.setItem('manglar_students', JSON.stringify([]));
+    localStorage.setItem('manglar_loans', JSON.stringify([]));
+    localStorage.setItem('manglar_holds', JSON.stringify([]));
   }
 }
 
 export function getStoredWorks(): Work[] {
   if (typeof window === 'undefined') return CURATED_MOS_WORKS;
   const saved = localStorage.getItem('manglar_works');
-  if (!saved) {
+  if (saved === null) {
     loadCuratedCollection();
     return CURATED_MOS_WORKS;
   }
   try {
     const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      loadCuratedCollection();
-      return CURATED_MOS_WORKS;
+    if (Array.isArray(parsed)) {
+      return parsed;
     }
-    return parsed;
+    return [];
   } catch {
-    loadCuratedCollection();
-    return CURATED_MOS_WORKS;
+    return [];
   }
 }
 
 export function getStoredBranches(): Branch[] {
   if (typeof window === 'undefined') return INITIAL_BRANCHES;
   const saved = localStorage.getItem('manglar_branches');
-  if (!saved) {
+  if (saved === null) {
     localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
     return INITIAL_BRANCHES;
   }
   try {
     const parsed: Branch[] = JSON.parse(saved);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
-      return INITIAL_BRANCHES;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
     }
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const hasValidIds = parsed.every((b) => uuidRegex.test(b.id));
-    if (!hasValidIds) {
-      localStorage.setItem('manglar_branches', JSON.stringify(INITIAL_BRANCHES));
-      return INITIAL_BRANCHES;
-    }
-    return parsed;
+    return INITIAL_BRANCHES;
   } catch {
     return INITIAL_BRANCHES;
   }
@@ -630,15 +705,14 @@ export function getStoredBranches(): Branch[] {
 export function getStoredCopies(): Copy[] {
   if (typeof window === 'undefined') return CURATED_MOS_COPIES;
   const saved = localStorage.getItem('manglar_copies');
-  if (!saved) {
+  if (saved === null) {
     loadCuratedCollection();
     return CURATED_MOS_COPIES;
   }
   try {
     const list: Copy[] = JSON.parse(saved);
-    if (!Array.isArray(list) || list.length === 0) {
-      loadCuratedCollection();
-      return CURATED_MOS_COPIES;
+    if (!Array.isArray(list)) {
+      return [];
     }
 
     let modified = false;
@@ -777,3 +851,294 @@ export function getWorksWithInventory(
     };
   });
 }
+
+/**
+ * Actualiza los datos de una obra tanto en Supabase como en localStorage.
+ */
+export async function updateWork(work: Work): Promise<Work> {
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await (supabase as any)
+      .from('works')
+      .update({
+        title: work.title,
+        author: work.author,
+        isbn: work.isbn,
+        dewey_code: work.dewey_code,
+        cover_url: work.cover_url,
+        publisher: work.publisher,
+        publication_year: work.publication_year,
+        subjects: work.subjects,
+        description: work.description,
+        language: work.language,
+        edition: work.edition,
+        physical_description: work.physical_description,
+        series: work.series,
+        target_audience: work.target_audience,
+        call_number: work.call_number,
+      })
+      .eq('id', work.id);
+
+    if (error) {
+      console.error('Error al actualizar obra en Supabase:', error);
+      throw new Error(`Error en Supabase al actualizar obra: ${error.message}`);
+    }
+  }
+
+  // Sincronizar en localStorage
+  if (typeof window !== 'undefined') {
+    const works = getStoredWorks();
+    const idx = works.findIndex((w) => w.id === work.id);
+    if (idx !== -1) {
+      works[idx] = { ...works[idx], ...work };
+      localStorage.setItem('manglar_works', JSON.stringify(works));
+    }
+
+    // Actualizar referencia anidada en copias si existe
+    const copies = getStoredCopies();
+    let modifiedCopies = false;
+    const updatedCopies = copies.map((c) => {
+      if (c.work_id === work.id || (c.work && c.work.id === work.id)) {
+        modifiedCopies = true;
+        return { ...c, work: { ...(c.work || {}), ...work } };
+      }
+      return c;
+    });
+    if (modifiedCopies) {
+      localStorage.setItem('manglar_copies', JSON.stringify(updatedCopies));
+    }
+  }
+
+  return work;
+}
+
+/**
+ * Actualiza los datos de un ejemplar físico individual.
+ */
+export async function updateCopy(copy: Copy): Promise<Copy> {
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await (supabase as any)
+      .from('copies')
+      .update({
+        internal_code: copy.internal_code,
+        branch_id: copy.branch_id,
+        condition: copy.condition,
+        status: copy.status,
+        notes: copy.notes,
+        barcode: copy.barcode,
+      })
+      .eq('id', copy.id);
+
+    if (error) {
+      console.error('Error al actualizar ejemplar en Supabase:', error);
+      throw new Error(`Error en Supabase al actualizar ejemplar: ${error.message}`);
+    }
+  }
+
+  // Sincronizar en localStorage
+  if (typeof window !== 'undefined') {
+    const copies = getStoredCopies();
+    const idx = copies.findIndex((c) => c.id === copy.id);
+    if (idx !== -1) {
+      copies[idx] = { ...copies[idx], ...copy };
+      localStorage.setItem('manglar_copies', JSON.stringify(copies));
+    }
+  }
+
+  return copy;
+}
+
+/**
+ * Guarda simultáneamente los cambios de la obra y de su conjunto de ejemplares
+ * (incluyendo creación de nuevos ejemplares, actualización de existentes y eliminación de dados de baja).
+ */
+export async function saveWorkAndCopies(
+  work: Work,
+  copies: Copy[],
+  deleteCopyIds: string[] = []
+): Promise<void> {
+  // 1. Guardar la obra
+  await updateWork(work);
+
+  const branches = getStoredBranches();
+
+  // 2. Eliminar copias marcadas para baja
+  if (deleteCopyIds.length > 0) {
+    for (const copyId of deleteCopyIds) {
+      await deleteCopy(copyId);
+    }
+  }
+
+  // 3. Procesar copias existentes vs nuevas
+  for (const c of copies) {
+    const isNew = !c.id || c.id.startsWith('c_new_') || c.id.startsWith('temp_');
+    const branch = branches.find((b) => b.id === c.branch_id) || branches[0];
+
+    if (isNew) {
+      // Inserción de nuevo ejemplar
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await (supabase as any)
+          .from('copies')
+          .insert({
+            work_id: work.id,
+            branch_id: c.branch_id,
+            condition: c.condition,
+            internal_code: c.internal_code.trim(),
+            status: c.status || (branch?.type === 'external_donation' ? 'en_donacion' : 'disponible'),
+            notes: c.notes?.trim() || '',
+            barcode: c.barcode?.trim() || null,
+          });
+        if (error) {
+          console.error('Error insertando nuevo ejemplar:', error);
+        }
+      } else if (typeof window !== 'undefined') {
+        const currentCopies = getStoredCopies();
+        const newCopy: Copy = {
+          ...c,
+          id: `c_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          work_id: work.id,
+          work: work,
+          branch: branch,
+          created_at: new Date().toISOString(),
+        };
+        localStorage.setItem('manglar_copies', JSON.stringify([newCopy, ...currentCopies]));
+      }
+    } else {
+      // Actualización de ejemplar existente
+      await updateCopy(c);
+    }
+  }
+}
+
+/**
+ * Elimina un ejemplar físico específico del inventario.
+ */
+export async function deleteCopy(copyId: string): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      // Eliminar préstamos asociados a este ejemplar
+      await (supabase as any).from('loans').delete().eq('copy_id', copyId);
+      await (supabase as any).from('preservation_items').delete().eq('copy_id', copyId);
+      
+      const { error } = await (supabase as any)
+        .from('copies')
+        .delete()
+        .eq('id', copyId);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Error eliminando ejemplar de Supabase:', err);
+      throw new Error(`Error en Supabase al eliminar ejemplar: ${err.message || err}`);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const copies = getStoredCopies();
+    const filtered = copies.filter((c) => String(c.id).trim() !== String(copyId).trim());
+    localStorage.setItem('manglar_copies', JSON.stringify(filtered));
+  }
+
+  return true;
+}
+
+/**
+ * Elimina una obra completa y todos sus ejemplares del inventario.
+ */
+export async function deleteWork(workId: string): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      // Borrar dependencias asociadas para evitar bloqueo por clave foránea
+      await (supabase as any).from('loans').delete().eq('work_id', workId);
+      await (supabase as any).from('holds').delete().eq('work_id', workId);
+      await (supabase as any).from('virtual_shelf_items').delete().eq('work_id', workId);
+      await (supabase as any).from('copies').delete().eq('work_id', workId);
+      
+      // Borrar obra
+      const { error } = await (supabase as any).from('works').delete().eq('id', workId);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Error eliminando obra de Supabase:', err);
+      throw new Error(`Error en Supabase al eliminar obra: ${err.message || err}`);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const works = getStoredWorks();
+    const updatedWorks = works.filter((w) => String(w.id).trim() !== String(workId).trim());
+    localStorage.setItem('manglar_works', JSON.stringify(updatedWorks));
+
+    const copies = getStoredCopies();
+    const updatedCopies = copies.filter((c) => String(c.work_id).trim() !== String(workId).trim());
+    localStorage.setItem('manglar_copies', JSON.stringify(updatedCopies));
+  }
+
+  return true;
+}
+
+/**
+ * Sube y sincroniza todos los datos locales (sedes, obras, ejemplares) a Supabase.
+ */
+export async function syncLocalDataToSupabase(): Promise<{ success: boolean; count: number; message: string }> {
+  if (!isSupabaseConfigured || !supabase) {
+    return { success: false, count: 0, message: 'Supabase no está configurado.' };
+  }
+
+  try {
+    const branches = getStoredBranches();
+    const works = getStoredWorks();
+    const copies = getStoredCopies();
+
+    // 1. Sincronizar Sedes
+    for (const b of branches) {
+      await (supabase as any).from('branches').upsert({
+        id: b.id,
+        name: b.name,
+        type: b.type,
+        location: b.location || null,
+        description: b.description || null,
+      }, { onConflict: 'name' });
+    }
+
+    // 2. Sincronizar Obras
+    for (const w of works) {
+      await (supabase as any).from('works').upsert({
+        id: w.id,
+        title: w.title,
+        author: w.author,
+        isbn: w.isbn || null,
+        dewey_code: w.dewey_code,
+        cover_url: w.cover_url || null,
+        publisher: w.publisher || null,
+        publication_year: w.publication_year || null,
+        subjects: w.subjects || [],
+        description: w.description || null,
+      }, { onConflict: 'id' });
+    }
+
+    // 3. Sincronizar Ejemplares
+    for (const c of copies) {
+      await (supabase as any).from('copies').upsert({
+        id: c.id,
+        work_id: c.work_id,
+        branch_id: c.branch_id,
+        condition: c.condition,
+        internal_code: c.internal_code,
+        status: c.status || 'disponible',
+        notes: c.notes || null,
+        barcode: c.barcode || null,
+      }, { onConflict: 'internal_code' });
+    }
+
+    return {
+      success: true,
+      count: works.length + copies.length,
+      message: `Se sincronizaron con éxito ${branches.length} sedes, ${works.length} obras y ${copies.length} ejemplares en Supabase.`,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      count: 0,
+      message: `Error durante la migración a Supabase: ${err.message || err}`,
+    };
+  }
+}
+
+

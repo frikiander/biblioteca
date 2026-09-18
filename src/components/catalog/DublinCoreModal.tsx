@@ -18,7 +18,8 @@ import {
   Printer,
   Download,
   Image as ImageIcon,
-  FileDown
+  FileDown,
+  Pencil
 } from 'lucide-react';
 import type { WorkWithCopiesCount, Copy as CopyType } from '../../types/database';
 import { getDeweyInfo } from '../../lib/dewey';
@@ -30,9 +31,10 @@ interface DublinCoreModalProps {
   work: WorkWithCopiesCount | null;
   onClose: () => void;
   onOpenPrintModal?: (work: WorkWithCopiesCount) => void;
+  onOpenEdit?: (work: WorkWithCopiesCount) => void;
 }
 
-export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose, onOpenPrintModal }) => {
+export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose, onOpenPrintModal, onOpenEdit }) => {
   const [activeTab, setActiveTab] = useState<'catalog' | 'dublin_raw'>('catalog');
   const [copiedRaw, setCopiedRaw] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -140,6 +142,19 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {onOpenEdit && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenEdit(work);
+                }}
+                className="px-3 py-1.5 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-800 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                title="Editar obra y ejemplares"
+              >
+                <Pencil className="w-3.5 h-3.5 text-[#83B141]" />
+                <span className="hidden sm:inline">Editar Obra</span>
+              </button>
+            )}
             <button
               onClick={() => setIsPrintModalOpen(true)}
               className="px-3 py-1.5 bg-[#83B141] hover:bg-[#719b35] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
@@ -439,13 +454,27 @@ export const DublinCoreModal: React.FC<DublinCoreModalProps> = ({ work, onClose,
             </button>
           </div>
 
-          <button
-            id="close-dublin-modal-footer-btn"
-            onClick={onClose}
-            className="px-5 py-2.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-[#D3D2D3] rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs"
-          >
-            Cerrar Ficha
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenEdit && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenEdit(work);
+                }}
+                className="px-4 py-2.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-[#D3D2D3] rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              >
+                <Pencil className="w-3.5 h-3.5 text-[#83B141]" />
+                <span>Editar Obra / Ejemplares</span>
+              </button>
+            )}
+            <button
+              id="close-dublin-modal-footer-btn"
+              onClick={onClose}
+              className="px-5 py-2.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-[#D3D2D3] rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs"
+            >
+              Cerrar Ficha
+            </button>
+          </div>
         </div>
       </div>
 

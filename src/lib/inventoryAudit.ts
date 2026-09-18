@@ -6,8 +6,8 @@ import type {
   PreservationStatus, 
   DamageType 
 } from '../types/database';
-import { getStoredCopies, getStoredWorks, getStoredBranches } from './supabaseClient';
-import { areMarbeteCodesMatching, findCopyByCode } from './loans';
+import { getStoredCopies, getStoredWorks, getStoredBranches, supabase, isSupabaseConfigured } from './supabaseClient';
+import { areMarbeteCodesMatching, findCopyByCode, normalizeMarbeteCode } from './loans';
 
 export function getStoredAuditSessions(): StockAuditSession[] {
   if (typeof window === 'undefined') return [];
@@ -112,31 +112,72 @@ export function scanItemInSession(
   return { session: updatedSession, item: auditItem, isNew };
 }
 
-// ----------------- PRESERVATION & WORKSHOP -----------------
+export function finishAuditSession(sessionId: string): StockAuditSession | null {
+  const sessions = getStoredAuditSessions();
+  const session = sessions.find((s) => s.id === sessionId);
+  if (!session) return null;
+
+  const copies = getStoredCopies();
+  const branchCopies = copies.filter((c) => c.branch_id === session.branch_id);
+  const scannedCodes = new Set(session.items.map((i) => normalizeMarbeteCode(i.copy_code)));
+
+  const missingItems: StockAuditItem[] = branchCopies
+    .filter((c) => !scannedCodes.has(normalizeMarbeteCode(c.internal_code)))
+    .map((c) => ({
+      copy_code: c.internal_code,
+      status: 'missing' as AuditItemStatus,
+      work_title: c.work?.title,
+      work_author: c.work?.author,
+      dewey_code: c.work?.dewey_code,
+      expected_branch_name: session.branch_name,
+      scanned_branch_name: session.branch_name,
+      shelf_section: session.shelf_range,
+      scanned_at: new Date().toISOString(),
+    }));
+
+  const finalItems = [...session.items, ...missingItems];
+
+  const updatedSession: StockAuditSession = {
+    ...session,
+    ended_at: new Date().toISOString(),
+    items: finalItems,
+    missing_count: missingItems.length,
+  };
+
+  const updatedSessions = sessions.map((s) => (s.id === sessionId ? updatedSession : s));
+  saveAuditSessions(updatedSessions);
+
+  return updatedSession;
+}
+
+// ---------------------------------------------------------------------------
+// PRESERVATION & BINDERY WORKFLOW (Colegio Integral El Manglar)
+// ---------------------------------------------------------------------------
 
 export const INITIAL_PRESERVATION_ITEMS: PreservationItem[] = [
   {
     id: 'pres_01',
-    copy_id: 'copy_sample_01',
-    copy_code: 'MOS-BAC-863-OTEc-001',
+    copy_id: '20000000-0000-4000-a000-000000000002',
+    copy_code: 'MOS-PRI-863-OTEc-002',
     work_title: 'Casas Muertas',
     work_author: 'Miguel Otero Silva',
     damage_type: 'lomo_danado',
     status: 'en_tratamiento',
-    diagnosis: 'Desprendimiento de lomo por uso intensivo en aula.',
-    treatment_applied: 'Encolado vinílico neutro, refuerzo de cabezadas y nuevo forro de mylar.',
-    entered_at: '2026-02-15T09:00:00Z',
-    technician_name: 'Prof. Ana Teresa Valera (Taller)',
+    diagnosis: 'Desprendimiento parcial del lomo por uso continuo en aula de 5to grado. Papel interior en excelente estado.',
+    treatment_applied: 'Encolado flexible con acetato de polivinilo (PVA) neutro y refuerzo con tela de algodón.',
+    technician_name: 'Prof. Carlos Eduardo Benítez',
+    entered_at: '2026-02-14T10:00:00Z',
   },
   {
     id: 'pres_02',
-    copy_id: 'copy_sample_02',
-    copy_code: 'MOS-PRI-500-SAG-001',
-    work_title: 'El Mundo Vegetal y los Manglares',
-    work_author: 'Equipo Pedagógico',
+    copy_id: '20000000-0000-4000-a000-000000000008',
+    copy_code: 'MOS-PRI-843-EXUp-002',
+    work_title: 'El Principito',
+    work_author: 'Antoine de Saint-Exupéry',
     damage_type: 'hojas_sueltas',
     status: 'en_espera',
-    diagnosis: 'Páginas 45-48 desprendidas.',
+    diagnosis: 'Páginas 23 a 34 descosidas por manipulación escolar en rincón de lectura.',
+    technician_name: 'Comité de Biblioteca Escolar',
     entered_at: '2026-02-20T14:00:00Z',
   },
 ];
@@ -150,9 +191,9 @@ export function getStoredPreservationItems(): PreservationItem[] {
   }
   try {
     const parsed: PreservationItem[] = JSON.parse(saved);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_PRESERVATION_ITEMS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return INITIAL_PRESERVATION_ITEMS;
+    return [];
   }
 }
 
@@ -243,5 +284,20 @@ export function updatePreservationStatus(
     }
   }
 
+  return true;
+}
+
+export async function deletePreservationItem(itemId: string): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await (supabase as any).from('preservation_items').delete().eq('id', itemId);
+    } catch (err) {
+      console.warn('Error eliminando item de preservación en Supabase:', err);
+    }
+  }
+
+  const items = getStoredPreservationItems();
+  const updated = items.filter((i) => i.id !== itemId);
+  savePreservationItems(updated);
   return true;
 }

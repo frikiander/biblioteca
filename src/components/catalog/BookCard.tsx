@@ -5,7 +5,8 @@ import {
   Info, 
   Printer, 
   FileCode,
-  Sparkles
+  Sparkles,
+  Pencil
 } from 'lucide-react';
 import type { WorkWithCopiesCount } from '../../types/database';
 import { getDeweyInfo } from '../../lib/dewey';
@@ -13,6 +14,7 @@ import { getDeweyInfo } from '../../lib/dewey';
 interface BookCardProps {
   work: WorkWithCopiesCount;
   onOpenDetails: (work: WorkWithCopiesCount) => void;
+  onEdit?: (work: WorkWithCopiesCount) => void;
   onOpenMarc21?: (work: WorkWithCopiesCount) => void;
   onQuickRegisterCopy?: (work: WorkWithCopiesCount) => void;
   onAddCopy?: (work: WorkWithCopiesCount) => void;
@@ -22,6 +24,7 @@ interface BookCardProps {
 export const BookCard: React.FC<BookCardProps> = ({ 
   work, 
   onOpenDetails, 
+  onEdit,
   onOpenMarc21,
   onQuickRegisterCopy, 
   onAddCopy,
@@ -158,6 +161,18 @@ export const BookCard: React.FC<BookCardProps> = ({
           <Info className="w-3.5 h-3.5 text-neutral-500" strokeWidth={1.5} />
           <span>Ficha</span>
         </button>
+
+        {onEdit && (
+          <button
+            id={`edit-work-${work.id}`}
+            onClick={() => onEdit(work)}
+            title="Editar obra y ejemplares específicos"
+            className="py-1.5 px-2.5 bg-white hover:bg-[#f2f7ec] text-neutral-800 hover:text-[#3b5e14] border border-[#D3D2D3] hover:border-[#83B141]/50 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+          >
+            <Pencil className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={1.75} />
+            <span>Editar</span>
+          </button>
+        )}
 
         {onOpenMarc21 && (
           <button

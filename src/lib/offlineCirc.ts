@@ -57,7 +57,7 @@ export async function processOfflineQueue(): Promise<{
         const copyCode = String(item.payload.copyCode || '');
         const copy = findCopyByCode(copyCode);
         if (copy) {
-          const res = registerLoan({
+          const res = await registerLoan({
             copy,
             student: item.payload.student as any,
             dueDays: item.payload.dueDays as number,
@@ -76,7 +76,7 @@ export async function processOfflineQueue(): Promise<{
         }
       } else if (item.type === 'checkin') {
         const copyCode = String(item.payload.copyCode || '');
-        const res = returnLoan({
+        const res = await returnLoan({
           copyCode,
           returnNotes: `[Offline Sync] ${String(item.payload.returnNotes || '')}`.trim(),
           returnCondition: item.payload.returnCondition as any,

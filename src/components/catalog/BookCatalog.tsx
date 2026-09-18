@@ -19,7 +19,8 @@ import {
   FileCode,
   Info,
   RotateCcw,
-  X
+  X,
+  Pencil
 } from 'lucide-react';
 import type { Work, Branch, Copy, WorkWithCopiesCount } from '../../types/database';
 import { 
@@ -34,11 +35,13 @@ import {
   getWorksWithInventory, 
   getStoredBranches, 
   getStoredCopies, 
+  getStoredWorks,
   clearAllPlatformData 
 } from '../../lib/supabaseClient';
 import { BookCard } from './BookCard';
 import { DublinCoreModal } from './DublinCoreModal';
 import { Marc21Modal } from './Marc21Modal';
+import { EditWorkModal } from './EditWorkModal';
 import { RegisterWorkModal } from '../works/RegisterWorkModal';
 import { QuickAddCopyModal } from '../copies/QuickAddCopyModal';
 import { PrintSpineLabelsModal } from '../copies/PrintSpineLabelsModal';
@@ -62,6 +65,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
   const [_dataSource, setDataSource] = useState<'supabase' | 'local'>('local');
 
   // Modals state
+  const [editingWork, setEditingWork] = useState<WorkWithCopiesCount | null>(null);
   const [isRegisterWorkModalOpen, setIsRegisterWorkModalOpen] = useState<boolean>(false);
   const [quickAddCopyWork, setQuickAddCopyWork] = useState<WorkWithCopiesCount | null>(null);
   const [isPrintSpineModalOpen, setIsPrintSpineModalOpen] = useState<boolean>(false);
@@ -109,6 +113,13 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         const { data: copiesData, error: copiesError } = await supabase.from('copies').select('*');
         if (copiesError) throw new Error(copiesError.message);
 
+        // Sincronizar en localStorage para que todos los módulos tengan la data fresca de Supabase
+        if (typeof window !== 'undefined') {
+          if (worksData) localStorage.setItem('manglar_works', JSON.stringify(worksData));
+          if (copiesData) localStorage.setItem('manglar_copies', JSON.stringify(copiesData));
+          if (branchesData) localStorage.setItem('manglar_branches', JSON.stringify(branchesData));
+        }
+
         const enriched = getWorksWithInventory(
           (worksData as Work[]) || [],
           (branchesData as Branch[]) || [],
@@ -118,22 +129,22 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         setWorks(enriched);
         setDataSource('supabase');
       } else {
-        const savedCopiesStr = localStorage.getItem('manglar_copies');
-        const currentCopies: Copy[] = savedCopiesStr ? JSON.parse(savedCopiesStr) : CURATED_MOS_COPIES;
-
-        const savedWorksStr = localStorage.getItem('manglar_works');
-        const currentWorks: Work[] = savedWorksStr ? JSON.parse(savedWorksStr) : CURATED_MOS_WORKS;
-
-        const currentBranches: Branch[] = getStoredBranches();
+        const currentCopies = getStoredCopies();
+        const currentWorks = getStoredWorks();
+        const currentBranches = getStoredBranches();
 
         const enriched = getWorksWithInventory(currentWorks, currentBranches, currentCopies);
         setWorks(enriched);
         setDataSource('local');
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al cargar catálogo';
+      const message = err instanceof Error ? err.message : 'Error al conectar con Supabase';
       setError(message);
-      const enriched = getWorksWithInventory(CURATED_MOS_WORKS, getStoredBranches(), CURATED_MOS_COPIES);
+      // Mantener los datos almacenados localmente sin forzar la colección estática si fue eliminada
+      const currentCopies = getStoredCopies();
+      const currentWorks = getStoredWorks();
+      const currentBranches = getStoredBranches();
+      const enriched = getWorksWithInventory(currentWorks, currentBranches, currentCopies);
       setWorks(enriched);
       setDataSource('local');
     } finally {
@@ -254,15 +265,6 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         {/* Acciones Curatoriales */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
-            onClick={handleRestoreCurated}
-            title="Cargar o restablecer inventario fundamental de Miguel Otero Silva y clásicos"
-            className="px-3 py-2 bg-white hover:bg-neutral-50 border border-[#D3D2D3] text-neutral-700 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={1.75} />
-            <span className="hidden sm:inline">Inventario Curado MOS</span>
-          </button>
-
-          <button
             onClick={() => {
               setPrintModalWork(null);
               setPrintModalCopies(undefined);
@@ -288,16 +290,6 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
             <Share2 className="w-3.5 h-3.5 text-neutral-600" strokeWidth={1.5} />
             <span className="hidden sm:inline">OPAC Alumnos</span>
           </button>
-
-          {works.length > 0 && (
-            <button
-              onClick={handleClearAllData}
-              className="p-2 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 transition cursor-pointer"
-              title="Vaciar inventario"
-            >
-              <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-            </button>
-          )}
 
           <button
             id="open-register-work-btn"
@@ -541,6 +533,7 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
               key={work.id}
               work={work}
               onOpenDetails={(w) => setActiveModalWork(w)}
+              onEdit={(w) => setEditingWork(w)}
               onOpenMarc21={(w) => setActiveMarcWork(w)}
               onQuickRegisterCopy={(w) => setQuickAddCopyWork(w)}
               onAddCopy={onSelectWorkForCopy}
@@ -641,6 +634,14 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
                       <td className="py-2.5 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            onClick={() => setEditingWork(work)}
+                            title="Editar obra y ejemplares"
+                            className="p-1.5 rounded-lg bg-white hover:bg-[#f2f7ec] text-neutral-700 hover:text-[#3b5e14] border border-[#D3D2D3] hover:border-[#83B141]/50 transition cursor-pointer shadow-2xs"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-[#83B141]" strokeWidth={1.75} />
+                          </button>
+
+                          <button
                             onClick={() => setActiveModalWork(work)}
                             title="Ficha Dublin Core"
                             className="p-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition cursor-pointer"
@@ -692,6 +693,23 @@ export const BookCatalog: React.FC<BookCatalogProps> = ({ onSelectWorkForCopy, r
         <DublinCoreModal
           work={activeModalWork}
           onClose={() => setActiveModalWork(null)}
+          onOpenEdit={(w) => setEditingWork(w)}
+        />
+      )}
+
+      {editingWork && (
+        <EditWorkModal
+          work={editingWork}
+          isOpen={Boolean(editingWork)}
+          onClose={() => setEditingWork(null)}
+          onWorkUpdated={(_updatedWork) => {
+            fetchWorksCatalog();
+            showToast('Inventario y ejemplares actualizados exitosamente.', 'success');
+          }}
+          onWorkDeleted={(_deletedWorkId) => {
+            fetchWorksCatalog();
+            showToast('Obra eliminada del inventario.', 'info');
+          }}
         />
       )}
 
